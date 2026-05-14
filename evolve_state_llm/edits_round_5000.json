@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 — activate still-dead widgets for trend_chaser/peer-social and size-anxious/fit cells; dial back round-1 over-corrections on material_deep_dive and easy_returns_promise",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.45, "reason": "STILL 0% activation despite round 1; size_specific_anxious/top 27.1% and corporate_uniform_buyer/bottoms 28.8% regret need N1_fit anchor that size_guide alone cannot satisfy"},
+    {"widget": "customers_chose", "path": "base", "from": 0.1, "to": 0.4, "reason": "Only 2.3% activation; trend_chaser/top 31.2% regret and trend_chaser/accessories 27.8% need N3_peer social signal that no other widget delivers"},
+    {"widget": "brand_story", "path": "base", "from": 0.1, "to": 0.4, "reason": "0% activation; trend_chaser N2_visual=0.78 and N3_peer=0.82 in accessories (×1.3 multiplier) demands premium-visual widget separate from material_deep_dive"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.35, "reason": "0% activation; paralyzed_wishlister N7_commit=0.95 underserved — expert_pick currently monopolizes F51 slot but wishlist_save addresses commit directly"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.3, "reason": "0% activation; bargain_hunter_returning and mobile_evening_browser need N7_commit/F45 widget — currently zero coverage of price-anxiety commitment loop"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.4, "to": 0.25, "reason": "ROUND-1 OVERCORRECTION dial-back: 14.5% activation across nearly every persona suggests it's over-firing where premium-visual is not the binding need (e.g. hesitant_first_buyer, paralyzed_wishlister)"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.35, "to": 0.22, "reason": "ROUND-1 OVERCORRECTION dial-back: 15.8% top activation rate but avg-slot 4.60 means it lands late as filler; lower base lets need-aligned widgets win earlier slots"},
+    {"widget": "expert_pick", "path": "base", "from": 0.35, "to": 0.22, "reason": "ROUND-1 OVERCORRECTION dial-back: 14.2% activation with r/fire 0.287 — over-firing on personas whose F51 is not primary (corporate_uniform_buyer, returner_from_recent_order)"},
+    {"widget": "customers_chose", "path": "on_rem.F51", "from": 1.2, "to": 2.0, "reason": "Strengthen F51 pull so customers_chose displaces expert_pick for trend_chaser/top where peer-driven decision paralysis dominates"},
+    {"widget": "brand_story", "path": "on_cov.F33", "from": -1.0, "to": 0.4, "reason": "Flip to mild positive synergy so brand_story chains after material_deep_dive in premium-visual stacks (trend_chaser/accessories, premium_silent_browser/outerwear)"},
+    {"widget": "fit_reassurance", "path": "on_cov.F32", "from": -1.2, "to": 0.3, "reason": "Flip to positive synergy so fit_reassurance chains WITH size_guide rather than competing — N1_fit-dominant personas need both reassurance and concrete guide"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.2, "to": 2.3, "reason": "Boost F51 pull so wishlist_save wins over expert_pick for paralyzed_wishlister and tabbed_comparison_shopper where commit-deferral is the real need"},
+    {"widget": "customers_chose", "path": "on_cov.F41", "from": 0.5, "to": 1.0, "reason": "Stronger positive synergy after comparison_card fires — trend_chaser/top and tabbed_comparison_shopper benefit from social proof following compare frame"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.05, "reason": "Round 1 set slot_decay 0.18 but base 0.45 still lets it grab early slots in default-stack sessions; lower base completes the suppression"},
+    {"widget": "price_drop_notify", "path": "on_rem.F45", "from": 0.6, "to": 1.6, "reason": "Boost F45 pull so price_drop_notify activates for bargain_hunter_returning where value_breakdown already covers comparison but commit trigger missing"},
+    {"widget": "low_return_alts", "path": "slot_decay", "from": 0.06, "to": 0.03, "reason": "5.5% activation at avg slot 1.34 — fires too early then exits; flatter decay keeps it eligible for late F46 reinforcement in returner_from_recent_order/shoes"}
+  ]
+}

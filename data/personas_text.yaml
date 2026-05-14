@@ -1,0 +1,150 @@
+# 14 persona text descriptions for LLM-driven session generation.
+#
+# Each persona has:
+#   description: a paragraph describing the customer archetype
+#   mixture_weight: their share of the stream (will be renormalised to sum=1)
+#   notes_for_llm: optional guidance for the generator subagent
+#
+# The persona generator (experiments/persona_generate.py) feeds each entry to
+# a Claude subagent which produces:
+#   - true_needs_base: 7-d need vector inferred from the description
+#   - exemplars: 50 concrete signal vectors that are plausible sessions from
+#     this persona, with realistic correlations between signals
+#
+# These are cached to data/personas_llm_cache.json and consumed by
+# edp.personas.llm at simulation time.
+
+personas:
+  - name: hesitant_first_buyer
+    mixture_weight: 0.13
+    description: >
+      First-time visitor on a friend's recommendation. Late twenties, has
+      never bought from this brand before. Looking at a mid-price item but
+      anxious about whether it'll fit, whether they can return it easily,
+      and whether the brand is legit. Spends a lot of time reading the
+      size chart, opens the returns policy in a new tab, hovers over price
+      multiple times. Has not added to cart yet. Mobile device, evening.
+
+  - name: tabbed_comparison_shopper
+    mixture_weight: 0.11
+    description: >
+      Has 4-7 tabs open across three different retailers. Knows what they
+      want stylistically and is doing a final pricing pass. Low size
+      anxiety (knows their measurements). Wishlist already exists from
+      prior visits. Will compulsively check the price on each tab and
+      look at the value-breakdown / shipping cost section. Often comes
+      back the next day.
+
+  - name: birthday_rush_gifter
+    mixture_weight: 0.07
+    description: >
+      Buying a gift for someone whose size they're not 100% sure about.
+      Time pressure — birthday is in 2-3 days. They click "expedited
+      shipping" early, are willing to spend a bit more for confidence,
+      care a lot about "easy returns for the recipient" and gift wrapping.
+      Style-stretch is moderate (matching recipient's taste, not theirs).
+      Not return-anxious about money, return-anxious about giving a bad
+      gift.
+
+  - name: post_return_returner
+    mixture_weight: 0.08
+    description: >
+      Recently returned an item from the same brand. Their previous order
+      didn't fit. They are skeptical now and proceeding cautiously. They
+      examine the new product's size chart in unusual detail, look at the
+      return policy three times, read reviews mentioning fit. They might
+      use a "size up" or "low return rate alternative" widget if shown.
+      High return history, very high return-page views.
+
+  - name: outfit_event_planner
+    mixture_weight: 0.09
+    description: >
+      Has a specific event in mind — wedding, vacation, work conference.
+      Looking at an item that needs to complete an outfit. High style-
+      stretch (open to discovery), interested in 'wear it with' content
+      and lookbooks. Less price-sensitive than average. Will linger on
+      outfit-completion or occasion-lookbook content.
+
+  - name: bargain_hunter_returning
+    mixture_weight: 0.10
+    description: >
+      Loyal returning customer who only ever buys on sale. Knows the
+      brand well. Checks the price history widget if available, has
+      saved items to a wishlist months ago, watches for price drops.
+      Low size anxiety, low return anxiety. Will tab-switch but to
+      check coupon sites, not other retailers.
+
+  - name: premium_silent_browser
+    mixture_weight: 0.07
+    description: >
+      Mid-thirties, considering a premium-priced item. Confident in their
+      taste, looking for quality signals. Zooms in on product images
+      repeatedly, reads brand-story content, materials, craftsmanship
+      details. Doesn't browse alternatives — they want THIS item, but
+      need to be convinced it's worth the spend. Low return history but
+      premium products have higher abandonment.
+
+  - name: paralyzed_wishlister
+    mixture_weight: 0.08
+    description: >
+      Has 20+ items in their wishlist across multiple visits. Looking at
+      the current item is the 4th time in two weeks. They oscillate
+      between this and similar items, click between recommendations,
+      add and remove from cart. High revisit, high cart-osc, high
+      wishlist signals. Decision paralysis is the modal state.
+
+  - name: mobile_evening_browser
+    mixture_weight: 0.08
+    description: >
+      On phone, on the couch, after dinner. Mobile-only signals high.
+      Low engagement depth (doesn't zoom much, doesn't read long copy).
+      Casually browsing, maybe will save to wishlist, low intent to
+      buy today. Moderate style-stretch, low size anxiety, low compare
+      activity.
+
+  - name: confident_repeat_buyer
+    mixture_weight: 0.09
+    description: >
+      Buys from this brand 3-4 times a year. Knows their size in this
+      brand. Goes straight to product, adds to cart quickly. Low signals
+      across the board for anxiety dimensions, low tab switching, low
+      revisit. Premium-ish but consistent buyer.
+
+  - name: size_specific_anxious
+    mixture_weight: 0.05
+    description: >
+      Has body proportions that don't match standard sizing — e.g. long
+      torso, athletic build, between sizes. Very high size_chart usage,
+      very high return_view, reads sizing reviews extensively. Often
+      sizes up out of caution. Will deeply engage with fit_reassurance
+      and size_guide widgets if shown.
+
+  - name: trend_chaser
+    mixture_weight: 0.05
+    description: >
+      Saw the item on social media or a celebrity. Came in via paid ad.
+      High style_stretch, doesn't really know the brand. Will look at
+      "trending" or "customers chose" content. Mobile. Low fit info
+      consumed because they care about the look, not the technical
+      fit.
+
+  - name: corporate_uniform_buyer
+    mixture_weight: 0.05
+    description: >
+      Buying a category they need for work — basics, suiting, neutrals.
+      They've bought similar items before and know what works. Slightly
+      price-sensitive but value time over price. Mid-day desktop
+      session, will probably buy two or three sizes of the same thing
+      to keep the one that fits.
+
+  - name: returner_from_recent_order
+    mixture_weight: 0.05
+    description: >
+      Order from last week is being returned right now and they're
+      browsing for a replacement. They know the brand, know their size
+      (from the failure), and are slightly cautious. Their previous
+      item didn't work, so they're more open to alternatives and to
+      'low return rate' recommendations. Mid revisit, high return_view.
+
+# Mixture weights total: 0.13+0.11+0.07+0.08+0.09+0.10+0.07+0.08+0.08+0.09+0.05+0.05+0.05+0.05 = 1.10
+# Will be renormalised to sum to 1.0 by the loader.
