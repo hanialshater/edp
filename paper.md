@@ -259,7 +259,7 @@ Mean cumulative regret at milestone session counts. Bandit values are mean ± SE
 
 EDP-static / EDP-agent / EDP-OPRO are identical through session 2500 (all running the same initial config). They diverge after the first edit round. At every measured N from 500 onward, the report-based agent leads. At 1K sessions — well before most A/B tests reach decision — EDP-agent is **2.37× better** than LinTS-warm (118 vs 281).
 
-![Figure 3: Statistical-power sweep. Cumulative regret at each milestone session count. Error bars are ±1 standard error across replicates (10 seeds for bandits, 3 reps for agent variants). EDP-agent leads at every measured N from 500 onward.](figures/fig3_power_sweep.png)
+![Figure 3: Statistical-power sweep. Cumulative regret at each milestone session count. Error bars are ±1 standard error across replicates (10 seeds for bandits, 3 reps for agent variants). EDP-agent leads at every measured N from 500 onward.](figures/fig3_robustness.png)
 
 ### 5.4 Per-persona breakdown (Fig. 4)
 
@@ -278,7 +278,7 @@ Per-persona regret as % of that persona's oracle reward, averaged across reps fo
 
 The report-based agent wins (or ties) every persona vs the bandits. Its biggest wins over static EDP are on `confident_buyer` (8.3 → 3.3%) and `browser_lurker` (9.0 → 4.4%) — exactly the personas the report flagged as moderate-regret with under-served widget families. OPRO's results are erratic: it helps `paralyzed` (3.4 → 2.4%) but actively hurts `confident_buyer` (8.3 → 12.9%) and `outfit_seeker` (6.3 → 10.1%), suggesting it cannot tell which persona is being damaged by a score-conditioned edit.
 
-![Figure 4: Per-persona regret heatmap. Each cell is the mean regret on sessions of that persona as a percentage of the persona's oracle reward. Averaged across reps. The report-based EDP-agent (rightmost column) is the only method that achieves single-digit regret on every persona.](figures/fig4_persona_heatmap.png)
+![Figure 4: Per-persona regret heatmap. Each cell is the mean regret on sessions of that persona as a percentage of the persona's oracle reward. Averaged across reps. The report-based EDP-agent (rightmost column) is the only method that achieves single-digit regret on every persona.](figures/fig4_persona_heatmap_llm.png)
 
 ### 5.5 OPRO ablation (Fig. 5)
 
@@ -299,7 +299,7 @@ OPRO captures ~42% of the gain on average (189 / 445), but the standard error of
 
 **Interpretation.** The LLM-in-the-loop is not the source of the gain. The gain comes from the LLM consuming structured diagnostics over interpretable curves. Without the report to anchor reasoning, the same model with the same action space and the same number of attempts produces high-variance, near-baseline updates — sometimes lucky, sometimes regressive, on average no better than no learning at all.
 
-![Figure 5: OPRO ablation. Same Claude model, same edit-action space, same number of attempts. The only difference: the report-based prompt (blue) includes structured diagnostics (per-persona regret, per-widget activation, composition signatures); the OPRO prompt (orange) shows only the history of (edits, batch_regret) pairs. Bands are ±1 standard error across 3 independent runs of each variant. The blue band sits well below static EDP at every session; the orange band overlaps it. The structured report is the carrier of the gain.](figures/fig5_opro_ablation.png)
+![Figure 5: OPRO ablation. Same Claude model, same edit-action space, same number of attempts. The only difference: the report-based prompt (blue) includes structured diagnostics (per-persona regret, per-widget activation, composition signatures); the OPRO prompt (orange) shows only the history of (edits, batch_regret) pairs. Bands are ±1 standard error across 3 independent runs of each variant. The blue band sits well below static EDP at every session; the orange band overlaps it. The structured report is the carrier of the gain.](figures/fig1_cumregret.png)
 
 ### 5.6 Evolution trajectory (Fig. 6, Fig. 7)
 
