@@ -10,25 +10,34 @@ We exercise the paradigm on page composition under the reward signal production 
 
 ## 1. Introduction
 
-Recommendation pages are composed, not just ranked. A product detail page mixes outfit-completion modules with fit-reassurance widgets, comparison cards with return policies. The academic framing is contextual combinatorial bandit / slate ranking: a context-dependent slate of items is chosen, and per-item or per-slot reward is observed. Methods like LinUCB, LinTS, and slate-bandit variants assume the reward signal is locally informative for each slot.
+Where should the intelligence of a recommendation system live?
 
-Production departs from that framing on three structural axes:
+The default answer in industry is *in model weights*: a transformer ranker or contextual bandit absorbs engagement signal into millions of opaque parameters, and the system gets smarter by retraining. This works, but at three costs that compound at scale: decisions are not explainable in detail; the system can only get smarter in directions gradient descent finds; and the most capable reasoning tool we have (an LLM) cannot read or contribute to the policy without running expensively in the serving path.
 
-1. **Reward attribution.** Engagement, purchase, return — all are observed at the page or order level, not per-slot. There is no per-slot ground truth a learner could regress against; the same page outcome is the only available label for every slot in that page.
-2. **Delay.** In categories where returns matter (apparel, electronics), the reward for a session served today does not settle for one to several days.
-3. **Low N.** Most production A/B test arms close before reaching 10K sessions per cell, so methods that pay an exploration tax up front are penalised twice.
+We study an alternative in the spirit of Karpathy's *Software 3.0*. The policy is a **readable code artifact** — a 2-layer generalised additive model with roughly 300 numbers organised as named piecewise-linear shape functions — that an LLM agent writes from domain knowledge at design time, edits as PR diffs at checkpoints, and explains by plotting the curves. The LLM is strictly offline. At serving time the policy is a deterministic Python function in microseconds, with no external dependencies. We call this an **Evolvable Decision Program** (EDP).
 
-This paper is not about beating a specific bandit algorithm; it is about evaluating page-composition methods on the reward signal production actually has. We use per-slot Linear Thompson Sampling with a 7-d problem-fingerprint context (LinTS-warm) and a 14-d raw-signal context (LinTS-cold) as our representative bandit baselines, and discuss slate-bandit / semi-bandit alternatives in §8.
+The application in this paper is page composition: at each session, choose and order 6 widgets out of 22 candidates on a fashion product page given 14 raw behavioural signals and 6 categories. The reward signal is the one production actually has — observed at the page level, delayed by several days, noisy — not the per-slot signal academic bandit work assumes. Most of the academic-to-deployment gap shows up here, and §5.1 measures it directly: per-slot LinTS, the canonical contextual bandit, loses 4.9 % of oracle reward under lab conditions and 18.9 % under production conditions. The degradation is not from algorithmic weakness; it is from a structurally absent per-slot signal.
 
-We propose **Evolvable Decision Programs (EDP)** as an alternative. EDP is a 2-layer GAM policy: piecewise-linear shape functions detect 7 latent "problems" from 14 raw signals, and a module GAM scores each widget for each slot based on remaining and coverage of those problems. An LLM agent reads a structured diagnostic report at each checkpoint and proposes atomic edits to the curves. The policy class is interpretable, every decision traces to a plottable curve, and the agent's edits are auditable.
+Three properties of the paradigm motivate the experiments:
 
-The "evolvable" framing refers to the agent's ability to edit a structured policy class at each checkpoint, which the experiments support directly. Structural growth in the strongest sense — adding new shape functions, new widgets, new synergy types mid-stream — is supported by the infrastructure but does not yet pay off empirically in single-trial experiments (see §5.4d for Layer-1 PWL evolution and §5.9 for catalog growth). A more accurate but less catchy name would be "agent-edited Decision Programs"; we keep "Evolvable" because the infrastructure is there and the empirical case for structural evolution is a multi-seed study away.
+**Reasoning and LLM knowledge as the policy author.** The agent writes the initial program directly from shopping psychology — Layer 1 maps signals to 7 latent "problem" scores via PWL curves (Fig. 8); Layer 2 scores widgets against those problems with a remaining/coverage mechanic that captures inter-slot dependencies. Cold start is not "explore randomly until conversion happens" but "write a sensible program from domain knowledge." Every parameter is named, every curve is plottable, and every edit at a checkpoint carries an LLM-authored reason that survives in the audit log (Fig. 10).
+
+**The GAM doubles as a Bayesian prior for online learning.** Bayesian-EDP (§3.4, §5.4b) treats the LLM-authored shape functions as a Gaussian prior anchor and runs regularised SGD on observed page-level reward between checkpoints. This is the principled fusion of LLM-authored structure with online gradient learning: the readable representation never disappears, but the numbers shift as data accumulates (Fig. 11). Bayesian-EDP is the best method on the harder LLM-driven simulator at 11.0 ± 0.2 %, roughly 2× better than the strongest combinatorial bandit we measured.
+
+**Explainability is architectural, not bolted on.** Every page decision factors as `(detected problem intensity) × (widget shape function) − slot decay` (Fig. 9). The decision trace is a curve plot rather than a SHAP approximation, and the same property powers the live composition demo (`demo/edp_orchestrator.html`) where stakeholders can step through every choice on every example.
+
+The bandit head-to-head is one of several yardsticks. We test against eight baselines — per-slot LinTS (warm and cold context), Slate-LinTS, CombLinUCB, GreedyLinTS, static placement, one-shot LLM-as-policy, and an OPRO-style ablation that strips structured diagnostics from the agent's loop — under both a parametric 8-persona simulator and a richer LLM-driven 14-persona-by-6-category simulator. The paradigm-level claim is broader than any one comparison: that a readable code artifact written by an offline LLM is a competitive alternative to opaque online learners for whole-page composition, with cold-start, audit-trail, and serving-cost properties out of reach for weight-based methods.
+
+§2 specifies the simulators. §3 details the 2-layer GAM, the evolution loop, and Bayesian-EDP. §4 fixes the protocol. §5 reports results. §6 discusses where the paradigm wins and where it does not. Appendix A walks through a single session in full to make the open-box claim concrete.
+
+The "evolvable" qualifier deserves one disclaimer. The experiments support coefficient updates within a fixed policy class. Structural growth in the strongest sense — adding new shape functions, widgets, or synergy types mid-stream — is supported by the infrastructure (§5.4d, §5.9) but does not yet pay off empirically in single-trial runs; multi-seed evaluation of that capability is open work.
 
 **Contributions:**
 
-1. A direct measurement of the **academic-vs-production gap**: per-slot LinTS is the best method under lab conditions (4.9 % of oracle reward lost), and it degrades by 14 percentage points under production conditions (page-level attribution + delay + noise) — not because the algorithm is bad, but because the reward signal it expects is structurally absent.
-2. A reproducible head-to-head between EDP and bandit methods (per-slot LinTS, Slate-LinTS, CombLinUCB) under the production reward stack across two simulator setups (parametric and LLM-driven). EDP variants win by ~2× over the strongest bandit and degrade less than the LLM-driven baselines under the realism shift; the precise winner depends on simulator (EDP-agent on parametric, Bayesian-EDP on LLM-persona — see §5.4c).
-3. An OPRO-style ablation showing that the diagnostic report — not the LLM's general intelligence — is what makes the agent-in-the-loop work.
+1. **GAM as Software 3.0 primitive (§3, §6.1).** A readable, LLM-authorable, agent-editable policy class for whole-page composition. Roughly 300 numbers, microsecond serving, atomic PR-diff edits, demonstrable explainability via curve plots (Figs. 8–11) and a live demo.
+2. **GAM-as-prior Bayesian fusion (§3.4, §5.4b).** Regularised SGD anchored at the LLM-authored prior. Best method on the LLM-persona simulator at 11.0 ± 0.2 % — a principled answer to "how do we fuse LLM knowledge with online learning without giving up the readable representation?"
+3. **Direct measurement of the academic-vs-production gap (§5.1).** Per-slot LinTS degrades by 14 pp under the production reward stack — not from algorithmic weakness but from a structurally absent per-slot signal. Combinatorial bandits (CombLinUCB, Slate-LinTS) inherit the same problem (§5.3); the gap is structural, not method-specific.
+4. **OPRO-style ablation (§5.4).** The structured diagnostic report — not the LLM's general intelligence — is what makes the agent-in-the-loop work. The implication is that the readable representation is what enables the LLM contribution, not a side benefit of it.
 
 ## 2. Simulation setup
 
@@ -157,6 +166,10 @@ LinTS hyperparameters held fixed: `α = 0.3`, `λ = 1.0`, `N_SLOTS = 6`. Action 
 
 Each of 7 problems (F32 size anxiety, F33 quality, F41 comparison friction, F43 outfit viz, F45 price-quality, F46 returns, F51 paralysis) is a weighted average of PWL shape functions over relevant signals. Output: a 7-d "problem fingerprint" per session.
 
+The entire Layer-1 fits on one page (Fig. 8). Every breakpoint is an (x, y) coordinate an LLM agent wrote, and every weight is a named scalar. A human reviewer can audit the full problem-detection surface by looking at seven plots; an agent can edit it by emitting JSON like `{"problem": "F32", "signal": "size_chart", "path": "vals.2", "from": 0.45, "to": 0.60, "reason": "..."}`.
+
+![Figure 8: Layer-1 PWL shape functions. Each panel shows the curves the GAM evaluates to score one problem. Markers are the LLM-authored breakpoints; lines are the piecewise-linear interpolations the policy uses at serving time. The full Layer-1 is 7 panels × 2–3 signals × ~4 breakpoints ≈ 80 numbers.](figures/fig9_pwl_shapes.png)
+
 ### 3.2 Layer 2: module GAM + greedy composition
 
 Each of 22 widgets has:
@@ -173,9 +186,17 @@ score = base + Σ_p on_rem[p] · remaining[p] + Σ_p on_cov[p] · coverage[p] �
 
 The page is filled greedy submodular: pick highest-scoring widget for slot 0, update remaining/coverage from `addr`, repeat.
 
+Fig. 9 traces a single session end-to-end. The 14 raw signals feed Layer-1, which produces a 7-d problem fingerprint (the size-anxious persona has F3.2 = 0.74 and the rest near zero). Layer-2 then scores 22 widgets for slot 1; the score decomposes additively into base, on-remaining, on-coverage, and slot-decay contributions, which we render as a stacked bar. The winning widget (`fit_reassurance`) wins not because of a high `base` but because its on-remaining slope on F3.2 fires hard. Every choice the policy ever makes admits this kind of decomposition.
+
+![Figure 9: Open-box decision trace for one size-anxious session. Top: the 14 raw behavioural signals. Middle: the 7 Layer-1 problem scores. Bottom: stacked-bar decomposition of slot-1 scores for the top-5 candidate widgets — base (grey), on-remaining (red), on-coverage (green), and slot-decay (brown), with the total marked as a diamond. The winner wins for readable reasons.](figures/fig10_decision_trace.png)
+
 ### 3.3 Evolution loop
 
 At each checkpoint the orchestrator generates a structured Markdown report (per-persona regret, per-widget activation, composition signature, edit history). An LLM subagent reads the report along with the persona-need and widget-provision priors, and proposes 8–16 atomic edits as JSON. Each edit is `(widget, dotted_path, from, to, reason)`. The orchestrator applies them and runs the next batch.
+
+Fig. 10 shows the first round-2500 edit batch on the parametric simulator: ten scalar parameter changes, each carrying an LLM-authored reason. The reasons are not post-hoc rationalisation — they are emitted alongside the edit and surface verbatim in the audit log a reviewer reads.
+
+![Figure 10: Agent edit batch at session 2500. Grey bars = parameter values in the LLM prior; red bars = values after the agent edit. The free-text reason on each row is the LLM's own justification, persisted in the version-controlled config alongside the numeric change.](figures/fig11_agent_edit_diff.png)
 
 ### 3.4 Bayesian-EDP: continuous updates with an LLM-anchored prior
 
@@ -184,6 +205,10 @@ Bayesian-EDP (introduced empirically in §5.4b) treats each Layer-2 parameter `�
 `L_i = (R̂_i − R^{obs}_i)²  +  λ · Σ_θ ((θ − μ_LLM) / σ_LLM)²`
 
 SGD on `L_i` is point-estimate MAP inference: as `λ → ∞` the parameters stay pinned to `μ_LLM` (recovering EDP-agent); as `λ → 0` and the LLM-anchor is replaced by an uninformative prior, the method becomes an **adaptive-submodular contextual bandit on the EDP architecture** — what we call **GreedyLinTS** in §5.4c. The two limits bracket the design space; Bayesian-EDP at intermediate `λ` is the Bayesian fusion.
+
+Fig. 11 visualises what online learning actually does to the readable representation. We snapshot every widget's `base` parameter at session 0 (the LLM prior, re-anchored at each checkpoint by the agent's edits) and at session 10K (after delayed-reward SGD has run between checkpoints). The differences are scalars a human can read: `outfit_completion.base` drifted from 0.05 (post-agent-cut) to ~0.20, `size_guide.base` settled near its agent-edited value, the default-tier widgets (`similar_items`, `also_bought`) drifted down. Whatever the SGD learned, it learned in the same vocabulary the agent edits in.
+
+![Figure 11: Bayesian-EDP `base` parameters before (LLM prior at session 0) and after (posterior at session 10K). Numbers above the bars annotate drift > 0.05. Every change is a readable scalar — no opaque weights.](figures/fig12_bayesian_drift.png)
 
 ## 4. Experimental protocol
 
@@ -532,7 +557,7 @@ Classic ML: collect logs → train black-box model → deploy. EDP: LLM agent wr
 
 ### 6.2 Explainability is architectural, not bolted on
 
-Every composition decision traces to: `(detected problem intensity) × (widget shape function) − slot decay`. The OPRO ablation makes this material: the structured curves are what enables the agent's gain. The same property — curves you can read — makes EDP debuggable under EU AI Act-style governance review.
+Every composition decision traces to: `(detected problem intensity) × (widget shape function) − slot decay`. Figs. 8–11 make this concrete: Fig. 8 is the full Layer-1 surface on one page of plots; Fig. 9 is an end-to-end decision trace for a single session; Fig. 10 is the auditable diff for one round of agent edits with reasons attached; Fig. 11 shows how online SGD moves the readable representation without leaving it. Appendix A walks through the same trace as Fig. 9 in full prose. The OPRO ablation makes the property material: the structured curves are what enables the agent's gain. The same readability makes EDP debuggable under EU AI Act-style governance review — a regulator can audit the entire decision logic by reading ~300 numbers organised as named curves, without an interpretability library between them and the policy.
 
 ### 6.3 When each approach wins
 
@@ -585,6 +610,45 @@ We ran four of the items previously listed here (slate-LinTS in §5.3, drift in 
 
 Per-slot LinTS is the wrong abstraction for slate-with-submodular-reward problems under page-level reward; the framing was always misapplied. The EDP architecture (adaptive submodular over a shared GAM parameterisation) is the right baseline, and most of the production-stack advantage we measure comes from that architecture — not from the LLM. GreedyLinTS, the EDP architecture with no LLM prior and pure SGD, already closes 6 pp of the lab-vs-prod gap that per-slot LinTS suffers (12.8 % parametric, 13.3 % LLM in production). The LLM agent and continuous SGD then trade off depending on the simulator: **on parametric, EDP-agent (LLM checkpoint edits, no SGD) is the best method we measured (6.5 ± 0.2 %)** because the agent's edits are well-targeted; **on LLM-persona, Bayesian-EDP (LLM-anchored prior + continuous regularised SGD) is the best (11.0 ± 0.2 %)** because the wider persona / category space leaves enough numerical-calibration headroom for SGD to help. Neither method is uniformly best — they are simulator-conditional. The OPRO ablation isolates the *structured diagnostic report* — not the LLM's general intelligence — as the carrier of the LLM-side gain, cleanly so on the LLM simulator (≈2.2 σ separation at K=3-4) and weakly so on parametric (≈1 σ separation, underpowered). The decomposable claim that survives: **under page-level reward, use the adaptive-submodular policy class; if you have an LLM with knowledge of the problem domain, use it as a prior + checkpoint editor; if your simulator is rich enough that the LLM's discrete edits don't saturate, add continuous regularised SGD on top**.
 
+
+---
+
+## Appendix A: Open-box decision trace
+
+This appendix walks through Fig. 9 in prose. The session is a `size_anxious_new` persona sampled from the parametric simulator at seed 42, browsing the `dresses` category. The whole trace lives in 14 + 7 + 22 = 43 named numbers; everything below was generated by reading the policy's internal state, not by any post-hoc interpretability library.
+
+**Step 1 — raw signals (14 numbers).** The persona's distribution puts most of its mass on three signals: `size_chart` (0.62), `size_conf` (0.18, so `size_conf_inv = 0.82`), and `return_hist` (0.41). Tab-switch is moderate (0.31), zoom and price-dwell are low. The product-side signal `price_norm = 0.55` (mid-priced item).
+
+**Step 2 — Layer-1 problem fingerprint (7 numbers).** The PWL curves in Fig. 8 are evaluated at the signal values above, weighted, and clipped to [0, 1]. The fingerprint comes out concentrated on F3.2:
+
+| Problem | Score | Driving signal(s) |
+|---|---|---|
+| F3.2 size anxiety | **0.74** | size_chart 0.62 → 0.61; size_conf_inv 0.82 → 0.78; return_hist 0.41 → 0.30 |
+| F4.6 return hesitation | 0.31 | return_hist 0.41 → 0.30 |
+| F4.1 comparison | 0.18 | tab_switch 0.31 → 0.16 |
+| F3.3 / F4.3 / F4.5 / F5.1 | < 0.10 | (signals near baseline) |
+
+The fingerprint is a 7-d vector with one dominant axis. Layer-2 will see this and compose accordingly.
+
+**Step 3 — Layer-2 slot-1 scoring (22 numbers per slot).** For slot 1, remaining = the fingerprint above, coverage = 0. The score decomposes as `base + Σ on_rem[p]·remaining[p] + Σ on_cov[p]·coverage[p] − slot_decay·0`. The top five candidates (Fig. 9, bottom panel):
+
+| Widget | base | on_rem contribution | on_cov | total |
+|---|---|---|---|---|
+| `fit_reassurance` | 0.10 | 2.2 × 0.74 + 0.6 × 0.31 = **1.81** | 0 | **1.91** |
+| `size_guide` | 0.05 | 2.0 × 0.74 = **1.48** | 0 | **1.53** |
+| `low_return_alts` | 0.05 | 1.0 × 0.74 + 1.8 × 0.31 = 1.30 | 0 | 1.35 |
+| `easy_returns_promise` | 0.10 | 1.2 × 0.31 = 0.37 | 0 | 0.47 |
+| `similar_items` | 0.45 | small | 0 | 0.46 |
+
+`fit_reassurance` wins because of the F3.2 on_rem slope, not because of a high base. After it is placed, F3.2 remaining drops by 0.55 (its addr value) to 0.19, F3.2 coverage rises by 0.55 to 0.55, and slot 2 scoring reruns with the updated state. `size_guide`, with `on_cov.F32 = -1.4` in the LLM prior, gets *penalised* in slot 2 by 1.4 × 0.55 = 0.77 — the explicit anti-synergy stops the page from wasting a second slot on fit guidance.
+
+(The round-2500 agent edit batch in Fig. 10 mutates this exact anti-synergy on `size_guide.on_cov.F32` from −1.4 to +0.6, converting it from a substitute to a chained complement for the size-anxious persona. The reason field is preserved verbatim. Whether the edit pays off is empirical (§5.4b–5.4c): it does on parametric, less clearly so on LLM.)
+
+**What an interpretability reviewer can verify in 5 minutes.** That the size-anxious persona's page leads with `fit_reassurance` because of the F3.2 on-remaining slope; that the second slot's identity is sensitive to the size_guide / fit_reassurance synergy parameter; that swapping the persona changes the fingerprint, the slot-1 winner, and the slot-2 anti-synergy — all by editing values the reviewer can see and write. No SHAP, no LIME, no post-hoc surrogate. The decision trace is the policy.
+
+**What an agent can do at the same place.** The agent reads exactly the table above (plus regret aggregates) and proposes scalar edits to any of the 43 numbers, each with a free-text reason. Fig. 10 shows what one such batch looks like in practice. The unit of work is a number-with-a-reason, not a weight update.
+
+This is the open-box property the paradigm hinges on. Every other claim — cold-start advantage, audit-trail compatibility, LLM-as-prior fusion — derives from being able to do this on every session.
 
 ---
 
