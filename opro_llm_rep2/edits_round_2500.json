@@ -1,0 +1,19 @@
+{
+  "note": "round 1 — blind exploration; modest positive bases on reassurance/utility widgets, gentle slot decay, mild on_rem boosts",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 1.2, "reason": "core reassurance likely high-utility"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 1.0, "reason": "informational, broad fit"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.0, "to": 0.8, "reason": "return-risk mitigation"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.7, "reason": "reassurance reduces friction"},
+    {"widget": "comparison_card", "path": "base", "from": 0.0, "to": 0.6, "reason": "decision support"},
+    {"widget": "value_breakdown", "path": "base", "from": 0.0, "to": 0.5, "reason": "price justification"},
+    {"widget": "customers_chose", "path": "base", "from": 0.0, "to": 0.4, "reason": "social proof modest"},
+    {"widget": "similar_items", "path": "base", "from": 0.0, "to": 0.3, "reason": "discovery aid"},
+    {"widget": "fit_reassurance", "path": "slot_decay", "from": 0.0, "to": -0.3, "reason": "mild decay to allow placement variance"},
+    {"widget": "size_guide", "path": "slot_decay", "from": 0.0, "to": -0.2, "reason": "gentle decay"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 0.0, "to": 0.5, "reason": "boost when removed-context F32"},
+    {"widget": "low_return_alts", "path": "on_rem.F43", "from": 0.0, "to": 0.4, "reason": "return-context lift"},
+    {"widget": "brand_story", "path": "base", "from": 0.0, "to": -0.5, "reason": "narrative likely low-utility, probe negative"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": -0.3, "reason": "probe whether trend widgets hurt"}
+  ]
+}

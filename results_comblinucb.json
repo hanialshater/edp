@@ -1,0 +1,46 @@
+{
+  "parametric": {
+    "comb_warm": {
+      "lab": {
+        "mean_pct": 2.1348371128306938,
+        "sem_pct": 0.0
+      },
+      "production": {
+        "mean_pct": 10.53639525822403,
+        "sem_pct": 0.051411946273025935
+      }
+    },
+    "comb_cold": {
+      "lab": {
+        "mean_pct": 2.6833554307923855,
+        "sem_pct": 0.0
+      },
+      "production": {
+        "mean_pct": 11.2293028587994,
+        "sem_pct": 0.0412779186675966
+      }
+    }
+  },
+  "llm": {
+    "comb_warm": {
+      "lab": {
+        "mean_pct": 4.23088840126042,
+        "sem_pct": 0.0
+      },
+      "production": {
+        "mean_pct": 17.29432142042299,
+        "sem_pct": 0.09593954754541952
+      }
+    },
+    "comb_cold": {
+      "lab": {
+        "mean_pct": 3.9733928482669034,
+        "sem_pct": 2.220446049250313e-16
+      },
+      "production": {
+        "mean_pct": 16.832635103108295,
+        "sem_pct": 0.09286038514568491
+      }
+    }
+  }
+}

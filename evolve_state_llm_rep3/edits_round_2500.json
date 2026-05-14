@@ -1,0 +1,21 @@
+{
+  "note": "round 2500 — revive dead widgets, dampen weak defaults, add cov-chain synergies for low-need personas",
+  "edits": [
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.18, "reason": "fires often (4%) at low r/fire 0.13; over-selected for confident_repeat_buyer"},
+    {"widget": "trending_now", "path": "base", "from": 0.3, "to": 0.15, "reason": "r/fire only 0.085; crowding out better picks for low-need personas"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.30, "reason": "highest activation 15.4% but mediocre 0.25 r/fire; reduce default dominance"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.22, "reason": "10% activation at 0.21 r/fire; weak default eating slots from confident/corporate buyers"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.20, "reason": "0% activation despite paralyzed_wishlister and mobile personas needing N7_commit"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.18, "reason": "0% activation; needed for paralyzed/corporate buyers (N7_commit + guidance)"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.1, "to": 0.22, "reason": "0% activation; corporate_uniform_buyer (N6_trust=0.7) and outerwear category need it"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.20, "reason": "0% activation despite size_specific_anxious + bottoms/shoes (F32 high)"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.05, "to": 0.18, "reason": "0% activation; premium_silent_browser (N2_visual=0.92) underserved"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.08, "to": 0.18, "reason": "0% activation; outfit_event_planner and dress/accessories categories need styling chain"},
+    {"widget": "easy_returns_promise", "path": "on_cov.F46", "from": 0.0, "to": 0.6, "reason": "NEW synergy: chains after return_explainer/low_return_alts when F46 partially covered"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": 0.5, "reason": "flip to positive synergy so size_guide chains after fit_reassurance instead of being suppressed"},
+    {"widget": "material_deep_dive", "path": "on_cov.F33", "from": -0.9, "to": 0.4, "reason": "let it chain after brand_story for premium personas needing depth"},
+    {"widget": "expert_pick", "path": "on_rem.F51", "from": 1.4, "to": 2.0, "reason": "boost to compete vs customers_chose for paralyzed_wishlister"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.2, "to": 1.9, "reason": "make commitment-action visible for high-N7 personas"},
+    {"widget": "occasion_lookbook", "path": "on_cov.F43", "from": -0.5, "to": 0.4, "reason": "flip to synergy so it chains after outfit_completion for event planners"}
+  ]
+}

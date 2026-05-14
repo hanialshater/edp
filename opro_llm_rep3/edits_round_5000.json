@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 — strengthen winners, expand F-code coverage, deepen negatives on hype widgets",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 1.8, "reason": "prior winner; push higher"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 1.3, "reason": "complement fit; lift more"},
+    {"widget": "low_return_alts", "path": "on_rem.F32", "from": 0.0, "to": 1.7, "reason": "strong remorse signal; amplify"},
+    {"widget": "easy_returns_promise", "path": "on_rem.F33", "from": 0.0, "to": 1.5, "reason": "remorse mitigation; raise"},
+    {"widget": "return_explainer", "path": "on_cov.F46", "from": 0.0, "to": 1.2, "reason": "policy clarity worked; lift"},
+    {"widget": "value_breakdown", "path": "on_cov.F45", "from": 0.0, "to": 1.1, "reason": "value framing helpful; boost"},
+    {"widget": "expert_pick", "path": "on_cov.F41", "from": 0.0, "to": 0.9, "reason": "authority on coverage; raise"},
+    {"widget": "similar_items", "path": "on_rem.F43", "from": 0.0, "to": 1.0, "reason": "alternatives on remorse; lift"},
+    {"widget": "comparison_card", "path": "on_cov.F51", "from": 0.0, "to": 0.8, "reason": "extend decision support to new F-code"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 0.0, "to": 0.7, "reason": "compose winner with remorse code"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": -1.1, "reason": "negative probe seemed safe; deepen"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.0, "to": -0.9, "reason": "distraction; deepen negative"},
+    {"widget": "price_history", "path": "base", "from": 0.0, "to": -0.6, "reason": "likely distraction sibling; probe negative"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.0, "to": -0.4, "reason": "low-intent reminder; probe negative"},
+    {"widget": "customers_chose", "path": "base", "from": 0.0, "to": 0.7, "reason": "moderate social proof; slight lift"},
+    {"widget": "brand_story", "path": "slot_decay", "from": 0.0, "to": -0.6, "reason": "deepen decay reduction"}
+  ]
+}

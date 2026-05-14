@@ -1,0 +1,21 @@
+{
+  "note": "round 2500 rep2 — revive dead widgets for high-regret personas (confident_repeat, corporate_uniform), tame over-firing similar_items, add cov synergies",
+  "edits": [
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.18, "reason": "15.4% activation but lowest r/fire among top widgets — over-firing as default crowds out signal-bearing widgets"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.2, "reason": "10.1% activation, fires very late slots (avg 5.15) at low r/fire 0.21 — reduce default pull"},
+    {"widget": "trending_now", "path": "base", "from": 0.3, "to": 0.55, "reason": "confident_repeat_buyer has weak needs and 52.7% regret; trending_now matches their N3_peer/N5_styling profile"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.5, "reason": "confident_repeat_buyer composition is dominated by it but firing too late — boost so it lands earlier"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.35, "reason": "0% activation despite shoes/bottoms (worst categories) needing N1_fit; size_specific_anxious underserved"},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.0, "to": 2.6, "reason": "amplify F32 pull so size_guide actually competes with fit_reassurance on shoes/bottoms"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.1, "to": 0.3, "reason": "0% activation; corporate_uniform_buyer + shoes/outerwear need cheap trust signal"},
+    {"widget": "easy_returns_promise", "path": "on_cov.F46", "from": -0.5, "to": 1.1, "reason": "NEW synergy: chain after return_explainer/low_return_alts cover F46 partially"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.05, "to": 0.28, "reason": "0% activation; premium_silent_browser (32.8% regret) needs N2_visual material content"},
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.25, "reason": "0% activation; bargain_hunter and corporate_uniform need extra F45 evidence beyond value_breakdown"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.08, "to": 0.3, "reason": "0% activation; outfit_event_planner and birthday_rush_gifter could use third F43 widget"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.28, "reason": "0% activation; paralyzed_wishlister/mobile_evening_browser have N7_commit but only price_drop_notify fires"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.1, "to": 0.32, "reason": "0% activation; mobile_evening_browser (14.5% regret) needs lightweight F51 context widget"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.25, "reason": "0% activation; paralyzed_wishlister N7_commit + premium browsers benefit from guidance"},
+    {"widget": "fit_reassurance", "path": "on_cov.F32", "from": -1.2, "to": -1.6, "reason": "stronger negative cov so size_guide/material_deep_dive can chain instead of double-firing fit_reassurance"},
+    {"widget": "comparison_card", "path": "on_cov.F41", "from": -1.3, "to": -1.7, "reason": "comparison_card fires for nearly every comparison persona — push diversification toward customers_chose/value_breakdown"}
+  ]
+}

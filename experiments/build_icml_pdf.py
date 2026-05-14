@@ -82,6 +82,13 @@ UNICODE_MAP = {
     '⁹': r'$^9$',
     '⁻': r'$^-$',
     '∞': r'$\infty$',
+    '√': r'$\surd$',
+    'θ': r'$\theta$',
+    'ᵀ': r'$^T$',
+    '⁻¹': r'$^{-1}$',
+    '·': r'$\cdot$',
+    '×': r'$\times$',
+    '√': r'$\surd$',
     ' ': ' ',                # non-breaking space
 }
 def normalize_unicode(s):

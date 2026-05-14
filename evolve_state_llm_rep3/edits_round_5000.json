@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 — boost corporate_uniform/confident_repeat coverage, revive dead price widgets, tame over-firing low-reward widgets",
+  "edits": [
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.22, "reason": "0% activation despite F45 utility; raise base so it competes with value_breakdown for bargain/comparison personas"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.24, "reason": "0% activation; lift base to surface F51 commit help for paralyzed/wishlist personas"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.1, "to": 0.26, "reason": "0% activation; useful late-slot F51 reminder for confident_repeat and mobile browsers"},
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.18, "reason": "0% activation, but high r/fire (0.32); needed for size_specific_anxious + corporate_uniform F46"},
+    {"widget": "trending_now", "path": "base", "from": 0.15, "to": 0.06, "reason": "0% activation and lowest r/fire (0.07); reduce noise to free slots"},
+    {"widget": "personal_recs", "path": "base", "from": 0.18, "to": 0.07, "reason": "r/fire 0.057 is worst among firers; suppress"},
+    {"widget": "also_bought", "path": "base", "from": 0.22, "to": 0.12, "reason": "fires 2% with r/fire 0.119; dampen weak default"},
+    {"widget": "similar_items", "path": "base", "from": 0.3, "to": 0.18, "reason": "r/fire 0.174 is poor for 4.7% activation; reduce so targeted widgets win"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.18, "to": 0.10, "reason": "r/fire 0.208 lowest among heavy firers; let style_bridge/outfit_completion claim F43"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.16, "reason": "0.2% activation despite F43 cov-chain potential for outfit_event_planner"},
+    {"widget": "size_guide", "path": "base", "from": 0.2, "to": 0.32, "reason": "highest r/fire (0.372) but only 1.4% activation; boost for size_specific_anxious + bottoms/shoes"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.2, "to": 0.30, "reason": "0.6% activation; lift to help paralyzed_wishlister close F51"},
+    {"widget": "fit_reassurance", "path": "on_cov.F46", "from": 0.0, "to": 0.6, "reason": "NEW synergy: chain after return widgets cover F46, since fit also reduces return hesitation"},
+    {"widget": "size_guide", "path": "on_cov.F46", "from": 0.0, "to": 0.5, "reason": "NEW synergy: corporate_uniform/size_anxious need both F32 size + F46 returns chained"},
+    {"widget": "brand_story", "path": "on_cov.F33", "from": -1.0, "to": -0.4, "reason": "soften self-anti-synergy; premium_silent_browser still needs F33 chain reinforcement"},
+    {"widget": "material_deep_dive", "path": "on_rem.F33", "from": 1.7, "to": 2.1, "reason": "premium_silent_browser regret 19%; strengthen F33 pull for accessories/outerwear"}
+  ]
+}

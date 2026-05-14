@@ -1,0 +1,18 @@
+{
+  "note": "round 7500 rep2 — stabilization: nudge confident_repeat/returner shoes+bottoms, lift dead widgets gently, trim over-fire",
+  "edits": [
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.12, "reason": "strong r/fire 0.3754 and helps confident_repeat/returner shoes-bottoms cells"},
+    {"widget": "expert_pick", "path": "base", "from": 0.25, "to": 0.32, "reason": "good r/fire 0.3261 but only 2.9% activation; lift to help corporate_uniform"},
+    {"widget": "comparison_card", "path": "base", "from": -0.05, "to": 0.02, "reason": "best r/fire 0.3263 among hot widgets; modest base lift to broaden firing"},
+    {"widget": "size_guide", "path": "base", "from": 0.35, "to": 0.45, "reason": "0.5% activation despite F32 demand on shoes/bottoms cells"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.42, "to": 0.34, "reason": "weak r/fire 0.2288 at 6.1% activation, gently trim"},
+    {"widget": "trending_now", "path": "base", "from": 0.4, "to": 0.32, "reason": "low r/fire 0.2112; trim to give room for higher-quality widgets"},
+    {"widget": "personal_recs", "path": "base", "from": 0.32, "to": 0.22, "reason": "lowest r/fire 0.1161; continue trimming"},
+    {"widget": "return_explainer", "path": "base", "from": 0.22, "to": 0.28, "reason": "only 2.8% activation; help returner_from_recent_order high regret"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.18, "to": 0.28, "reason": "0% activation; needed for premium_silent_browser shoes 19.7% regret"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.18, "to": 0.24, "reason": "0% activation; cheap N6_trust support for returner cells"},
+    {"widget": "fit_reassurance", "path": "on_cov.F46", "from": 0.0, "to": 0.5, "reason": "NEW synergy: chain fit_reassurance when return hesitation already covered"},
+    {"widget": "low_return_alts", "path": "on_rem.F32", "from": 1.0, "to": 1.4, "reason": "strengthen F32 response for shoes/bottoms size anxiety cells"},
+    {"widget": "expert_pick", "path": "on_rem.F33", "from": 0.4, "to": 0.7, "reason": "premium_silent_browser 13.9% regret; deepen F33 response"}
+  ]
+}

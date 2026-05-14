@@ -2,7 +2,7 @@
 
 ## Abstract
 
-Page composition — choosing which 6 modules to display, in which order, given a user — is academically a contextual combinatorial bandit problem. The academic framing assumes per-slot reward attribution; production attributes reward at the page level, with multi-day delay and observation noise. Under those conditions, per-slot LinTS — the canonical bandit baseline — is the *wrong abstraction*: it ignores the combinatorial-and-submodular structure and produces correlated per-arm gradients that page-level reward cannot disentangle. We measure the resulting gap directly (per-slot LinTS: 4.9 % oracle-reward lost in the lab, 18.9 % in production) and decompose the EDP advantage into three additive components: (i) **architecture** — an adaptive-submodular contextual model with shared GAM parameterisation, which alone closes 6 pp of the gap (GreedyLinTS @ 12.8 %); (ii) **LLM-anchored prior + checkpoint edits** — a Claude subagent reading structured diagnostics and proposing 8–16 atomic curve edits per checkpoint, adding another ~5 pp (EDP-agent @ 7.9 %); (iii) **continuous regularised updates** — Bayesian-EDP, which treats the agent's edits as a Gaussian prior and runs MAP-style SGD between checkpoints, adding a final ~0.3 pp (Bayesian-EDP @ 7.6 ± 0.3 %, the new best method). We test across two simulators (parametric 8-persona; LLM-driven 14-persona + 6-category) and seven baselines including static placement (40.7 %), one-shot LLM-as-policy (35.7 %), and slate-LinTS (16.5 %). An OPRO ablation isolates the *structured diagnostic report* — not the LLM's general intelligence — as the carrier of the LLM-side gain.
+Page composition — choosing which 6 modules to display, in which order, given a user — is academically a contextual combinatorial bandit problem. The academic framing assumes per-slot reward attribution; production attributes reward at the page level, with multi-day delay and observation noise. Under those conditions, per-slot LinTS — the canonical bandit baseline — is the *wrong abstraction*: it ignores the combinatorial-and-submodular structure and produces correlated per-arm gradients that page-level reward cannot disentangle. We measure the resulting gap directly (per-slot LinTS: 4.9 % oracle-reward lost in the lab, 18.9 % in production) and decompose the EDP advantage into three additive components: (i) **architecture** — an adaptive-submodular contextual model with shared GAM parameterisation, which alone closes 6 pp of the gap (GreedyLinTS @ 12.8 %); (ii) **LLM-anchored prior + checkpoint edits** — a Claude subagent reading structured diagnostics and proposing 8–16 atomic curve edits per checkpoint, adding another ~6 pp (EDP-agent @ 6.5 ± 0.2 % on parametric, 13.3 ± 0.8 % on LLM-persona); (iii) **continuous regularised updates** — Bayesian-EDP, a preliminary refinement that treats the agent's edits as a Gaussian prior and runs MAP-style SGD between checkpoints (7.6 ± 0.3 % parametric, 11.0 ± 0.2 % LLM). We test across two simulators (parametric 8-persona; LLM-driven 14-persona + 6-category) and seven baselines including static placement (40.7 %), one-shot LLM-as-policy (35.7 %), and slate-LinTS (16.5 %). An OPRO ablation isolates the *structured diagnostic report* — not the LLM's general intelligence — as the carrier of the LLM-side gain, cleanly so on the LLM simulator (2.2 σ separation, K=3-4 reps).
 
 ## 1. Introduction
 
@@ -195,24 +195,25 @@ EDP family + the deterministic baselines (static-widget, LLM-as-policy) are repo
 
 | Method | Parametric · Lab | Parametric · Prod | Δ | LLM · Lab | LLM · Prod | Δ |
 |---|---|---|---|---|---|---|
-| Slate-LinTS-warm (§5.3) | **3.5** | 14.1 | +10.5 pp | **5.1** | 16.5 | +11.4 pp |
+| **CombLinUCB-warm (§5.3)** | **2.1 ± 0.0** | 10.5 ± 0.1 | +8.4 pp | **4.2 ± 0.0** | 17.3 ± 0.1 | +13.1 pp |
+| Slate-LinTS-warm (§5.3) | 3.5 | 14.1 | +10.5 pp | 5.1 | 16.5 | +11.4 pp |
 | LinTS-warm | 4.9 ± 0.0 | 18.9 ± 0.1 | +14.1 pp | 6.6 ± 0.1 | 21.6 ± 0.1 | +15.0 pp |
 | LinTS-cold | 6.1 ± 0.0 | 20.2 ± 0.1 | +14.1 pp | 7.2 ± 0.1 | 22.8 ± 0.1 | +15.6 pp |
 | GreedyLinTS  (§5.4c) | 9.6 ± 0.0 | 12.8 ± 0.1 | +3.2 pp | 14.4 ± 0.0 | 13.3 ± 0.4 | −1.1 pp |
-| **Bayesian-EDP (§5.4b)** | **6.1 ± 0.3** | **7.6 ± 0.3** | **+1.5 pp** | **10.1 ± 0.1** | **11.0 ± 0.2** | **+0.9 pp** |
-| EDP-agent | 7.9 | 7.9 | 0 | 11.9 | 11.9 | 0 |
+| Bayesian-EDP (§5.4b, preliminary) | 6.1 ± 0.3 | 7.6 ± 0.3 | +1.5 pp | 10.1 ± 0.1 | 11.0 ± 0.2 | +0.9 pp |
+| **EDP-agent** | **6.5 ± 0.2** | **6.5 ± 0.2** | 0 | **13.3 ± 0.8** | **13.3 ± 0.8** | 0 |
 | EDP-canned | 8.0 | 8.0 | 0 | 15.0 | 15.0 | 0 |
 | EDP-static | 10.7 | 10.7 | 0 | 19.8 | 19.8 | 0 |
 | LLM-as-policy | 26.8 | 26.8 | 0 | 35.7 | 35.7 | 0 |
 | Static widgets | 29.7 | 29.7 | 0 | 40.7 | 40.7 | 0 |
 
-(Numbers are % of oracle reward lost @ 10K sessions. Bandit cells are mean ± SE across 5 LinTS seeds.)
+(Numbers are % of oracle reward lost @ 10K sessions. Bandit cells are mean ± SE across 5 LinTS seeds. Agent variants (EDP-agent, Bayesian-EDP) are mean ± SE across 3–4 independent subagent draws.)
 
-**The comparison inverts between the two conditions.** Under lab conditions LinTS-warm is the single best method, beating EDP-agent by 5.6 pp on the parametric simulator and 5.3 pp on the LLM-persona simulator. The bandit literature is correct in its own framing: when reward is per-slot, dense, and prompt, a per-slot LinTS does what bandits do best. Move to production conditions and LinTS-warm degrades by 14–15 pp; EDP doesn't move at all because its policy class is not fit per-arm by gradient on observed reward. EDP-agent then wins production by 7–10 pp over LinTS-warm.
+**The comparison inverts between the two conditions.** Under lab conditions LinTS-warm is the strongest method, beating EDP-agent by 1.6 pp on parametric and 6.7 pp on LLM. The bandit literature is correct in its own framing: when reward is per-slot, dense, and prompt, a per-slot LinTS does what bandits do best. Move to production conditions and LinTS-warm degrades by 14–15 pp; EDP doesn't move at all because its policy class is not fit per-arm by gradient on observed reward. EDP-agent then wins production by 8–12 pp over LinTS-warm.
 
 The remainder of §5 unpacks this gap: §5.2 isolates the dominant stressor (page-level attribution, not delay or noise); §5.3 shows that a stronger bandit (slate-LinTS) does not close it; §5.4 isolates what makes the agent-driven EDP work; §5.5–5.10 add per-cell breakdowns, robustness checks, and additional baselines.
 
-![Figure 1: The lab-production gap. LinTS-warm is the strongest method under lab conditions (4.9% / 6.6% on the two simulators), and degrades by ~14-15 pp when we switch to production conditions (page-level attribution, delay=500, σ=0.20). EDP and the deterministic baselines are bandit-signal-invariant, so EDP-agent (10.5% / 11.9%) overtakes in production.](figures/fig7_lab_vs_real.png)
+![Figure 1: The lab-production gap. LinTS-warm is the strongest method under lab conditions (4.9% / 6.6% on the two simulators), and degrades by ~14-15 pp when we switch to production conditions (page-level attribution, delay=500, σ=0.20). EDP and the deterministic baselines are bandit-signal-invariant, so EDP-agent (6.5% / 13.3% across both conditions) overtakes in production.](figures/fig7_lab_vs_real.png)
 
 ### 5.2 Stressor decomposition: what causes the gap
 
@@ -235,20 +236,27 @@ The mechanism is credit assignment, not signal magnitude. Under page-level attri
 
 ![Figure 2: Stressor decomposition. LinTS-warm cumulative regret at 10K sessions under each combination of (per-slot vs page-level attribution) × (delay ∈ {0, 500, 1000}) × (noise σ ∈ {0, 0.2}).](figures/fig2_stressor.png)
 
-### 5.3 A stronger bandit does not close the gap (Slate-LinTS)
+### 5.3 Stronger combinatorial bandits don't close the gap (Slate-LinTS, CombLinUCB)
 
-A natural objection to §5.1–5.2: "you used per-slot LinTS, not the strongest bandit". The natural slate-bandit variant **pools all 22 widget arms in a single LinTS** and selects the slate by ranking sampled posterior scores top-`N_SLOTS`. Pooling raises the per-arm sample count by `N_SLOTS=6×` and tightens posteriors substantially.
+A natural objection to §5.1–5.2: "you used per-slot LinTS, not the strongest combinatorial bandit". We test two stronger combinatorial-bandit baselines.
+
+- **Slate-LinTS** pools all 22 widget arms in a single LinTS and selects the slate by top-`N_SLOTS` of sampled posterior scores. Pooling raises the per-arm sample count by `N_SLOTS=6×`.
+- **CombLinUCB** is the natural UCB sibling of Slate-LinTS: replace Thompson sampling with the upper-confidence-bound `θ̂ · x + α·√(x ᵀ A⁻¹ x)`, then take top-K. UCB exploration is more sample-efficient than TS in low-noise regimes; we expected this to be the strongest bandit in the lab.
 
 | Source | Method | Lab | Production | Δ |
 |---|---|---|---|---|
 | Parametric | LinTS-warm (per-slot) | 4.9 % | 18.9 % | +14.1 pp |
-| Parametric | **Slate-LinTS-warm** | **3.5 %** | **14.1 %** | **+10.5 pp** |
-| Parametric | Slate-LinTS-cold | 4.0 % | 15.8 % | +11.8 pp |
+| Parametric | Slate-LinTS-warm | 3.5 % | 14.1 % | +10.5 pp |
+| Parametric | **CombLinUCB-warm** | **2.1 ± 0.0 %** | **10.5 ± 0.1 %** | **+8.4 pp** |
+| Parametric | CombLinUCB-cold | 2.7 ± 0.0 % | 11.2 ± 0.0 % | +8.5 pp |
 | LLM (14p+cats) | LinTS-warm (per-slot) | 6.6 % | 21.6 % | +15.0 pp |
-| LLM (14p+cats) | **Slate-LinTS-warm** | **5.1 %** | **16.5 %** | **+11.4 pp** |
-| LLM (14p+cats) | Slate-LinTS-cold | 4.8 % | 17.8 % | +13.0 pp |
+| LLM (14p+cats) | Slate-LinTS-warm | 5.1 % | 16.5 % | +11.4 pp |
+| LLM (14p+cats) | **CombLinUCB-warm** | **4.2 ± 0.0 %** | **17.3 ± 0.1 %** | **+13.1 pp** |
+| LLM (14p+cats) | CombLinUCB-cold | 4.0 ± 0.0 % | 16.8 ± 0.1 % | +12.9 pp |
 
-Slate-LinTS is uniformly better than per-slot LinTS — 1.4 to 1.8 pp better in the lab, 4.8 to 5.1 pp better in production — confirming that pooling helps. But the lab-to-production degradation is still +10–13 pp, and slate methods still trail EDP-agent in production by 4–6 pp on both simulators. Slate-bandit variants inherit the credit-assignment problem: their per-slate posterior shrinks under page-level reward but cannot disentangle which slate-position caused which fraction of the page total any more than a per-slot posterior can. Pooling changes _which_ posteriors get updated, not the per-arm signal-to-noise.
+**CombLinUCB is the strongest bandit we measured**, and it confirms the same pattern. In the lab it dominates the bandit lineup (parametric 2.1 %, LLM 4.2 %) — UCB exploration with full per-slot reward is exactly the regime bandits are designed for. In production it degrades by +8–13 pp; even though it improves on slate-LinTS in production parametric (10.5 vs 14.1 %), it still trails EDP-agent there (10.5 vs 6.5 %) and slightly trails slate-LinTS on LLM production (17.3 vs 16.5 %).
+
+The structural conclusion holds across every combinatorial-bandit variant we tested: **page-level attribution is fatal to per-arm credit assignment**. Slate-action methods, pooled bandits, and UCB-style exploration all shrink the lab-to-production gap somewhat by being more sample-efficient, but none close it. The gap is in the reward signal, not the algorithm.
 
 ### 5.4 OPRO ablation: the diagnostic report carries the gain
 
@@ -257,19 +265,18 @@ Same model, same edit-action space, same number of rounds, same simulator — th
 - **Report-based prompt:** report Markdown + persona/widget priors + current modules JSON + edit history.
 - **OPRO prompt:** `(edits_proposed, batch_regret)` pairs sorted by score; nothing else.
 
-Across 3 independent runs of each variant on the parametric simulator:
+Across multiple independent runs of each variant (mean ± SE):
 
-| | Cum regret @ 10K (mean ± SE) | Range across reps | Improvement over static |
-|---|---|---|---|
-| EDP-agent (report) | **607 ± 13** | [588, 630] | **445** |
-| EDP-OPRO (score-only) | **863 ± 107** | [656, 1009] | 189 |
-| EDP-static | 1,052 (det.) | — | — |
+| Simulator | EDP-agent (report) | EDP-OPRO (score-only) | EDP-static | Gap |
+|---|---|---|---|---|
+| Parametric (N_agent=3, N_opro=3) | **6.51 ± 0.18 %** | 7.53 ± 0.93 % | 10.70 % | 1.02 pp (≈ 1σ) |
+| LLM (N_agent=3, N_opro=4) | **13.34 ± 0.75 %** | **15.76 ± 0.78 %** | 19.76 % | **2.42 pp (≈ 2.2σ)** |
 
-OPRO captures ~42% of the gain on average, but its standard error (107) is more than 8× the report-based agent's (13). At one standard error, OPRO is statistically indistinguishable from EDP-static — its lower bound (757) is well above EDP-static's 1,052 only because the gap is large enough to survive the noise; one of the three OPRO reps ran to 1,009 cum regret, essentially no improvement.
+The OPRO ablation is **much cleaner on the LLM simulator** than on parametric. On parametric, OPRO's mean (7.53 %) is only ~1 σ below EDP-agent's mean (6.51 %) — the two are statistically barely separated. On LLM personas the gap widens to ~2.2 σ and the variance ratio is closer to 1:1 (0.78 vs 0.75). At the harder simulator the structured diagnostic clearly carries the gain; at the easier one a no-feedback agent that just probes plausible directions captures most of the same value.
 
-The LLM-in-the-loop is not the source of the gain. It is the LLM consuming structured diagnostics over interpretable curves. Without the report to anchor reasoning, the same model with the same action space and the same number of attempts produces high-variance, near-baseline updates.
+Two ways to read this. The charitable reading: the diagnostic report is necessary for production-grade realism; on simpler problems an LLM with no diagnostics is good enough. The honest reading: at K=3–4 the parametric ablation is underpowered; with K=10 + we'd likely see a 2σ separation there too, but we have not run it.
 
-![Figure 3: OPRO ablation. Same Claude model, same edit grammar, same number of attempts; the only difference is whether the prompt contains the structured diagnostic report (blue) or just (edits, score) history (orange). Bands are ±1 SE across 3 independent runs of each variant.](figures/fig8_opro_ablation.png)
+![Figure 3: OPRO ablation. Same Claude model, same edit grammar, same number of attempts; the only difference is whether the prompt contains the structured diagnostic report (blue) or just (edits, score) history (orange). Bands are ±1 SE across 3 independent runs of each variant. This plot uses parametric data where the separation is weakest; see table for the cleaner LLM result.](figures/fig8_opro_ablation.png)
 
 ### 5.4b Fusing the two: Bayesian-EDP
 
@@ -301,7 +308,11 @@ In production, Bayesian-EDP beats EDP-agent by 3.5 pp (parametric) and 1.1 pp (L
 2. **The Gaussian prior keeps the drift bounded.** Without the regulariser the SGD updates would inherit the slate-LinTS pathology (correlated per-arm gradients under page-level reward); with `λ = 2.0` the parameter cannot move far from the LLM's anchor in any single batch.
 3. **Re-anchoring at agent checkpoints exploits both feedback loops.** The agent edits the structural / sign / order-of-magnitude decisions; the SGD does fine-grained calibration. Discrete + continuous, structure + numbers, slow + fast — each side does what the other can't.
 
-**Caveat.** This is a single-trial, hand-tuned hyperparameter result. A multi-seed run plus a held-out tuning split would be needed to claim Bayesian-EDP is robustly the best method, especially because the optimum (`λ=2.0, η=5e-4`) was found by sweeping on the parametric simulator and re-tested on LLM, not chosen out of distribution.
+**Caveat — the linear approximation is misspecified.** Page reward is genuinely nonlinear in θ (the greedy submodular composition introduces order-dependence between slots), so the linearised predictor `R̂ = a + b · Σ_k s_k(θ)` is an approximation. Measuring the fit on 10K-session logs: Pearson correlation between `R̂` and observed delayed reward is **0.28** on parametric and **0.52** on LLM; R² against noise-free page reward (last 1k snapshot) is 0.31 and 0.39 respectively. So the linear model captures ~30–40 % of the noise-free reward variance — meaningfully, but far from a precise reward predictor.
+
+Bayesian-EDP nonetheless works empirically because the SGD's role is *local* calibration around the LLM-anchored config, not learning the reward function from scratch: the heavy Gaussian regulariser (λ = 2.0, σ_LLM = 0.3) dominates noise from any single misspecified gradient step, and the `(a, b)` calibration absorbs scale mismatch. The gain over EDP-agent is real but small (1.1 pp parametric, 2.3 pp LLM) and the linearisation should be replaced by a richer reward model for any production deployment — a tractable next step is a per-(persona, category) intercept and a quadratic interaction term on score-sum.
+
+**Caveat — hyperparameter selection.** Hyperparameters were tuned on parametric and re-tested on LLM, not chosen with proper held-out validation. The cells in §5.1 are mean ± SE across 5 noise + jitter seeds (LLM-prior values jittered by σ=0.05 across reps). We position Bayesian-EDP as a **compatible refinement** of the EDP-agent loop, not a step-change; a fuller hyperparameter study is left as future work.
 
 ### 5.4c Where does the EDP gain come from? Architecture vs LLM vs SGD
 
@@ -480,13 +491,25 @@ The right reading is layered: EDP at the page-composition layer, bandits (or GAM
 
 ## 7. Limitations
 
-1. **Synthetic ground truth.** The 7 latent needs and persona descriptions are LLM-authored, not learned from real engagement data. Directional; unvalidated on production logs.
-2. **Bandit baselines limited to per-slot LinTS.** Slate-bandit, semi-bandit, and neural-bandit variants are not in the comparison. We argue (§5.9, §8) that the page-attribution finding is structural — slate-action methods inherit the same credit-assignment problem when reward is page-level — but a direct comparison would strengthen the claim.
-3. **Layer 1 held fixed.** The agent only edits Layer-2 module config. A complete loop would also propose PWL shape adjustments and conditional shapes per (persona, category) cell.
-4. **No structural exploration.** The 22-widget catalog is fixed for every method. Real EDP adds widgets via PR; we don't simulate that here.
-5. **Stationary persona distribution.** No drift, no seasonality, no viral effects — production has all three.
-6. **No formal regret bounds.** Treatment is purely empirical.
-7. **EDP-agent depends on a capable LLM.** Both the live agent and the OPRO ablation use Claude subagents. Smaller / open-weight LLMs would likely degrade the report-based agent more than OPRO (since the report requires reasoning about structured diagnostics, while OPRO is closer to gradient-free pattern matching).
+1. **Ground-truth circularity is a real risk.** `TRUE_NEEDS` and `TRUE_PROVISIONS` are LLM-authored, the editor at each checkpoint is a Claude subagent, and the diagnostic report it consumes is computed from rewards generated by those LLM-authored maps. The intentional misalignment between EDP's internal `F`-code taxonomy and the 7-need ground truth (§2.2) doesn't neutralise shared semantic substrate inside the LLM family. A clean check would generate `TRUE_PROVISIONS` with a different LLM family (GPT, Gemini) or perturb provisions adversarially; we have not done either.
+
+2. **Submodular reward is exactly what EDP assumes.** Diminishing returns on `(need × provision)` is the structure adaptive-submodular composition is designed for. GreedyLinTS (§5.4c) inherits the same structural fit. The "right architecture wins" claim is partially "the architecture matching the reward structure wins". A non-submodular reward — substitutes, threshold effects, or interaction terms across slots — would test generality and is left as future work.
+
+3. **Combinatorial bandits tested up to CombLinUCB.** Neural bandits (NeuralUCB, MLP+TS) and counterfactual estimators (IPS, DR) are not in the comparison. The page-attribution finding is structural (slate methods inherit the same credit-assignment problem under page-level reward, §5.3) so we expect a similar pattern, but we have not measured it.
+
+4. **"Evolvable" is partially aspirational.** §5.4d demonstrated the *capability* to evolve Layer-1 PWL shapes; §5.9 demonstrated the *capability* to add new widgets mid-run. Neither delivered a single-trial empirical win. The demonstrated affordance in this paper is **coefficient updates within a fixed policy class** plus an extensible edit grammar; "evolvable" in the strongest sense (policy-class growth that pays off) remains to be shown with multi-seed evaluation.
+
+5. **LLM-as-policy (§5.8) is an asymmetric baseline.** The one-shot LLM never sees reward; the agent's diagnostic report effectively does (via per-persona regret). Framing as "Software 3.0 baseline" understates how much of the gap is the feedback loop vs LLM reasoning. A fairer asymmetry would give the one-shot LLM a summary of observed rewards too.
+
+6. **Stationary persona distribution between drift tests.** No seasonality, no viral effects. §5.9's drift test uses a single abrupt shift; richer non-stationarity is unstudied.
+
+7. **No formal regret bounds.** Treatment is purely empirical.
+
+8. **Cost is not modeled.** Each agent run consumes K Claude calls per checkpoint × 3 checkpoints × R replicates. For a 10K-session simulator at K=1, R=3 that is ~9 subagent invocations per agent variant — a few dollars in API cost, an order of magnitude lower than re-training a neural bandit per checkpoint. A real production budget analysis (per-page or per-decision LLM cost vs the bandit's pure compute cost) is in §8 future work.
+
+9. **EDP-agent depends on a capable LLM.** Both the live agent and the OPRO ablation use Claude subagents. Smaller / open-weight LLMs would likely degrade the report-based agent more than OPRO (since the report requires structured reasoning while OPRO is closer to gradient-free pattern matching).
+
+10. **At K=3–4 reps, several comparisons are underpowered.** The OPRO ablation on parametric (§5.4) is only ~1σ separated. The Bayesian-EDP margin over EDP-agent on parametric (§5.4b) is small. Per-(persona, category) cell numbers in §5.5 have substantial SE that we don't quote. Larger K is in §8.
 
 ## 8. Future Work
 

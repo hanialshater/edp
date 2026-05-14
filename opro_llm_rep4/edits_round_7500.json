@@ -1,0 +1,17 @@
+{
+  "note": "round 7500 — revert to round-2500 magnitudes (5000 over-scaled); keep best additions, prune probes",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 1.3, "reason": "near 2500 best, slight bump"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 0.9, "reason": "match 2500 value"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.0, "to": 0.7, "reason": "match 2500 value"},
+    {"widget": "comparison_card", "path": "base", "from": 0.0, "to": 0.6, "reason": "match 2500 value"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.5, "reason": "match 2500 value"},
+    {"widget": "value_breakdown", "path": "on_rem.F32", "from": 0.0, "to": 0.8, "reason": "match 2500"},
+    {"widget": "return_explainer", "path": "on_rem.F41", "from": 0.0, "to": 1.0, "reason": "match 2500"},
+    {"widget": "customers_chose", "path": "on_cov.F45", "from": 0.0, "to": 0.6, "reason": "match 2500"},
+    {"widget": "expert_pick", "path": "on_cov.F43", "from": 0.0, "to": 0.5, "reason": "match 2500"},
+    {"widget": "similar_items", "path": "slot_decay", "from": 0.0, "to": -0.3, "reason": "match 2500 mild decay"},
+    {"widget": "personal_recs", "path": "base", "from": 0.0, "to": 0.4, "reason": "match 2500"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": -0.3, "reason": "soft negative, between 2500 and 5000"}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "note": "round 7500 — pull back to moderate magnitudes; r2500 < r5000 suggests overshoot",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 1.0, "reason": "between r2500(0.8) and r5000(1.4) winners"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 0.8, "reason": "moderate return reducer"},
+    {"widget": "low_return_alts", "path": "on_rem.F32", "from": 0.0, "to": 1.2, "reason": "strong persona-conditional but not 1.8"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.6, "reason": "modest reassurance"},
+    {"widget": "return_explainer", "path": "on_cov.F33", "from": 0.0, "to": 0.9, "reason": "coverage boost, between prior values"},
+    {"widget": "comparison_card", "path": "base", "from": 0.0, "to": 0.5, "reason": "decision aid, modest"},
+    {"widget": "value_breakdown", "path": "base", "from": 0.0, "to": 0.4, "reason": "revert to base path that worked at r2500"},
+    {"widget": "expert_pick", "path": "base", "from": 0.0, "to": 0.5, "reason": "moderate trust signal"},
+    {"widget": "similar_items", "path": "on_rem.F41", "from": 0.0, "to": 0.7, "reason": "alt-finding, between prior"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": -0.6, "reason": "moderate suppression"},
+    {"widget": "also_bought", "path": "base", "from": 0.0, "to": -0.5, "reason": "moderate suppression"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.0, "to": -0.3, "reason": "mild off-task suppression"},
+    {"widget": "recently_viewed", "path": "slot_decay", "from": 0.0, "to": 0.4, "reason": "moderate decay"},
+    {"widget": "personal_recs", "path": "base", "from": 0.0, "to": 0.2, "reason": "mild positive from r2500"}
+  ]
+}

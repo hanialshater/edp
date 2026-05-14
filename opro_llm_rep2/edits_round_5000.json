@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 — amplify proven reassurance/fit core, broaden negative probes, expand context-conditional lifts",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 1.8, "reason": "amplify top utility further"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 1.4, "reason": "push informational fit higher"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.0, "to": 1.1, "reason": "strengthen return-risk mitigation"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.9, "reason": "continue reassurance stack"},
+    {"widget": "comparison_card", "path": "base", "from": 0.0, "to": 0.7, "reason": "decision support nudge up"},
+    {"widget": "value_breakdown", "path": "base", "from": 0.0, "to": 0.6, "reason": "price justification"},
+    {"widget": "return_explainer", "path": "base", "from": 0.0, "to": 0.5, "reason": "untested reassurance-adjacent"},
+    {"widget": "expert_pick", "path": "base", "from": 0.0, "to": 0.4, "reason": "probe curated authority"},
+    {"widget": "brand_story", "path": "base", "from": 0.0, "to": -1.0, "reason": "deepen narrative negative probe"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": -0.7, "reason": "deepen trend negative probe"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.0, "to": -0.4, "reason": "probe transactional nudge negative"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.0, "to": -0.3, "reason": "probe editorial low-utility"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 0.0, "to": 0.8, "reason": "strengthen F32 contextual lift"},
+    {"widget": "low_return_alts", "path": "on_rem.F43", "from": 0.0, "to": 0.7, "reason": "strengthen F43 return context"},
+    {"widget": "size_guide", "path": "on_cov.F41", "from": 0.0, "to": 0.5, "reason": "explore cov-context lift"},
+    {"widget": "fit_reassurance", "path": "slot_decay", "from": 0.0, "to": -0.1, "reason": "reduce decay magnitude vs prior"}
+  ]
+}

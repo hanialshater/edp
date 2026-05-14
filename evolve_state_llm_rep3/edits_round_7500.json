@@ -1,0 +1,19 @@
+{
+  "note": "round 7500 — stabilize: lift confident_repeat/trend_chaser coverage, revive remaining dead widgets, tame low-r/fire over-firers",
+  "edits": [
+    {"widget": "recently_viewed", "path": "base", "from": 0.26, "to": 0.42, "reason": "0% activation despite F51 relevance; lift base so it competes for confident_repeat/mobile_evening filler slots"},
+    {"widget": "also_bought", "path": "base", "from": 0.12, "to": 0.26, "reason": "0% activation; cheap N3_peer/N7_commit filler for trend_chaser and confident_repeat"},
+    {"widget": "personal_recs", "path": "base", "from": 0.07, "to": 0.22, "reason": "0% activation; provides N5_styling/N7_commit for trend_chaser top and confident_repeat outerwear"},
+    {"widget": "trending_now", "path": "base", "from": 0.06, "to": 0.18, "reason": "0% activation; N3_peer for trend_chaser top/shoes which had 34% regret"},
+    {"widget": "brand_story", "path": "base", "from": 0.1, "to": 0.24, "reason": "0% activation but 5.67 avg-slot value; lift base so it surfaces for premium_silent_browser accessories (27% regret)"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.1, "to": 0.04, "reason": "lowest r/fire (0.1983) among active; reduce base so style_bridge/outfit_completion claim those slots"},
+    {"widget": "price_history", "path": "base", "from": 0.22, "to": 0.14, "reason": "low r/fire (0.182); dampen to free slots for higher-yield widgets"},
+    {"widget": "similar_items", "path": "base", "from": 0.18, "to": 0.08, "reason": "r/fire only 0.115; lowest yield active widget, taking slots from better choices"},
+    {"widget": "material_deep_dive", "path": "on_cov.F33", "from": 0.4, "to": 0.7, "reason": "boost F33 chain to better cover premium_silent_browser and confident_repeat trust gaps"},
+    {"widget": "fit_reassurance", "path": "on_cov.F46", "from": 0.6, "to": 0.95, "reason": "strengthen F46 follow-up after fit_reassurance for size_specific_anxious accessories (36% regret)"},
+    {"widget": "expert_pick", "path": "on_cov.F33", "from": 0.0, "to": 0.6, "reason": "NEW synergy — expert_pick chains nicely after brand_story/material for premium/trend_chaser"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.3, "to": 0.38, "reason": "lift commit closer for confident_repeat_buyer who is top-regret persona"},
+    {"widget": "customers_chose", "path": "on_cov.F51", "from": -0.6, "to": -0.3, "reason": "weaken anti-chain so customers_chose can co-occur with wishlist for trend_chaser/post_return"},
+    {"widget": "style_bridge", "path": "on_rem.F43", "from": 2.0, "to": 1.6, "reason": "over-fires for outfit_event_planner top-1 (189 of 192); dampen so occasion variety improves"}
+  ]
+}
