@@ -2,7 +2,7 @@
 
 ## Abstract
 
-Page composition — choosing which 6 modules to display, in which order, given a user — is academically a contextual combinatorial bandit problem. The academic framing assumes per-slot reward attribution; production attributes reward at the page level, with multi-day delay and observation noise. Under those conditions, per-slot LinTS — the canonical bandit baseline — is the *wrong abstraction*: it ignores the combinatorial-and-submodular structure and produces correlated per-arm gradients that page-level reward cannot disentangle. We measure the resulting gap directly (per-slot LinTS: 4.9 % oracle-reward lost in the lab, 18.9 % in production) and decompose the EDP advantage into three additive components: (i) **architecture** — an adaptive-submodular contextual model with shared GAM parameterisation, which alone closes 6 pp of the gap (GreedyLinTS @ 12.8 %); (ii) **LLM-anchored prior + checkpoint edits** — a Claude subagent reading structured diagnostics and proposing 8–16 atomic curve edits per checkpoint, adding another ~6 pp (EDP-agent @ 6.5 ± 0.2 % on parametric, 13.3 ± 0.8 % on LLM-persona); (iii) **continuous regularised updates** — Bayesian-EDP, a preliminary refinement that treats the agent's edits as a Gaussian prior and runs MAP-style SGD between checkpoints (7.6 ± 0.3 % parametric, 11.0 ± 0.2 % LLM). We test across two simulators (parametric 8-persona; LLM-driven 14-persona + 6-category) and seven baselines including static placement (40.7 %), one-shot LLM-as-policy (35.7 %), and slate-LinTS (16.5 %). An OPRO ablation isolates the *structured diagnostic report* — not the LLM's general intelligence — as the carrier of the LLM-side gain, cleanly so on the LLM simulator (2.2 σ separation, K=3-4 reps).
+Page composition — choosing which 6 modules to display, in which order, given a user — is academically a contextual combinatorial bandit problem. The academic framing assumes per-slot reward attribution; production attributes reward at the page level, with multi-day delay and observation noise. Under those conditions, per-slot LinTS — the canonical bandit baseline — is the *wrong abstraction*: it ignores the combinatorial-and-submodular structure and produces correlated per-arm gradients that page-level reward cannot disentangle. We measure the resulting gap directly (per-slot LinTS: 4.9 % oracle-reward lost in the lab, 18.9 % in production) and **decompose the EDP advantage non-uniformly across simulators**: (i) the **adaptive-submodular architecture** alone (GreedyLinTS, no LLM) closes 6 pp of the gap (12.8 % parametric, 13.3 % LLM in production); (ii) an **LLM agent that reads structured diagnostics and proposes 8–16 atomic curve edits per checkpoint** is the best method on parametric (EDP-agent @ 6.5 ± 0.2 %) but only ties the architecture on LLM-persona (13.3 ± 0.8 %); (iii) a **Bayesian fusion** treating the agent's edits as a Gaussian prior and running regularised SGD between checkpoints is the best method on LLM-persona (Bayesian-EDP @ 11.0 ± 0.2 %) but underperforms EDP-agent on parametric. Neither approach is uniformly best — the trade-off is simulator-dependent. We test across two simulators (parametric 8-persona; LLM-driven 14-persona + 6-category) and eight baselines including static placement (40.7 %), one-shot LLM-as-policy (35.7 %), and the strongest combinatorial bandit we measured (CombLinUCB @ 10.5 %/17.3 %). An OPRO ablation isolates the *structured diagnostic report* — not the LLM's general intelligence — as the carrier of the LLM-side gain, cleanly so on the LLM simulator (≈2.2 σ separation, K=3-4 reps).
 
 ## 1. Introduction
 
@@ -292,15 +292,19 @@ with `(a, b)` learnable scalars. The loss per delayed observation is
 
 where `μ_LLM` is the agent's most-recent edit value for each parameter (re-anchored at every checkpoint). Hyperparameters: learning rate `η = 5×10⁻⁴`, `λ = 2.0`, `σ_LLM = 0.3` per parameter (chosen by a small sweep on the parametric simulator).
 
-**Result.** Bayesian-EDP becomes the new best method in production on both simulators while staying competitive in the lab:
+**Result.** Bayesian-EDP is competitive on parametric and the best method on LLM-persona; the picture is mixed enough that we report it as a refinement, not a clean win:
 
 | Method | Parametric · Lab | Parametric · Prod | LLM · Lab | LLM · Prod |
 |---|---|---|---|---|
 | Slate-LinTS-warm | **3.5** | 14.1 | **5.1** | 16.5 |
-| EDP-agent | 10.5 | 10.5 | 11.9 | 11.9 |
-| **Bayesian-EDP** | 5.7 | **7.0** | 9.8 | **10.8** |
+| EDP-agent | 6.5 ± 0.2 | **6.5 ± 0.2** | 13.3 ± 0.8 | 13.3 ± 0.8 |
+| **Bayesian-EDP** | 6.1 ± 0.3 | 7.6 ± 0.3 | 10.1 ± 0.1 | **11.0 ± 0.2** |
 
-In production, Bayesian-EDP beats EDP-agent by 3.5 pp (parametric) and 1.1 pp (LLM), and beats slate-LinTS by 7.1 pp / 5.7 pp. It still trails slate-LinTS in the lab (where the bandit's clean reward signal lets it find the optimum), but the lab-to-production gap is +1.3 pp / +1.0 pp — comparable to EDP-agent's zero degradation, vs slate-LinTS's +10.5 / +11.4 pp.
+On **parametric** the result inverts: Bayesian-EDP (7.6 % ± 0.3) is **1.1 pp worse** than plain EDP-agent (6.5 % ± 0.2) in production. The two are within ~2 σ of each other given the combined SE ≈ 0.36 pp. The SGD updates evidently introduce drift that the regulariser does not fully cancel when the LLM agent already has a strong handle on the simpler 8-persona simulator.
+
+On **LLM-persona** Bayesian-EDP beats EDP-agent by 2.3 pp (combined SE ≈ 0.78 pp, ≈ 2.9 σ), and is the only method below 11.5 % on the harder simulator. The continuous SGD channel pays off here because the LLM agent leaves more numerical-calibration headroom on the table when the persona/category space is wider.
+
+So Bayesian-EDP is **the best on LLM-persona, worse than EDP-agent on parametric, and beats every bandit on both simulators in production**. The fusion helps when the LLM agent's discrete edits are insufficient; it hurts when they were already near-optimal.
 
 **Why it works.** Three things compose:
 
@@ -320,25 +324,35 @@ The previous sections framed the comparison as "EDP vs bandit". A fair reader sh
 
 To decompose, we add **GreedyLinTS** — Bayesian-EDP with `λ = 0` and no LLM checkpoint resets. Mechanically this is the same EDP architecture with the same calibrated linear reward predictor, but parameters initialised from the LLM-prior config and then updated purely by SGD on observed (delayed, noisy, page-level) reward, with no further LLM intervention. It is, structurally, an **adaptive-submodular contextual bandit on the EDP architecture** — the bandit baseline that actually fits the problem, as opposed to the per-slot LinTS instances of §5.1.
 
-Cumulative regret @ 10K, % of oracle reward lost on the production reward stack (page-level + delay=500 + σ=0.20). Stochastic methods reported mean ± SE across 5 seeds:
+Cumulative regret @ 10K, % of oracle reward lost on the production reward stack (page-level + delay=500 + σ=0.20). Stochastic methods reported mean ± SE across replicates:
 
 | Method | Parametric · Prod | LLM · Prod | What's added |
 |---|---|---|---|
 | LinTS-warm (per-slot, misapplied) | 18.9 ± 0.1 | 21.6 ± 0.1 | nothing — wrong abstraction |
 | **GreedyLinTS** (EDP arch, no LLM) | **12.8 ± 0.1** | **13.3 ± 0.4** | + adaptive-submodular architecture |
 | EDP-static (LLM cold-start, no updates) | 10.7 | 19.8 | + LLM prior, no online learning |
-| EDP-agent (LLM cold-start + edits) | 7.9 | 11.9 | + LLM checkpoint edits, still no SGD |
+| EDP-agent (LLM cold-start + edits) | 6.5 ± 0.2 | 13.3 ± 0.8 | + LLM checkpoint edits, still no SGD |
 | **Bayesian-EDP** (LLM prior + SGD) | **7.6 ± 0.3** | **11.0 ± 0.2** | + continuous regularised SGD |
 
-Three findings:
+The decomposition is more nuanced than a single "architecture vs LLM vs SGD" decomposition, and the picture **differs sharply between the two simulators**:
 
-1. **Architecture carries most of the production gap.** Switching from misapplied per-slot LinTS to GreedyLinTS (same SGD + same delayed-noisy-page-level signal, but on the right architecture) closes 6.1 pp on parametric and 8.3 pp on LLM. The right policy class for a slate-with-submodular-reward problem is adaptive-submodular; per-slot bandits are simply the wrong abstraction.
-2. **LLM contribution is real but smaller than the headline ratio suggested.** The LLM-prior cold-start matters more on the LLM-persona simulator (-6.5 pp from GreedyLinTS to EDP-static) than on parametric (where EDP-static is actually 2.1 pp *worse* than GreedyLinTS — its hand-authored priors are mismatched to the data, and SGD without prior outperforms a frozen suboptimal config). The LLM agent's checkpoint edits add 2.9 pp on parametric and 7.9 pp on LLM over EDP-static.
-3. **SGD on top of the LLM is a small but consistent improvement.** Bayesian-EDP improves on EDP-agent by 0.3 pp / 0.9 pp in production. The marginal value of continuous updates is bounded by how much fine-tuning the agent's discrete edits left on the table.
+**On parametric** (the easier setup):
 
-The honest reading: **most of the production-stack advantage is the EDP architecture, not the LLM-in-the-loop**. The LLM is the cherry on top — significant on harder simulators (LLM personas), not on easier ones (parametric). The right sales pitch is "use adaptive-submodular for combinatorial slate problems with submodular reward; an LLM-anchored prior on top is a useful refinement, especially under realism shifts; continuous SGD with that prior is the principled fusion".
+- Architecture alone (GreedyLinTS) reaches 12.8 % — a 6.1 pp improvement over per-slot LinTS purely from the right policy class.
+- EDP-static (LLM cold-start, no updates) is 10.7 % — 2.1 pp better than GreedyLinTS. The hand-authored LLM priors are well-matched to the 8-persona structure.
+- EDP-agent (LLM cold-start + checkpoint edits) is **6.5 %** — another 4.2 pp on top of EDP-static. The LLM agent's edits dominate the gain on parametric.
+- Bayesian-EDP (adding SGD on top of EDP-agent) is **7.6 %** — *1.1 pp worse* than EDP-agent. SGD adds drift that hurts when the LLM agent's discrete edits are already near-optimal.
 
-(Aside: GreedyLinTS's parametric production regret 12.8 % is *better* than its lab regret 14.4 % on the LLM simulator. This is not an error — under page-level attribution the SGD signal averages over more sessions per update; under per-slot reward in the lab, the SGD signal is fresher but per-arm variance dominates. With the canonical Bayesian-EDP hyperparameters (`η=5×10⁻⁴, λ=0` for GreedyLinTS), this lab-vs-prod inversion is small but consistent across seeds. A GreedyLinTS-specific hyperparameter sweep would close the lab regret further.)
+**On LLM-persona** (the harder setup):
+
+- Architecture alone (GreedyLinTS) reaches **13.3 %** — same as on parametric.
+- EDP-static jumps to 19.8 % — the LLM priors are *less well-suited* to the wider 14-persona / 6-category mix and SGD-without-prior actually outperforms a frozen suboptimal config.
+- EDP-agent (LLM cold-start + checkpoint edits) is 13.3 % — essentially **tied with GreedyLinTS**. The LLM agent's checkpoint edits add ~zero over the architecture alone on LLM-persona.
+- Bayesian-EDP (SGD + LLM-anchor) reaches **11.0 %** — the only method below 13 % on the harder simulator. The fusion outperforms either component alone.
+
+**The honest decomposition.** On both simulators, the **architecture (adaptive-submodular GAM)** is the foundation: it closes most of the lab-vs-production gap that misapplied per-slot LinTS suffers. The LLM agent then either dominates the remaining gain (parametric, where its edits are well-targeted) or adds little on its own but enables the SGD-fusion that does dominate (LLM-persona). The choice "EDP-agent vs Bayesian-EDP" is **simulator-dependent**, not strictly hierarchical.
+
+This is a smaller and more nuanced contribution than "LLM in the loop beats bandits by 2×". The sharper claim: **the right policy class plus an LLM-anchored prior (with optional SGD refinement) consistently beats any bandit we tested in production, but the LLM and SGD contributions trade off and the right mix depends on how well the LLM's priors fit the data**.
 
 ### 5.4d Layer-1 PWL evolution (capability added; no win in single-trial)
 
@@ -348,11 +362,11 @@ Single-trial run on the LLM-persona simulator, 3 checkpoints, 35 total edits (27
 
 | Variant | Cum regret @ 10K | % oracle lost |
 |---|---|---|
-| EDP-agent (Layer-2 only) | 2,380 | 11.9 % |
-| Bayesian-EDP | 2,200 ± 35 | 11.0 ± 0.2 % |
-| **EDP-agent (Layer-1 + Layer-2)** | **2,714** | **13.6 %** |
+| EDP-agent (Layer-2 only, multi-seed mean) | — | 13.3 ± 0.8 % |
+| Bayesian-EDP (multi-seed mean) | — | 11.0 ± 0.2 % |
+| EDP-agent (Layer-1 + Layer-2, single-trial) | 2,714 | 13.6 % |
 
-The Layer-1 capability **does not improve performance** in this single trial; it slightly regresses. The agent diagnosed plausible Layer-1 issues each round (F33 zoom for `premium_silent_browser`, F41 tab_switch dampening for over-detected comparison sessions, F32 size_chart weight for `corporate_uniform_buyer`) and made conservative shape edits, but the simultaneous Layer-2 edits in the same batch differed from the Layer-2-only run's edits enough that the net trajectory was worse. We do not attribute this to a Layer-1-specific failure — both arms come from independent agent draws and live-stream variance is large at single-trial.
+The Layer-1+2 single-trial result (13.6 %) is **within the multi-seed SE of Layer-2-only EDP-agent (13.3 ± 0.8 %)** — the original draft framed this as a regression, but with the canonical multi-seed numbers Layer-1+2 is statistically indistinguishable from Layer-2-only. The capability works (the agent diagnosed plausible Layer-1 issues each round: F33 zoom for `premium_silent_browser`, F41 tab_switch for over-detected comparison sessions, F32 size_chart weight for `corporate_uniform_buyer`); whether it *helps* requires multi-seed replication of the Layer-1+2 arm itself.
 
 **The mechanism works, the value doesn't (yet).** Two tractable improvements left as future work:
 
@@ -392,13 +406,14 @@ To check that §5.1's production-condition result is not an artefact of the para
 
 | Method | Parametric (8) | LLM (14 + cats) | Δ |
 |---|---|---|---|
-| **EDP-agent (ours)** | **10.5%** | **11.9%** | **+1.4 pp** |
-| EDP-canned (offline) | 8.0% | 15.0% | +7.0 pp |
-| EDP-static | 10.7% | 19.8% | +9.1 pp |
-| LinTS-warm | 18.9% | 21.6% | +2.7 pp |
-| LinTS-cold | 20.2% | 22.9% | +2.7 pp |
+| Bayesian-EDP | 7.6 ± 0.3 % | **11.0 ± 0.2 %** | +3.4 pp |
+| EDP-agent | **6.5 ± 0.2 %** | 13.3 ± 0.8 % | +6.8 pp |
+| EDP-canned (offline) | 8.0 % | 15.0 % | +7.0 pp |
+| EDP-static | 10.7 % | 19.8 % | +9.1 pp |
+| LinTS-warm | 18.9 % | 21.6 % | +2.7 pp |
+| LinTS-cold | 20.2 % | 22.9 % | +2.7 pp |
 
-EDP-agent is the most simulator-robust of the EDP variants: +1.4 pp delta vs +9.1 pp for EDP-static. The agent's edit loop re-targets curves to the new persona/category mix; static and canned configs cannot. Bandits are flat (+2.7 pp) for the opposite reason: they were already learning from data, and the new simulator's harder signal slows learning by a similar amount in absolute terms.
+The "EDP-agent is the most simulator-robust" claim of the prior draft was an artefact of stale parametric numbers. With the canonical multi-seed values, **Bayesian-EDP** is the most robust of the EDP variants (+3.4 pp delta), and EDP-agent now sits between EDP-canned (+7.0 pp) and EDP-static (+9.1 pp) — it does re-target across the realism shift, but the gain over canned offline edits is modest. The LLM-persona simulator hurts every LLM-driven method more than expected because the wider 14-persona / 6-category mix exposes places where the agent's checkpoint edits don't have enough numerical-calibration headroom to compete with continuous SGD. Bandits stay flat (+2.7 pp) for the opposite reason: they were learning from data anyway, and the harder signal slows learning by a similar amount in absolute terms.
 
 ![Figure 6: Cumulative regret over 10K sessions on each simulator. Left: parametric (8 personas). Right: LLM (14 personas + categories). EDP-agent stays low across both; EDP-static / EDP-canned degrade visibly from left to right; LinTS is high in both.](figures/fig1_cumregret.png)
 
@@ -424,9 +439,9 @@ Two simple baselines bracket the production-stack comparison from below:
 
 **LLM-as-policy (Software 3.0 one-shot).** A Claude subagent reads the widget descriptions and signal schema and writes a Python function `pick_page(feat, category) -> list[str]`. One subagent call; the function runs deterministically on all 10K sessions. The subagent designs an archetype-based scoring rule with per-category axis weights. The LLM does not see persona names or true-needs / provisions — only the context features. **35.7 %** loss.
 
-The progression: static defaults 40.7 %, LLM-writes-policy 35.7 %, online bandits 21–23 %, static GAM 19.8 %, offline-curated edits 15.0 %, report-based agent 11.9 %. The agent's edit loop captures more value than any other method; the LLM by itself does not.
+The progression on the LLM simulator: static defaults 40.7 %, LLM-writes-policy 35.7 %, online bandits 17–23 %, static GAM 19.8 %, offline-curated edits 15.0 %, report-based agent 13.3 ± 0.8 %, Bayesian-EDP 11.0 ± 0.2 %. Continuous SGD with an LLM prior captures more value than any other method on LLM-persona; LLM-without-feedback by itself does not.
 
-**Robust-EDP wrapper.** After the report-based agent proposes an edit batch, generate K=8 perturbations of the resulting config (Gaussian noise σ=0.15 on parameters the edits touched, except `slot_decay`), evaluate all 9 candidates on a held-out 500-session validation slice, and adopt the candidate that maximises `mean − 0.5 · std`. Result: cum regret 2,341 (11.7 %) vs 2,380 (11.9 %) for plain EDP-agent on the LLM simulator — small absolute gain, but per-round perturbation diagnostics show 5–7 % spread of mean reward across perturbations, so the wrapper is selecting away from real fragility.
+**Robust-EDP wrapper.** After the report-based agent proposes an edit batch, generate K=8 perturbations of the resulting config (Gaussian noise σ=0.15 on parameters the edits touched, except `slot_decay`), evaluate all 9 candidates on a held-out 500-session validation slice, and adopt the candidate that maximises `mean − 0.5 · std`. Result on a single rep: cum regret 2,341 (11.7 %) vs 2,380 (11.9 %) for that same rep of plain EDP-agent on the LLM simulator — but this single-rep figure is well within the multi-seed SE of EDP-agent (13.3 ± 0.8 %), so the wrapper's apparent win does not survive replication. Per-round perturbation diagnostics still show 5–7 % spread of mean reward across perturbations, suggesting real fragility the wrapper *could* select against with a larger validation slice.
 
 ![Figure 7: Full baseline panel across simulators. Static and LLM-as-policy bracket from below; bandits in the middle; the EDP family on top. Robust EDP edges plain EDP-agent slightly.](figures/fig6_all_baselines.png)
 
@@ -445,6 +460,8 @@ Two production realities the previous sections did not address: the persona dist
 
 EDP-agent is the only method whose post-drift regret is _lower_ than its pre-drift regret. The agent's checkpoint at 7500 sees the new mixture in the report and its edits target the new high-traffic personas. EDP-canned half-recovers by accident — its canned edits over-cover trust/return widgets, which is what the spiked personas need. EDP-static degrades because its priors were tuned for the pre-drift mixture.
 
+**One source of the "post-drift < pre-drift" effect is mixture-driven, not learning-driven.** The drifted mixture's mean oracle reward is 2.13 (post-drift) vs 2.00 (pre-drift) — the spiked personas (`returner_anxious`, `post_return_returner`, `browser_lurker`) have richer effective-need vectors than the suppressed personas (`confident_repeat_buyer`, `outfit_event_planner`). All regret percentages are already normalised by oracle, so this 6.7 % shift in absolute oracle doesn't directly account for the 5.9 pp regret improvement EDP-agent shows, but it does mean the post-drift segment has more captureable upside in raw terms — about half of the apparent improvement is the agent capturing a similar fraction of a bigger pie, the other half is the round-7500 checkpoint genuinely adapting. The right framing is "EDP-agent recovers from drift cleanly and benefits from the mixture shift", not "EDP-agent gets monotonically smarter as it sees more drifted data".
+
 **Structural exploration.** At session 5000 a new widget `virtual_try_on` is added to the catalog with provisions `{N1_fit: 0.65, N2_visual: 0.45, N6_trust: 0.20}`. A default Layer-2 module entry is added so EDP can in principle pick it; the agent's checkpoint report at 5000 prefixes a `STRUCTURAL CHANGE` notice describing the widget. The agent activated `virtual_try_on` on round 2 and dialled it back on round 3 when the report showed it crowding others.
 
 | Method | Pre-add (0–5K) | Post-add (5K–10K) | Full |
@@ -454,17 +471,19 @@ EDP-agent is the only method whose post-drift regret is _lower_ than its pre-dri
 
 The post-add result is statistically tied with no-exploration — the new widget did not pay off in this run. The contribution is the **mechanism**: the agent integrated a previously non-existent widget into its policy class within one checkpoint, with no system change beyond the catalog patch. Bandits cannot do this without warming up the new arm from zero posterior data.
 
-### 5.10 What doesn't work: ensemble selection (negative result)
+### 5.10 What doesn't work: ensemble selection
 
 A natural extension of the report-based agent is to draw multiple edit batches per checkpoint and pick the best on a held-out validation slice — analogous to the Robust-EDP wrapper of §5.8, but with diverse subagent draws instead of parameter perturbations. We spawned 3 independent subagent draws at each of 3 checkpoints (9 draws total) on the LLM simulator, evaluated each on a 500-session validation slice (seed 99991), and adopted the best-mean candidate at each round.
 
 | Variant | Cum regret @ 10K | % oracle lost |
 |---|---|---|
-| EDP-agent (single draw) | 2,380 | 11.9 % |
-| Robust EDP (parameter perturbations, §5.8) | 2,341 | 11.7 % |
-| **EDP-agent + 3-draw ensemble** | **2,741** | **13.7 %** |
+| EDP-agent (multi-seed mean, N=3) | — | 13.3 ± 0.8 % |
+| Robust EDP (single-rep, §5.8) | 2,341 | 11.7 % |
+| EDP-agent + 3-draw ensemble (single-rep) | 2,741 | 13.7 % |
 
-The ensemble was worse than either the single-draw agent or the Robust wrapper. Round 2 was the failure point: the validation-best draw produced a worse trajectory than the single-draw arm because the validation slice's persona mixture differed slightly from the post-checkpoint live stream, and selection committed to a config that scored well on the slice but was mediocre on the live stream's later sessions.
+The ensemble's 13.7 % is **within the multi-seed SE of EDP-agent (13.3 ± 0.8 %)** — the original draft framed this as a clear negative result, but with the canonical multi-seed numbers the ensemble is statistically indistinguishable from a single draw. The earlier "ensemble was worse than either single-draw agent or Robust wrapper" claim does not survive replication. We retain this section because per-round diagnostics still showed the validation-best draw at round 2 producing a worse live-stream trajectory — that mechanism is real (validation-slice persona mixture differs from the next live segment) even if the aggregate doesn't show it under K=1 per arm.
+
+A multi-seed ensemble study (K=10 draws per checkpoint, each ensemble itself replicated 5 times) would be the right way to answer whether validation-slice selection helps; with our current 9 subagent calls per ensemble run the data simply cannot separate ensemble from single-draw.
 
 The negative finding is informative: the report-based agent's gain is **not a generic ensemble effect**. Three independent agents drawing from the same prompt and selected by held-out reward do not, on this setup, beat a single draw. Whatever the agent is doing right (§5.4: consuming structured diagnostics), it is not "trying multiple things and picking the best". Larger ensembles (K=10–20) and stratified validation slicing might close the gap, at proportional subagent cost; we did not run that.
 
@@ -513,23 +532,23 @@ The right reading is layered: EDP at the page-composition layer, bandits (or GAM
 
 ## 8. Future Work
 
-We ran four of the items previously listed here (slate-LinTS, drift, structural exploration, multi-agent ensembles) and folded them into §5.10–5.13. The remaining open directions:
+We ran four of the items previously listed here (slate-LinTS in §5.3, drift in §5.9, structural exploration in §5.9, multi-agent ensembles in §5.10) and have a new principled fusion (Bayesian-EDP in §5.4b). The remaining open directions:
 
-**Neural bandits.** NeuralUCB and small-MLP + Thompson sampling have richer policy classes than linear models and might recover some of the lab-condition gap on the LLM-persona simulator. Page-level attribution is still the dominant production stressor; we predict neural methods do not close the production gap (the credit-assignment problem is structural, see §5.9, §5.10), but a direct experiment would settle it.
+**Neural bandits.** NeuralUCB and small-MLP + Thompson sampling have richer policy classes than linear models and might recover some of the lab-condition gap on the LLM-persona simulator. Page-level attribution is still the dominant production stressor; we predict neural methods do not close the production gap (the credit-assignment problem is structural, see §5.2 and §5.3), but a direct experiment would settle it.
 
 **Counterfactual estimators.** IPS and Doubly Robust estimators can in principle recover partial per-slot credit if a propensity model is available. These methods need their own exploration policy and a logging policy; integrating them is a non-trivial extension and a separate study.
 
 **Layer-1-aware diagnostics + interleaved checkpoints.** §5.4d added the Layer-1 PWL-edit capability and observed no single-trial improvement. The most promising follow-ups: (a) interleave Layer-1-only and Layer-2-only checkpoints rather than mixing both in each batch, so we can attribute marginal value; (b) add Layer-1-specific diagnostics to the checkpoint report (e.g., "X% of high-regret sessions had problem F32 detected at <0.3 despite N1_fit > 0.7"), which would give the agent a sharper signal for when shape edits are warranted. Per-(persona, category) conditional shape functions are a structural step beyond and a separate future item.
 
-**Larger ensembles + better validation slicing.** §5.13's negative result on 3-draw ensembles is a real signal that validation-slice selection is fragile at K=3. Two natural extensions: (a) K=10–20 draws per checkpoint, (b) replace the held-out validation slice with a stratified set spanning all (persona, category) cells the live stream is about to encounter. Both add cost; neither is mechanically difficult.
+**Larger ensembles + better validation slicing.** §5.10's 3-draw ensemble is statistically indistinguishable from a single draw under the canonical multi-seed numbers, and per-round diagnostics suggest a structural fragility (validation-slice persona mixture differs from the next live segment) that this K=3 study cannot resolve. Two natural extensions: (a) K=10–20 draws per checkpoint, (b) replace the held-out validation slice with a stratified set spanning all (persona, category) cells the live stream is about to encounter. Both add cost; neither is mechanically difficult.
 
 **Live engagement validation.** Validate the synthetic-ground-truth ranking against logged engagement data from a deployed system. This is the limitation reviewers will press hardest on; the right way to address it is a logged-eval study, not a richer simulator.
 
-**Drift recovery via agent-triggered checkpoints.** §5.11 used a fixed checkpoint schedule. A natural extension: instrument the diagnostic report with a drift detector (e.g., persona-mixture tracking, per-cell regret time-series tests) that triggers an unscheduled agent call when the distribution shifts noticeably. Combined with §5.12's structural-exploration mechanism, this would close the loop on production non-stationarity.
+**Drift recovery via agent-triggered checkpoints.** §5.9's drift test used a fixed checkpoint schedule. A natural extension: instrument the diagnostic report with a drift detector (e.g., persona-mixture tracking, per-cell regret time-series tests) that triggers an unscheduled agent call when the distribution shifts noticeably. Combined with §5.9's structural-exploration mechanism, this would close the loop on production non-stationarity.
 
 ## 9. Conclusion
 
-Per-slot LinTS is the wrong abstraction for slate-with-submodular-reward problems under page-level reward; the framing was always misapplied. The EDP architecture (adaptive submodular over a shared GAM parameterisation) is the right baseline, and most of the production-stack advantage we measure comes from that architecture — not from the LLM. GreedyLinTS, the EDP architecture with no LLM prior and pure SGD, already closes 6 pp of the lab-vs-prod gap that per-slot LinTS suffers. Adding an LLM-anchored prior and checkpoint edits (EDP-agent) adds a further ~5 pp on the parametric simulator and ~8 pp on the LLM-persona simulator. Closing the loop with continuous Bayesian SGD updates between checkpoints (Bayesian-EDP) adds a small additional improvement and produces the lowest-regret method we measured on both simulators (7.6 ± 0.3 % parametric, 11.0 ± 0.2 % LLM, in production). The OPRO ablation isolates the *structured diagnostic report* — not the LLM's general intelligence — as the carrier of the LLM-side gain. The headline finding is conditional and decomposable: under page-level reward, use adaptive-submodular as the policy class; if you have an LLM with knowledge of the problem domain, use it as a prior + checkpoint editor; if you can also run continuous regularised SGD between checkpoints, do that on top.
+Per-slot LinTS is the wrong abstraction for slate-with-submodular-reward problems under page-level reward; the framing was always misapplied. The EDP architecture (adaptive submodular over a shared GAM parameterisation) is the right baseline, and most of the production-stack advantage we measure comes from that architecture — not from the LLM. GreedyLinTS, the EDP architecture with no LLM prior and pure SGD, already closes 6 pp of the lab-vs-prod gap that per-slot LinTS suffers (12.8 % parametric, 13.3 % LLM in production). The LLM agent and continuous SGD then trade off depending on the simulator: **on parametric, EDP-agent (LLM checkpoint edits, no SGD) is the best method we measured (6.5 ± 0.2 %)** because the agent's edits are well-targeted; **on LLM-persona, Bayesian-EDP (LLM-anchored prior + continuous regularised SGD) is the best (11.0 ± 0.2 %)** because the wider persona / category space leaves enough numerical-calibration headroom for SGD to help. Neither method is uniformly best — they are simulator-conditional. The OPRO ablation isolates the *structured diagnostic report* — not the LLM's general intelligence — as the carrier of the LLM-side gain, cleanly so on the LLM simulator (≈2.2 σ separation at K=3-4) and weakly so on parametric (≈1 σ separation, underpowered). The decomposable claim that survives: **under page-level reward, use the adaptive-submodular policy class; if you have an LLM with knowledge of the problem domain, use it as a prior + checkpoint editor; if your simulator is rich enough that the LLM's discrete edits don't saturate, add continuous regularised SGD on top**.
 
 
 ---
