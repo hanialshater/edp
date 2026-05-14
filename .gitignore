@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 *.npz
+# multi-seed run artifacts (regenerated per run, can be large)
+evolve_state_rep*/
+opro_state_rep*/
