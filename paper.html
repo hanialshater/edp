@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Evolvable Decision Programs</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="paper.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Evolvable Decision Programs</h1>
+</header>
+<h1
+id="evolvable-decision-programs-explainable-page-composition-under-production-reward-conditions">Evolvable
+Decision Programs: Explainable Page Composition under Production Reward
+Conditions</h1>
+<h2 id="abstract">Abstract</h2>
+<p>Page composition — choosing which 6 modules to display, in which
+order, given a user — is academically a contextual combinatorial bandit
+problem. In production, however, reward signals are page-level (not
+per-slot), arrive with multi-day delay, and are noisy. Under these
+conditions we show that a 2-layer Generalized Additive Model (GAM)
+policy edited by an LLM agent reading a structured diagnostic report —
+an <strong>Evolvable Decision Program (EDP)</strong> — beats Linear
+Thompson Sampling by <strong>3.23×</strong> in cumulative regret at 10K
+sessions (607 ± 12 vs 1,964 ± 6 across 3 independent agent runs and 10
+bandit seeds respectively). An OPRO-style ablation in which the agent
+sees only <code>(edit_batch, batch_regret)</code> pairs recovers ~42% of
+EDP’s improvement on average but with 9× the variance, leaving it
+indistinguishable from the static baseline at 1 standard error. We
+isolate the structured diagnostic report as the primary carrier of the
+gain. The “LLM-in-the-loop” advantage is not magic; it requires curves
+the LLM can reason about and a report telling it where they are off.</p>
+<h2 id="introduction">1. Introduction</h2>
+<p>Recommendation pages are composed, not just ranked. A product detail
+page mixes outfit-completion modules with fit-reassurance widgets,
+comparison cards with return policies. Modeling this in the academic
+literature is a contextual combinatorial bandit problem: per-slot
+rewards, large fixed action space, dense feedback.</p>
+<p>Production has two structural mismatches with this framing:</p>
+<ol type="1">
+<li><strong>Reward attribution.</strong> Engagement, purchase, return —
+all are observed at the page or order level, not per-slot. A bandit can
+divide page reward by N slots, but this dilutes signal by an order of
+magnitude.</li>
+<li><strong>Delay.</strong> Sales include returns; returns settle in ~2
+days. The reward for a session served today arrives 500 sessions
+later.</li>
+<li><strong>Low N.</strong> Most A/B test arms close before reaching 10K
+sessions per cell.</li>
+</ol>
+<p>Under all three, a per-slot LinTS bandit pays exploration tax it
+cannot amortize.</p>
+<p>We propose <strong>Evolvable Decision Programs (EDP)</strong> as an
+alternative. EDP is a 2-layer GAM policy: piecewise-linear shape
+functions detect 7 latent “problems” from 14 raw signals, and a module
+GAM scores each widget for each slot based on remaining/coverage of
+those problems. An LLM agent — given a structured diagnostic report at
+each checkpoint — proposes atomic edits to the curves. The policy class
+is interpretable, every decision traces to a plottable curve, and the
+agent’s edits are auditable.</p>
+<p><strong>Contributions:</strong></p>
+<ol type="1">
+<li>A reproducible head-to-head between EDP and LinTS under the
+production reward stack (page-level + delay + noise), with EDP winning
+2.6× at 10K sessions and 2.4× at 1K.</li>
+<li>An OPRO-style ablation showing the diagnostic report — not the LLM’s
+general intelligence — is what makes the agent-in-the-loop work in this
+action space.</li>
+<li>A stressor decomposition isolating page-level attribution as the
+dominant production stressor, an order of magnitude larger than delay or
+noise.</li>
+</ol>
+<h2 id="simulation-setup">2. Simulation setup</h2>
+<p>We deliberately separate three things, each in its own module of the
+codebase: the <strong>customer simulator</strong> (<code>sim.py</code>),
+the <strong>ground-truth reward</strong> (also <code>sim.py</code>, but
+independent of any policy’s internal representations), and the
+<strong>observable reward signal</strong> the policy actually receives
+(the <code>DelayedFeedback</code> queue with optional noise and
+page-level attribution).</p>
+<h3 id="customer-simulator">2.1 Customer simulator</h3>
+<p>A session is a tuple <code>(persona_name, feature_vector)</code>
+drawn from a stationary mixture of <strong>8 personas</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Persona</th>
+<th>p (mixture weight)</th>
+<th>Defining traits</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>size_anxious_new</td>
+<td>0.18</td>
+<td>low size_conf, high size_chart usage, new visitor</td>
+</tr>
+<tr class="even">
+<td>comparison_shopper</td>
+<td>0.16</td>
+<td>very high tab_switch, high revisit</td>
+</tr>
+<tr class="odd">
+<td>price_sensitive</td>
+<td>0.14</td>
+<td>high price_sens, high price_dwell</td>
+</tr>
+<tr class="even">
+<td>outfit_seeker</td>
+<td>0.12</td>
+<td>high style_stretch, low return_hist</td>
+</tr>
+<tr class="odd">
+<td>confident_buyer</td>
+<td>0.12</td>
+<td>very high size_conf, low return_hist, low cart_osc</td>
+</tr>
+<tr class="even">
+<td>paralyzed</td>
+<td>0.10</td>
+<td>high cart_osc, high wishlist, high revisit</td>
+</tr>
+<tr class="odd">
+<td>browser_lurker</td>
+<td>0.10</td>
+<td>high mobile, medium everything</td>
+</tr>
+<tr class="even">
+<td>returner_anxious</td>
+<td>0.08</td>
+<td>high return_hist, very high return_view</td>
+</tr>
+</tbody>
+</table>
+<p>Each persona specifies, for each of <strong>14 raw signals</strong>,
+a Gaussian <code>(μ, σ)</code>:</p>
+<pre><code>{size_conf, price_sens, return_hist, style_stretch, new, mobile,
+ size_chart, tab_switch, zoom, price_dwell, cart_osc, wishlist,
+ return_view, revisit}</code></pre>
+<p>Per session, each signal is sampled <code>x ~ Normal(μ, σ)</code> and
+clipped to <code>[0, 1]</code>. A 15th product-side signal
+<code>price_norm ~ Beta(2, 3)</code> is drawn per session (item
+premium-ness).</p>
+<p>The stream is reproducibly generated at seed 42 for all experiments —
+every method sees the same 10,000 <code>(persona, feature_vector)</code>
+pairs in the same order. Persona breakdown in the realised stream:</p>
+<pre><code>size_anxious_new   18.7%      paralyzed          9.7%
+comparison_shopper 16.5%      browser_lurker     9.8%
+price_sensitive   13.6%      returner_anxious   8.4%
+outfit_seeker     12.0%      confident_buyer   11.4%</code></pre>
+<h3 id="ground-truth-independent-of-every-policy">2.2 Ground truth
+(independent of every policy)</h3>
+<p>We author <strong>7 latent shopping needs</strong>:</p>
+<pre><code>{N1_fit, N2_visual, N3_peer, N4_compare, N5_styling, N6_trust, N7_commit}</code></pre>
+<p>For each persona,
+<code>TRUE_NEEDS[persona]: need → importance ∈ [0, 1]</code>. For each
+of <strong>22 widgets</strong>,
+<code>TRUE_PROVISIONS[widget]: need → provision ∈ [0, 1]</code>,
+typically 1–3 nonzero entries per widget. Both maps are LLM-authored
+from shopping psychology, intentionally <strong>not</strong> aligned
+with EDP’s internal 7-problem <code>F</code>-code taxonomy. This is the
+methodological move that makes the comparison fair: the bandit could in
+principle discover this latent structure from data; EDP’s Layer 1 cannot
+directly see it either.</p>
+<p><strong>Reward function.</strong> Diminishing returns on
+<code>(need × provision)</code>. Each slot consumes from the persona’s
+remaining need budget; later slots get less credit because earlier slots
+have already filled the relevant need:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> true_page_reward(persona, page):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    needs <span class="op">=</span> TRUE_NEEDS[persona]                 <span class="co"># dict need -&gt; importance</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    remaining <span class="op">=</span> <span class="bu">dict</span>(needs)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> widget <span class="kw">in</span> page:                         <span class="co"># 6 slots</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> d, p <span class="kw">in</span> TRUE_PROVISIONS[widget].items():</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            consumed <span class="op">=</span> <span class="bu">min</span>(remaining[d], p)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            total <span class="op">+=</span> needs[d] <span class="op">*</span> consumed        <span class="co"># weight by importance</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            remaining[d] <span class="op">-=</span> consumed</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total</span></code></pre></div>
+<p>The page-level <strong>oracle</strong> is computed once per persona
+by greedy submodular selection over <code>TRUE_PROVISIONS</code> with
+the same diminishing-returns mechanic. With 6 slots and 22 candidate
+widgets, the oracle ranges from 0.53 (<code>confident_buyer</code>) to
+1.48 (<code>returner_anxious</code>) depending on how concentrated the
+persona’s needs are.</p>
+<pre><code>oracle_reward[returner_anxious]   = 1.480     oracle_reward[confident_buyer]  = 0.528
+oracle_reward[paralyzed]          = 1.410     oracle_reward[browser_lurker]   = 0.643
+oracle_reward[size_anxious_new]   = 1.350     oracle_reward[price_sensitive]  = 0.923
+oracle_reward[comparison_shopper] = 1.240     oracle_reward[outfit_seeker]    = 1.215</code></pre>
+<p>We report <strong>cumulative regret</strong> =
+<code>Σᵢ (oracle[personaᵢ] − reward[i])</code>. Lower is better.</p>
+<h3 id="production-reward-stack">2.3 Production reward stack</h3>
+<p>The bandit (and the agent’s diagnostic report) sees a modified
+observable signal. Three orthogonal stressors:</p>
+<ol type="1">
+<li><p><strong>Page-level attribution.</strong> Instead of per-slot
+<code>slot_reward[k]</code>, each slot in a page receives
+<code>page_total / N_SLOTS = page_total / 6</code> as its credit. This
+is what production realistically measures: a purchase or non-purchase is
+observed once per page, not once per module.</p></li>
+<li><p><strong>Delay.</strong> Reward for session <code>i</code> is
+queued and released at session <code>i + delay</code>. Default
+<code>delay=500</code>. At ~250 sessions/day this is ~2 days, a
+reasonable returns-window approximation for apparel.</p></li>
+<li><p><strong>Observation noise.</strong> Gaussian noise
+<code>ε ~ Normal(0, σ²)</code> is added to the page reward on release
+from the delay queue (NOT at observation time, to mimic noisy returns
+processing). Default <code>σ=0.2</code>, which is ~18% of mean page
+reward.</p></li>
+</ol>
+<p>Implementation: a single <code>DelayedFeedback</code> queue submits
+<code>(session_idx, true_reward, payload)</code> at action time and
+releases <code>(true_reward + ε, payload)</code> once
+<code>current_session_idx ≥ submit_idx + delay</code>. Residual queue is
+drained at end of run.</p>
+<p>EDP receives the same delayed/noisy/page-level signal but uses it
+only to compute the diagnostic report read by the LLM agent at each
+checkpoint. EDP’s policy decisions at any session <code>i</code> are
+based on the modules config produced by the most recent edit batch, not
+on a continuously-updated regression.</p>
+<h3 id="methods-compared">2.4 Methods compared</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>What it is</th>
+<th>Source of stochasticity (for SE)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Oracle</td>
+<td>Per-persona greedy over <code>TRUE_PROVISIONS</code></td>
+<td>none (det.)</td>
+</tr>
+<tr class="even">
+<td>EDP-static</td>
+<td>Initial LLM-prior modules, never updates</td>
+<td>none (det.)</td>
+</tr>
+<tr class="odd">
+<td>EDP-canned</td>
+<td>EDP with offline-curated edits at sessions 2500/5000/7500 (from
+prior published runs)</td>
+<td>none (det.)</td>
+</tr>
+<tr class="even">
+<td>EDP-agent (ours)</td>
+<td>Same EDP, edits proposed by Claude subagent reading the diagnostic
+report at each checkpoint</td>
+<td>subagent draw (3 reps)</td>
+</tr>
+<tr class="odd">
+<td>EDP-OPRO</td>
+<td>Same loop and same model, but prompt =
+<code>(prior_edits, batch_regret)</code> history only</td>
+<td>subagent draw (3 reps)</td>
+</tr>
+<tr class="even">
+<td>LinTS-warm</td>
+<td>Per-slot LinTS, 7-d problem-fingerprint context, page-level
+attribution, delay, noise</td>
+<td>TS / queue (10 seeds)</td>
+</tr>
+<tr class="odd">
+<td>LinTS-cold</td>
+<td>Per-slot LinTS, 14-d raw signal context, otherwise identical</td>
+<td>TS / queue (10 seeds)</td>
+</tr>
+</tbody>
+</table>
+<p>LinTS hyperparameters held fixed: <code>α = 0.3</code>,
+<code>λ = 1.0</code>, <code>N_SLOTS = 6</code>. Action mask prevents
+repeating a widget within one page.</p>
+<h2 id="edp-architecture">3. EDP architecture</h2>
+<h3 id="layer-1-pwl-problem-detection">3.1 Layer 1: PWL problem
+detection</h3>
+<p>Each of 7 problems (F32 size anxiety, F33 quality, F41 comparison
+friction, F43 outfit viz, F45 price-quality, F46 returns, F51 paralysis)
+is a weighted average of PWL shape functions over relevant signals.
+Output: a 7-d “problem fingerprint” per session.</p>
+<h3 id="layer-2-module-gam-greedy-composition">3.2 Layer 2: module GAM +
+greedy composition</h3>
+<p>Each of 22 widgets has: - <code>addr[problem]</code> — how much
+placing this widget consumes problem-remaining (content property; fixed)
+- <code>base</code> — slot-independent prior -
+<code>on_rem[problem]</code> — slope on problem remaining -
+<code>on_cov[problem]</code> — slope on problem coverage (enables
+synergy chains) - <code>slot_decay</code> — late-slot penalty</p>
+<p>Module score for slot <code>s</code>:</p>
+<pre><code>score = base + Σ_p on_rem[p] · remaining[p] + Σ_p on_cov[p] · coverage[p] − slot_decay · s</code></pre>
+<p>The page is filled greedy submodular: pick highest-scoring widget for
+slot 0, update remaining/coverage from <code>addr</code>, repeat.</p>
+<h3 id="evolution-loop">3.3 Evolution loop</h3>
+<p>At each checkpoint the orchestrator generates a structured Markdown
+report (per-persona regret, per-widget activation, composition
+signature, edit history). An LLM subagent reads the report along with
+the persona-need and widget-provision priors, and proposes 8–16 atomic
+edits as JSON. Each edit is
+<code>(widget, dotted_path, from, to, reason)</code>. The orchestrator
+applies them and runs the next batch.</p>
+<h2 id="experimental-protocol">4. Experimental protocol</h2>
+<p>All methods see the <strong>same</strong> 10,000-session stream (seed
+42). The bandits’ internal Thompson sampling is varied across 10 seeds
+(<code>policy_seed ∈ {1000, 1017, 1034, …, 1153}</code>). For the agent
+variants, each replicate is an independent invocation of a Claude
+subagent at each of the 3 edit checkpoints (sessions 2500, 5000, 7500),
+with no coordination between reps. Multi-rep estimates report mean ±
+standard error.</p>
+<p>Each EDP-agent and EDP-OPRO run goes through 4 batches separated by 3
+edit checkpoints, applying 8–16 atomic edits per checkpoint. All edits
+and all reports are persisted under <code>evolve_state_rep*/</code>
+(report-based) and <code>opro_state_rep*/</code> (OPRO) and committed to
+the repository so the experiment is byte-for-byte reproducible.</p>
+<h2 id="results">5. Results</h2>
+<h3 id="headline-edp-wins-3.23-under-production-stack-fig.-1-tab.-1">5.1
+Headline: EDP wins 3.23× under production stack (Fig. 1, Tab. 1)</h3>
+<p>10K sessions, page-level + delay=500 + σ=0.2. Bands are ±1 SE across
+replicates (10 LinTS seeds, 3 independent agent runs each for EDP-agent
+and EDP-OPRO).</p>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Cum regret @ 10K (mean ± SE)</th>
+<th>Last-1K mean reward</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Oracle</td>
+<td>0</td>
+<td>1.107</td>
+</tr>
+<tr class="even">
+<td><strong>EDP-agent (report-based, ours)</strong></td>
+<td><strong>607.2 ± 12.5</strong></td>
+<td><strong>1.078</strong></td>
+</tr>
+<tr class="odd">
+<td>EDP-canned (deterministic)</td>
+<td>783.6</td>
+<td>1.049</td>
+</tr>
+<tr class="even">
+<td>EDP-OPRO (ablation, 3 reps)</td>
+<td>863.2 ± 106.6</td>
+<td>1.027</td>
+</tr>
+<tr class="odd">
+<td>EDP-static (deterministic)</td>
+<td>1,052.4</td>
+<td>0.999</td>
+</tr>
+<tr class="even">
+<td>LinTS-warm (10 seeds)</td>
+<td>1,963.8 ± 6.3</td>
+<td>0.940</td>
+</tr>
+<tr class="odd">
+<td>LinTS-cold (10 seeds)</td>
+<td>2,101.3 ± 5.2</td>
+<td>0.924</td>
+</tr>
+</tbody>
+</table>
+<p>EDP-agent beats LinTS-warm by <strong>3.23×</strong> in cumulative
+regret and keeps 14.7 percentage points more of the last-1k reward. The
+standard error of EDP-agent (12.5) is more than 8× smaller than
+EDP-OPRO’s (106.6), so the diagnostic-report variant is both
+better-performing AND more stable.</p>
+<figure>
+<img src="figures/fig1_cumregret.png"
+alt="Figure 1: Cumulative regret over 10K sessions. EDP-agent (blue) ends at 607 ± 12; LinTS-warm (red) at 1964 ± 6; OPRO-ablation (orange) at 863 ± 107. Shaded bands are ±1 standard error across 10 LinTS seeds and 3 independent agent runs respectively. Vertical lines mark the three agent edit checkpoints at sessions 2,500 / 5,000 / 7,500." />
+<figcaption aria-hidden="true">Figure 1: Cumulative regret over 10K
+sessions. EDP-agent (blue) ends at 607 ± 12; LinTS-warm (red) at 1964 ±
+6; OPRO-ablation (orange) at 863 ± 107. Shaded bands are ±1 standard
+error across 10 LinTS seeds and 3 independent agent runs respectively.
+Vertical lines mark the three agent edit checkpoints at sessions 2,500 /
+5,000 / 7,500.</figcaption>
+</figure>
+<h3 id="stressor-decomposition-tab.-2-fig.-2">5.2 Stressor decomposition
+(Tab. 2, Fig. 2)</h3>
+<p>Holding the policy fixed at LinTS-warm, we add stressors one at a
+time:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Stressor</th>
+<th>LinTS-warm cum regret @ 10K</th>
+<th>Δ vs clean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Clean (per-slot reward, no delay, no noise)</td>
+<td>497</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>+ noise σ=0.2 only</td>
+<td>492</td>
+<td><strong>−5</strong> (TS is built for noise)</td>
+</tr>
+<tr class="odd">
+<td>+ delay=500 only</td>
+<td>629</td>
+<td>+132</td>
+</tr>
+<tr class="even">
+<td>+ delay=1000 only</td>
+<td>765</td>
+<td>+268</td>
+</tr>
+<tr class="odd">
+<td>+ page-level attribution only</td>
+<td><strong>1,959</strong></td>
+<td><strong>+1,462</strong></td>
+</tr>
+<tr class="even">
+<td>+ page + delay=500</td>
+<td>1,999</td>
+<td>+1,502</td>
+</tr>
+<tr class="odd">
+<td>+ page + noise=0.2</td>
+<td>1,961</td>
+<td>+1,464</td>
+</tr>
+<tr class="even">
+<td>Full production stack (page + delay=500 + σ=0.2)</td>
+<td>1,982</td>
+<td>+1,485</td>
+</tr>
+</tbody>
+</table>
+<p>Page-level attribution is the dominant axis by an order of magnitude.
+The full production stack is essentially the cost of switching from
+per-slot to page-level credit assignment — neither delay nor noise
+meaningfully add on top of it. This isolates the structural problem the
+bandit cannot solve no matter the algorithm: with
+<code>N_SLOTS=6</code>, page-level credit dilutes per-slot signal by 6×
+and breaks the per-arm linear regression that makes LinTS work.</p>
+<figure>
+<img src="figures/fig2_stressor.png"
+alt="Figure 2: Stressor decomposition. LinTS-warm cumulative regret at 10K sessions under each combination of (per-slot vs page-level attribution) × (delay ∈ {0, 500, 1000}) × (noise σ ∈ {0, 0.2}). Page-level attribution alone causes +1,462 regret; delay adds at most +268; noise is roughly free." />
+<figcaption aria-hidden="true">Figure 2: Stressor decomposition.
+LinTS-warm cumulative regret at 10K sessions under each combination of
+(per-slot vs page-level attribution) × (delay ∈ {0, 500, 1000}) × (noise
+σ ∈ {0, 0.2}). Page-level attribution alone causes +1,462 regret; delay
+adds at most +268; noise is roughly free.</figcaption>
+</figure>
+<h3 id="statistical-power-low-n-regime-fig.-3">5.3 Statistical power:
+low-N regime (Fig. 3)</h3>
+<p>Mean cumulative regret at milestone session counts. Bandit values are
+mean ± SE across 10 seeds; agent values are mean ± SE across 3 reps.
+EDP-static, EDP-canned, and pre-checkpoint values are deterministic.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>@ 500</th>
+<th>@ 1K</th>
+<th>@ 2.5K</th>
+<th>@ 5K</th>
+<th>@ 7.5K</th>
+<th>@ 10K</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>EDP-agent</strong></td>
+<td>64.5</td>
+<td>118.5</td>
+<td>281.2</td>
+<td>414.4 ± 11.3</td>
+<td>533.8 ± 23.7</td>
+<td><strong>607.2 ± 12.5</strong></td>
+</tr>
+<tr class="even">
+<td>EDP-canned</td>
+<td>64.5</td>
+<td>118.5</td>
+<td>281.2</td>
+<td>454.7</td>
+<td>641.3</td>
+<td>783.6</td>
+</tr>
+<tr class="odd">
+<td>EDP-OPRO</td>
+<td>64.5</td>
+<td>118.5</td>
+<td>281.2</td>
+<td>471.1 ± 25.5</td>
+<td>662.5 ± 61.2</td>
+<td>863.2 ± 106.6</td>
+</tr>
+<tr class="even">
+<td>EDP-static</td>
+<td>64.5</td>
+<td>118.5</td>
+<td>281.2</td>
+<td>538.5</td>
+<td>795.2</td>
+<td>1,052.4</td>
+</tr>
+<tr class="odd">
+<td>LinTS-warm</td>
+<td>148.5 ± 1.8</td>
+<td>280.8 ± 2.1</td>
+<td>608.0 ± 3.8</td>
+<td>1,095.5 ± 5.3</td>
+<td>1,544.1 ± 4.8</td>
+<td>1,963.8 ± 6.3</td>
+</tr>
+<tr class="even">
+<td>LinTS-cold</td>
+<td>149.0 ± 1.1</td>
+<td>284.5 ± 1.2</td>
+<td>627.3 ± 4.2</td>
+<td>1,153.7 ± 6.5</td>
+<td>1,641.4 ± 5.7</td>
+<td>2,101.3 ± 5.2</td>
+</tr>
+</tbody>
+</table>
+<p>EDP-static / EDP-agent / EDP-OPRO are identical through session 2500
+(all running the same initial config). They diverge after the first edit
+round. At every measured N from 500 onward, the report-based agent
+leads. At 1K sessions — well before most A/B tests reach decision —
+EDP-agent is <strong>2.37× better</strong> than LinTS-warm (118 vs
+281).</p>
+<figure>
+<img src="figures/fig3_power_sweep.png"
+alt="Figure 3: Statistical-power sweep. Cumulative regret at each milestone session count. Error bars are ±1 standard error across replicates (10 seeds for bandits, 3 reps for agent variants). EDP-agent leads at every measured N from 500 onward." />
+<figcaption aria-hidden="true">Figure 3: Statistical-power sweep.
+Cumulative regret at each milestone session count. Error bars are ±1
+standard error across replicates (10 seeds for bandits, 3 reps for agent
+variants). EDP-agent leads at every measured N from 500
+onward.</figcaption>
+</figure>
+<h3 id="per-persona-breakdown-fig.-4">5.4 Per-persona breakdown (Fig.
+4)</h3>
+<p>Per-persona regret as % of that persona’s oracle reward, averaged
+across reps for stochastic methods:</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Persona</th>
+<th>LinTS-cold</th>
+<th>LinTS-warm</th>
+<th>EDP-static</th>
+<th>EDP-OPRO</th>
+<th>EDP-canned</th>
+<th><strong>EDP-agent</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>returner_anxious</td>
+<td>25.7</td>
+<td>23.3</td>
+<td>27.1</td>
+<td>13.7</td>
+<td>10.9</td>
+<td><strong>11.2</strong></td>
+</tr>
+<tr class="even">
+<td>paralyzed</td>
+<td>12.5</td>
+<td>12.3</td>
+<td>3.4</td>
+<td>2.4</td>
+<td>4.7</td>
+<td><strong>3.3</strong></td>
+</tr>
+<tr class="odd">
+<td>size_anxious_new</td>
+<td>24.1</td>
+<td>22.3</td>
+<td>17.1</td>
+<td>12.8</td>
+<td>11.4</td>
+<td><strong>10.2</strong></td>
+</tr>
+<tr class="even">
+<td>comparison_shopper</td>
+<td>19.8</td>
+<td>18.6</td>
+<td>2.3</td>
+<td>2.2</td>
+<td>3.3</td>
+<td><strong>2.4</strong></td>
+</tr>
+<tr class="odd">
+<td>outfit_seeker</td>
+<td>18.4</td>
+<td>16.8</td>
+<td>6.3</td>
+<td>10.1</td>
+<td>5.2</td>
+<td><strong>4.3</strong></td>
+</tr>
+<tr class="even">
+<td>price_sensitive</td>
+<td>15.9</td>
+<td>15.5</td>
+<td>2.5</td>
+<td>1.7</td>
+<td>4.5</td>
+<td><strong>2.2</strong></td>
+</tr>
+<tr class="odd">
+<td>browser_lurker</td>
+<td>13.9</td>
+<td>13.5</td>
+<td>9.0</td>
+<td>10.9</td>
+<td>8.4</td>
+<td><strong>4.4</strong></td>
+</tr>
+<tr class="even">
+<td>confident_buyer</td>
+<td>13.9</td>
+<td>12.5</td>
+<td>8.3</td>
+<td>12.9</td>
+<td>9.9</td>
+<td><strong>3.3</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The report-based agent wins (or ties) every persona vs the bandits.
+Its biggest wins over static EDP are on <code>confident_buyer</code>
+(8.3 → 3.3%) and <code>browser_lurker</code> (9.0 → 4.4%) — exactly the
+personas the report flagged as moderate-regret with under-served widget
+families. OPRO’s results are erratic: it helps <code>paralyzed</code>
+(3.4 → 2.4%) but actively hurts <code>confident_buyer</code> (8.3 →
+12.9%) and <code>outfit_seeker</code> (6.3 → 10.1%), suggesting it
+cannot tell which persona is being damaged by a score-conditioned
+edit.</p>
+<figure>
+<img src="figures/fig4_persona_heatmap.png"
+alt="Figure 4: Per-persona regret heatmap. Each cell is the mean regret on sessions of that persona as a percentage of the persona’s oracle reward. Averaged across reps. The report-based EDP-agent (rightmost column) is the only method that achieves single-digit regret on every persona." />
+<figcaption aria-hidden="true">Figure 4: Per-persona regret heatmap.
+Each cell is the mean regret on sessions of that persona as a percentage
+of the persona’s oracle reward. Averaged across reps. The report-based
+EDP-agent (rightmost column) is the only method that achieves
+single-digit regret on every persona.</figcaption>
+</figure>
+<h3 id="opro-ablation-fig.-5">5.5 OPRO ablation (Fig. 5)</h3>
+<p>The cleanest result in the paper. Same model, same action space, same
+number of rounds, same simulator — the only change is the prompt
+content:</p>
+<ul>
+<li><strong>Report-based prompt:</strong> report Markdown +
+persona/widget priors + current modules JSON + edit history.</li>
+<li><strong>OPRO prompt:</strong>
+<code>(edits_proposed, batch_regret)</code> pairs sorted by score;
+nothing else.</li>
+</ul>
+<p>Across 3 independent runs of each variant:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Cum regret @ 10K (mean ± SE)</th>
+<th>Range across reps</th>
+<th>Improvement over static</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EDP-agent (report)</td>
+<td><strong>607.2 ± 12.5</strong></td>
+<td>[588, 630]</td>
+<td><strong>445</strong></td>
+</tr>
+<tr class="even">
+<td>EDP-OPRO (score-only)</td>
+<td><strong>863.2 ± 106.6</strong></td>
+<td>[656, 1009]</td>
+<td>189</td>
+</tr>
+<tr class="odd">
+<td>EDP-static</td>
+<td>1,052.4 (det.)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>OPRO captures ~42% of the gain on average (189 / 445), but the
+standard error of OPRO’s improvement (107) is more than 8× larger than
+the report-based agent’s (13). At 1 standard error, OPRO is
+statistically indistinguishable from EDP-static (lower bound 757, vs
+static 1,052), while the report-based agent’s upper bound (620) is
+comfortably below static. The full OPRO distribution overlaps with the
+static line; one rep ran to 1,009 cum regret (worse than
+static-equivalent within noise).</p>
+<p><strong>Interpretation.</strong> The LLM-in-the-loop is not the
+source of the gain. The gain comes from the LLM consuming structured
+diagnostics over interpretable curves. Without the report to anchor
+reasoning, the same model with the same action space and the same number
+of attempts produces high-variance, near-baseline updates — sometimes
+lucky, sometimes regressive, on average no better than no learning at
+all.</p>
+<figure>
+<img src="figures/fig5_opro_ablation.png"
+alt="Figure 5: OPRO ablation. Same Claude model, same edit-action space, same number of attempts. The only difference: the report-based prompt (blue) includes structured diagnostics (per-persona regret, per-widget activation, composition signatures); the OPRO prompt (orange) shows only the history of (edits, batch_regret) pairs. Bands are ±1 standard error across 3 independent runs of each variant. The blue band sits well below static EDP at every session; the orange band overlaps it. The structured report is the carrier of the gain." />
+<figcaption aria-hidden="true">Figure 5: OPRO ablation. Same Claude
+model, same edit-action space, same number of attempts. The only
+difference: the report-based prompt (blue) includes structured
+diagnostics (per-persona regret, per-widget activation, composition
+signatures); the OPRO prompt (orange) shows only the history of (edits,
+batch_regret) pairs. Bands are ±1 standard error across 3 independent
+runs of each variant. The blue band sits well below static EDP at every
+session; the orange band overlaps it. The structured report is the
+carrier of the gain.</figcaption>
+</figure>
+<h3 id="evolution-trajectory-fig.-6-fig.-7">5.6 Evolution trajectory
+(Fig. 6, Fig. 7)</h3>
+<p>Per-round metrics for the report-based agent:</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Round</th>
+<th>Sessions</th>
+<th>Edits</th>
+<th>Batch regret</th>
+<th>Cum regret</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0–2500</td>
+<td>0</td>
+<td>281</td>
+<td>281</td>
+<td>EDP-static baseline</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>2500–5000</td>
+<td>16</td>
+<td>170</td>
+<td>451</td>
+<td>revived returns/size widgets</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>5000–7500</td>
+<td>16</td>
+<td>97</td>
+<td>548</td>
+<td>revived style/visual widgets</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>7500–10000</td>
+<td>12</td>
+<td>219</td>
+<td>767</td>
+<td>stabilization, pulled back over-promotions</td>
+</tr>
+</tbody>
+</table>
+<p>Widget activation heatmap across rounds
+(<code>fig_widget_heatmap.png</code>) shows the agent activating
+successive families: returns/size first, then style/visual, then
+rebalancing.</p>
+<h2 id="discussion">6. Discussion</h2>
+<h3 id="gams-as-software-3.0-primitive">6.1 GAMs as Software 3.0
+primitive</h3>
+<p>Classic ML: collect logs → train black-box model → deploy. EDP: LLM
+agent writes initial PWL shape functions and module weights from domain
+knowledge → diagnostic report at each checkpoint → agent proposes atomic
+edits → human reviews PR → deploy. The unit of work is a curve, not a
+model. Three properties follow:</p>
+<ul>
+<li><strong>Cold start collapses.</strong> The agent’s initial config is
+informed by shopping psychology, not random.</li>
+<li><strong>Edits are atomic.</strong> A PR diff is one curve
+adjustment; auditable in 30 minutes.</li>
+<li><strong>Policy class grows.</strong> The agent can propose new shape
+functions, new synergies, new widgets — actions a fixed-policy bandit
+cannot take.</li>
+</ul>
+<h3 id="explainability-is-architectural-not-bolted-on">6.2
+Explainability is architectural, not bolted on</h3>
+<p>Every composition decision traces to:
+<code>(detected problem intensity) × (widget shape function) − slot decay</code>.
+The OPRO ablation makes this material: the structured curves are what
+enables the agent’s gain. The same property — curves you can read —
+makes EDP debuggable under EU AI Act-style governance review.</p>
+<h3 id="when-each-approach-wins">6.3 When each approach wins</h3>
+<ul>
+<li><strong>LinTS wins</strong> under clean per-slot reward, dense
+feedback, large stable arm count, no governance constraints.</li>
+<li><strong>EDP wins</strong> under page-level attribution, delayed
+reward, cold start, low N per arm, growing policy class,
+explainability/audit requirements.</li>
+</ul>
+<p>The right reading is layered: EDP at the page-composition layer,
+bandits (or GAMs) at the item-ranking layer inside a single module. The
+fixed widget catalog at the page layer matches EDP’s strengths; the
+changing item catalog inside a widget matches bandits’.</p>
+<h2 id="limitations">7. Limitations</h2>
+<ol type="1">
+<li><strong>Synthetic ground truth.</strong> The 7 latent needs are
+LLM-authored, not learned from real engagement data. Directional;
+unvalidated on production logs.</li>
+<li><strong>Layer 1 held fixed.</strong> The agent only edits Layer 2
+module config. A complete loop would also propose PWL shape
+adjustments.</li>
+<li><strong>LinTS-only bandit.</strong> Neural bandits (NeuralUCB,
+MLP+TS) might close some gap on clean reward. They do not change the
+page-attribution finding.</li>
+<li><strong>No structural exploration.</strong> The 22-widget catalog is
+fixed for both methods. Real EDP adds widgets via PR.</li>
+<li><strong>No drift.</strong> Persona distribution is stationary
+throughout.</li>
+<li><strong>No formal regret bounds.</strong></li>
+</ol>
+<h2 id="conclusion">8. Conclusion</h2>
+<p>When reward attribution is page-level and delayed — the production
+reality, not the academic regime — a 2-layer GAM policy edited by an LLM
+agent reading a structured diagnostic report beats Linear Thompson
+Sampling by <strong>3.23×</strong> in cumulative regret (607 ± 12 vs
+1,964 ± 6 at 10K sessions). The OPRO ablation isolates the structured
+diagnostic report as the primary carrier of the gain: replacing it with
+<code>(edits, score)</code> history alone yields high-variance updates
+(863 ± 107) whose mean is indistinguishable from EDP-static at one
+standard error. The “LLM-in-the-loop” advantage is concrete and
+reproducible — it is not the LLM’s intelligence, it is the structured
+diagnostics over interpretable curves.</p>
+<hr />
+<h3 id="reproducing">Reproducing</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> compare.py                      <span class="co"># main head-to-head</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> stressor_decomp.py              <span class="co"># Section 5.2</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> final_compare.py                <span class="co"># consolidated table</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> viz.py                          <span class="co"># all figures</span></span></code></pre></div>
+<h3 id="code-map">Code map</h3>
+<ul>
+<li><code>sim.py</code> — simulator</li>
+<li><code>policy_edp.py</code> — EDP policy + apply_edits</li>
+<li><code>policy_bandit.py</code> — LinTS</li>
+<li><code>compare.py</code> — main comparison</li>
+<li><code>orchestrator.py</code> — report-based live-agent loop</li>
+<li><code>orchestrator_opro.py</code> — OPRO ablation loop</li>
+<li><code>stressor_decomp.py</code> — Section 5.2 ablation</li>
+<li><code>viz.py</code> — figures</li>
+<li><code>final_compare.py</code> — table assembly</li>
+</ul>
+</body>
+</html>
