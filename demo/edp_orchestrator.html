@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDP Orchestrator — Greedy Composition with Coverage</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'IBM Plex Sans', sans-serif; user-select: none; overflow: hidden; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  input[type="range"] { accent-color: #3b82f6; height: 3px; }
+  .slot-fill {
+    transition: opacity .35s ease, transform .35s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes pop {
+    0% { transform: translateY(6px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  .slot-pop { animation: pop .35s cubic-bezier(.4,0,.2,1) backwards; }
+  .bar-anim { transition: width .3s ease, opacity .3s; }
+  .widget-card { transition: border-color .25s, background-color .25s, opacity .2s; }
+  .v3-only-pulse { animation: v3pulse 1.6s ease-in-out infinite; }
+  @keyframes v3pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.0); }
+    50% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18); }
+  }
+  /* dynamic Tailwind safelist */
+  .hidden-safelist {
+    @apply bg-cyan-500 bg-amber-500 bg-emerald-500 bg-fuchsia-500 bg-orange-500 bg-rose-500 bg-indigo-500;
+    @apply text-cyan-300 text-amber-300 text-emerald-300 text-fuchsia-300 text-orange-300 text-rose-300 text-indigo-300;
+    @apply text-cyan-400 text-amber-400 text-emerald-400 text-fuchsia-400 text-orange-400 text-rose-400 text-indigo-400;
+    @apply border-cyan-500 border-amber-500 border-emerald-500 border-fuchsia-500 border-orange-500 border-rose-500 border-indigo-500;
+  }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen flex flex-col p-2 md:p-3">
+
+<!-- safelist for arbitrary tailwind classes built dynamically -->
+<div class="hidden bg-cyan-500 bg-amber-500 bg-emerald-500 bg-fuchsia-500 bg-orange-500 bg-rose-500 bg-indigo-500 bg-blue-500 bg-purple-500 bg-teal-500 bg-pink-500 bg-lime-500 bg-slate-500
+            text-cyan-300 text-amber-300 text-emerald-300 text-fuchsia-300 text-orange-300 text-rose-300 text-indigo-300 text-blue-300 text-purple-300 text-teal-300 text-pink-300 text-lime-300 text-slate-400
+            text-cyan-400 text-amber-400 text-emerald-400 text-fuchsia-400 text-orange-400 text-rose-400 text-indigo-400 text-blue-400 text-purple-400 text-teal-400 text-pink-400 text-lime-400
+            border-cyan-500/40 border-amber-500/40 border-emerald-500/40 border-fuchsia-500/40 border-orange-500/40 border-rose-500/40 border-indigo-500/40 border-blue-500/40 border-purple-500/40 border-teal-500/40 border-pink-500/40 border-lime-500/40
+            border-cyan-500 border-amber-500 border-emerald-500 border-fuchsia-500 border-orange-500 border-rose-500 border-indigo-500
+            bg-cyan-500/10 bg-amber-500/10 bg-emerald-500/10 bg-fuchsia-500/10 bg-orange-500/10 bg-rose-500/10 bg-indigo-500/10 bg-blue-500/10 bg-purple-500/10 bg-teal-500/10 bg-pink-500/10 bg-lime-500/10
+            shadow-cyan-500/30 shadow-amber-500/30 shadow-emerald-500/30 shadow-fuchsia-500/30 shadow-orange-500/30 shadow-rose-500/30 shadow-indigo-500/30"></div>
+
+<!-- Header -->
+<header class="shrink-0 mb-2 px-2">
+  <div class="flex items-baseline justify-between flex-wrap gap-2">
+    <div>
+      <h1 class="text-lg md:text-xl font-bold text-white tracking-tight">EDP Orchestrator</h1>
+      <p class="text-[11px] text-slate-400 mono">14 signals → 7 problems → 22 widgets → 6 slots · greedy submodular composition · remaining/coverage state</p>
+    </div>
+    <div class="flex items-center gap-2 mono text-[10px]">
+      <span id="version-badge" class="px-2 py-1 rounded border border-slate-700 text-slate-500 uppercase tracking-widest">
+        active: <span id="version-label" class="text-slate-200 font-bold">v1 baseline</span>
+      </span>
+      <button id="btn-evolve" onclick="toggleVersion()"
+        class="px-3 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 font-bold hover:bg-amber-500/20 hover:border-amber-500/70 transition">
+        <span id="evolve-label">▸ Apply v3</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Personas -->
+<div class="shrink-0 flex flex-wrap gap-1.5 px-2 mb-2 text-[10px] mono">
+  <span class="text-slate-500 uppercase tracking-widest mr-1 self-center">persona:</span>
+</div>
+<div id="presets" class="shrink-0 flex flex-wrap gap-1.5 px-2 mb-2"></div>
+
+<!-- Tabs -->
+<div class="shrink-0 flex border-b border-slate-800 px-2 mb-2 text-[11px] font-semibold">
+  <button id="tab-flow" onclick="switchTab('flow')" class="px-3 py-1.5 border-b-2 border-blue-500 text-blue-400 transition">Composition Flow</button>
+  <button id="tab-curves" onclick="switchTab('curves')" class="px-3 py-1.5 border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition">GAM Curves</button>
+  <span class="ml-auto self-center text-[10px] text-slate-500 mono pr-2">latency target: 1–2ms · pure code, no LLM at runtime</span>
+</div>
+
+<!-- Main -->
+<div class="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+  <!-- ============ Composition Flow View ============ -->
+  <div id="view-flow" class="min-w-[1320px] h-full grid grid-cols-[260px_300px_360px_1fr] gap-2.5 px-2 pb-2">
+
+    <!-- Signals -->
+    <section class="bg-slate-900/60 rounded-lg border border-slate-800 flex flex-col overflow-hidden">
+      <div class="px-3 py-2 border-b border-slate-800 bg-slate-900 shrink-0">
+        <h2 class="text-[11px] font-bold text-white uppercase tracking-wider">1 · Clickstream &amp; Profile</h2>
+      </div>
+      <div id="signals-cont" class="p-2 flex-1 overflow-y-auto space-y-2.5 mono text-[10px]"></div>
+    </section>
+
+    <!-- Problems -->
+    <section class="bg-slate-900/60 rounded-lg border border-slate-800 flex flex-col overflow-hidden">
+      <div class="px-3 py-2 border-b border-slate-800 bg-slate-900 shrink-0 flex items-baseline justify-between">
+        <h2 class="text-[11px] font-bold text-white uppercase tracking-wider">2 · Problem Fingerprint</h2>
+        <span class="text-[9px] text-slate-500 mono">int / rem / cov</span>
+      </div>
+      <div id="problems-cont" class="p-2 flex-1 overflow-y-auto space-y-2"></div>
+    </section>
+
+    <!-- Widgets -->
+    <section class="bg-slate-900/60 rounded-lg border border-slate-800 flex flex-col overflow-hidden">
+      <div class="px-3 py-2 border-b border-slate-800 bg-slate-900 shrink-0">
+        <h2 class="text-[11px] font-bold text-white uppercase tracking-wider">3 · Widget Registry <span class="text-slate-500 mono ml-1">(22)</span></h2>
+      </div>
+      <div id="widgets-cont" class="p-2 flex-1 overflow-y-auto space-y-3 text-[10px]"></div>
+    </section>
+
+    <!-- Slots -->
+    <section class="bg-slate-900/60 rounded-lg border border-slate-800 flex flex-col overflow-hidden">
+      <div class="px-3 py-2 border-b border-slate-800 bg-slate-900 shrink-0 flex items-baseline justify-between">
+        <h2 class="text-[11px] font-bold text-white uppercase tracking-wider">4 · Page Composition</h2>
+        <span class="text-[9px] text-slate-500 mono">greedy · 6 slots</span>
+      </div>
+      <div id="slots-cont" class="p-2 flex-1 overflow-y-auto space-y-1.5"></div>
+    </section>
+  </div>
+
+  <!-- ============ GAM Curves View ============ -->
+  <div id="view-curves" class="hidden min-w-[1100px] h-full overflow-y-auto px-2 pb-2">
+    <div id="curves-cont" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// DATA — direct port from edp_sim.py
+// ============================================================================
+
+const PROBLEMS = ['F32','F33','F41','F43','F45','F46','F51'];
+const PROBLEM_META = {
+  F32: { name: 'F32 Size Anxiety',           color: 'cyan' },
+  F33: { name: 'F33 Quality Signal Deficit', color: 'amber' },
+  F41: { name: 'F41 Comparison Friction',    color: 'emerald' },
+  F43: { name: 'F43 Outfit Visualization',   color: 'fuchsia' },
+  F45: { name: 'F45 Price-Quality Confusion',color: 'orange' },
+  F46: { name: 'F46 Return Hesitation',      color: 'rose' },
+  F51: { name: 'F51 Decision Paralysis',     color: 'indigo' },
+};
+
+// 14 signals (12 normalized + price_norm + display)
+// All 0-1 normalized for piecewise-linear input.
+const SIGNALS = [
+  // Customer profile (slow-changing)
+  { id:'size_conf',     name:'Size Confidence',        group:'profile',  default:0.5, hint:'high = confident in fit' },
+  { id:'price_sens',    name:'Price Sensitivity',      group:'profile',  default:0.5, hint:'high = price-driven' },
+  { id:'return_hist',   name:'Return History',         group:'profile',  default:0.2, hint:'fraction of past orders returned' },
+  { id:'style_stretch', name:'Style Stretch',          group:'profile',  default:0.4, hint:'distance from typical style' },
+  { id:'new',           name:'New Customer',           group:'profile',  default:0.3, hint:'1 = first visit' },
+  { id:'mobile',        name:'Mobile Device',          group:'profile',  default:0.5 },
+  // Session (live)
+  { id:'size_chart',    name:'Size Chart Engagement',  group:'session',  default:0.3 },
+  { id:'tab_switch',    name:'Tab Switching',          group:'session',  default:0.3 },
+  { id:'zoom',          name:'Image Zoom',             group:'session',  default:0.3 },
+  { id:'price_dwell',   name:'Price Dwell',            group:'session',  default:0.3 },
+  { id:'cart_osc',      name:'Cart Add/Remove',        group:'session',  default:0.2 },
+  { id:'wishlist',      name:'Wishlist Depth',         group:'session',  default:0.2 },
+  { id:'return_view',   name:'Return Policy Views',    group:'session',  default:0.2 },
+  { id:'revisit',       name:'Revisits to Product',    group:'session',  default:0.3 },
+  // Product
+  { id:'price_norm',    name:'Price Premium-ness',     group:'product',  default:0.5 },
+];
+
+// 8 personas — use the means from PERSONAS in edp_sim.py
+const PERSONAS = {
+  size_anxious_new:   { label:'Size Anxious',     color:'cyan',
+    vals:{ size_conf:0.15, price_sens:0.5, return_hist:0.4, style_stretch:0.4, new:0.85, mobile:0.7,
+           size_chart:0.75, tab_switch:0.25, zoom:0.55, price_dwell:0.3, cart_osc:0.2, wishlist:0.3,
+           return_view:0.5, revisit:0.3, price_norm:0.5 } },
+  comparison_shopper: { label:'Comparison Shopper', color:'emerald',
+    vals:{ size_conf:0.6, price_sens:0.65, return_hist:0.2, style_stretch:0.3, new:0.4, mobile:0.45,
+           size_chart:0.2, tab_switch:0.85, zoom:0.4, price_dwell:0.6, cart_osc:0.3, wishlist:0.5,
+           return_view:0.2, revisit:0.6, price_norm:0.4 } },
+  price_sensitive:    { label:'Price Sensitive', color:'orange',
+    vals:{ size_conf:0.55, price_sens:0.85, return_hist:0.25, style_stretch:0.3, new:0.3, mobile:0.6,
+           size_chart:0.2, tab_switch:0.55, zoom:0.3, price_dwell:0.85, cart_osc:0.4, wishlist:0.6,
+           return_view:0.3, revisit:0.5, price_norm:0.6 } },
+  outfit_seeker:      { label:'Outfit Seeker', color:'fuchsia',
+    vals:{ size_conf:0.7, price_sens:0.4, return_hist:0.15, style_stretch:0.75, new:0.3, mobile:0.5,
+           size_chart:0.15, tab_switch:0.3, zoom:0.4, price_dwell:0.3, cart_osc:0.2, wishlist:0.4,
+           return_view:0.15, revisit:0.4, price_norm:0.5 } },
+  paralyzed:          { label:'Paralyzed', color:'indigo',
+    vals:{ size_conf:0.45, price_sens:0.55, return_hist:0.3, style_stretch:0.4, new:0.4, mobile:0.5,
+           size_chart:0.4, tab_switch:0.5, zoom:0.5, price_dwell:0.5, cart_osc:0.85, wishlist:0.85,
+           return_view:0.4, revisit:0.85, price_norm:0.5 } },
+  returner_anxious:   { label:'Returner-Anxious', color:'rose',
+    vals:{ size_conf:0.4, price_sens:0.5, return_hist:0.65, style_stretch:0.4, new:0.2, mobile:0.55,
+           size_chart:0.55, tab_switch:0.3, zoom:0.4, price_dwell:0.4, cart_osc:0.4, wishlist:0.4,
+           return_view:0.85, revisit:0.4, price_norm:0.5 } },
+  confident_buyer:    { label:'Confident Buyer', color:'teal',
+    vals:{ size_conf:0.85, price_sens:0.3, return_hist:0.1, style_stretch:0.3, new:0.15, mobile:0.5,
+           size_chart:0.1, tab_switch:0.15, zoom:0.25, price_dwell:0.2, cart_osc:0.1, wishlist:0.2,
+           return_view:0.1, revisit:0.2, price_norm:0.5 } },
+  browser_lurker:     { label:'Browser/Lurker', color:'slate',
+    vals:{ size_conf:0.5, price_sens:0.5, return_hist:0.2, style_stretch:0.5, new:0.5, mobile:0.7,
+           size_chart:0.2, tab_switch:0.4, zoom:0.3, price_dwell:0.3, cart_osc:0.2, wishlist:0.3,
+           return_view:0.2, revisit:0.3, price_norm:0.5 } },
+};
+
+// Problem detection PWLs — direct port of make_problem_shapes()
+// Each entry: { signal: id, bps: [...], vals: [...], weight: float }
+// Note: 'size_conf_inv' uses size_conf but inverted via vals
+const PROBLEM_SHAPES = {
+  F32: [
+    { signal:'size_chart',    bps:[0,.2,.5,.8,1], vals:[0,.1,.45,.75,.95], w:0.45, title:'Size Chart Opens' },
+    { signal:'size_conf',     bps:[0,.3,.6,1],    vals:[.95,.6,.25,.05],   w:0.30, title:'Low Size Confidence (inv)' },
+    { signal:'return_hist',   bps:[0,.2,.5,1],    vals:[0,.1,.4,.7],       w:0.25, title:'Personal Return History' },
+  ],
+  F33: [
+    { signal:'zoom',          bps:[0,.3,.6,1],    vals:[0,.15,.5,.85],     w:0.55, title:'Image Zoom' },
+    { signal:'price_norm',    bps:[0,.3,.6,1],    vals:[0,.2,.5,.8],       w:0.45, title:'Premium Price' },
+  ],
+  F41: [
+    { signal:'tab_switch',    bps:[0,.2,.5,.8,1], vals:[0,.1,.5,.85,.95],  w:0.55, title:'Tab Switching' },
+    { signal:'revisit',       bps:[0,.3,.6,1],    vals:[0,.2,.55,.8],      w:0.25, title:'Revisits' },
+    { signal:'price_dwell',   bps:[0,.3,.6,1],    vals:[0,.1,.35,.55],     w:0.20, title:'Price Dwell' },
+  ],
+  F43: [
+    { signal:'style_stretch', bps:[0,.3,.6,1],    vals:[0,.2,.6,.95],      w:0.65, title:'Style Stretch' },
+    { signal:'mobile',        bps:[0,.5,1],       vals:[0,.3,.55],         w:0.35, title:'Mobile Device' },
+  ],
+  F45: [
+    { signal:'price_dwell',   bps:[0,.3,.6,.9,1], vals:[0,.15,.5,.8,.95],  w:0.50, title:'Price Dwell' },
+    { signal:'price_sens',    bps:[0,.4,.7,1],    vals:[0,.2,.55,.85],     w:0.50, title:'Price Sensitivity' },
+  ],
+  F46: [
+    { signal:'return_view',   bps:[0,.2,.5,1],    vals:[0,.15,.55,.9],     w:0.55, title:'Return Policy Views' },
+    { signal:'return_hist',   bps:[0,.2,.5,1],    vals:[0,.15,.5,.8],      w:0.45, title:'Return History' },
+  ],
+  F51: [
+    { signal:'cart_osc',      bps:[0,.2,.5,1],    vals:[0,.15,.55,.9],     w:0.45, title:'Cart Oscillation' },
+    { signal:'wishlist',      bps:[0,.3,.6,1],    vals:[0,.1,.4,.7],       w:0.30, title:'Wishlist Depth' },
+    { signal:'revisit',       bps:[0,.3,.6,1],    vals:[0,.1,.4,.65],      w:0.25, title:'Revisits' },
+  ],
+};
+
+// 22 widgets — direct port of make_modules()
+function makeModulesV1() { return {
+  fit_reassurance:      { type:'size',     color:'cyan',
+    addr:{F32:0.55, F46:0.20}, base:0.10, on_rem:{F32:2.2, F46:0.6}, on_cov:{F32:-1.2}, slot_decay:0.05 },
+  size_guide:           { type:'size',     color:'cyan',
+    addr:{F32:0.50}, base:0.05, on_rem:{F32:2.0}, on_cov:{F32:-1.4}, slot_decay:0.10 },
+  low_return_alts:      { type:'size',     color:'cyan',
+    addr:{F32:0.30, F46:0.45}, base:0.05, on_rem:{F32:1.0, F46:1.8}, on_cov:{F46:-1.0}, slot_decay:0.06 },
+  comparison_card:      { type:'compare',  color:'emerald',
+    addr:{F41:0.60, F45:0.20}, base:0.05, on_rem:{F41:2.3, F45:0.7}, on_cov:{F41:-1.3}, slot_decay:0.04 },
+  customers_chose:      { type:'compare',  color:'emerald',
+    addr:{F41:0.30, F51:0.25}, base:0.10, on_rem:{F41:0.8, F51:1.2}, on_cov:{F41:0.5, F51:-0.6}, slot_decay:0.05 },
+  value_breakdown:      { type:'compare',  color:'emerald',
+    addr:{F45:0.55, F33:0.20}, base:0.05, on_rem:{F45:2.1, F33:0.5}, on_cov:{F45:-1.2}, slot_decay:0.06 },
+  outfit_completion:    { type:'outfit',   color:'fuchsia',
+    addr:{F43:0.55}, base:0.20, on_rem:{F43:1.8}, on_cov:{F43:-0.8}, slot_decay:0.04 },
+  style_bridge:         { type:'outfit',   color:'fuchsia',
+    addr:{F43:0.40}, base:0.05, on_rem:{F43:2.0}, on_cov:{F43:-1.0}, slot_decay:0.06 },
+  occasion_lookbook:    { type:'outfit',   color:'fuchsia',
+    addr:{F43:0.30}, base:0.08, on_rem:{F43:1.4}, on_cov:{F43:-0.5}, slot_decay:0.05 },
+  return_explainer:     { type:'returns',  color:'rose',
+    addr:{F46:0.50}, base:0.05, on_rem:{F46:2.0}, on_cov:{F46:-1.3}, slot_decay:0.07 },
+  easy_returns_promise: { type:'returns',  color:'rose',
+    addr:{F46:0.30}, base:0.10, on_rem:{F46:1.2}, on_cov:{F46:-0.5}, slot_decay:0.05 },
+  brand_story:          { type:'premium',  color:'amber',
+    addr:{F33:0.50}, base:0.10, on_rem:{F33:1.9}, on_cov:{F33:-1.0}, slot_decay:0.05 },
+  material_deep_dive:   { type:'premium',  color:'amber',
+    addr:{F33:0.45}, base:0.05, on_rem:{F33:1.7}, on_cov:{F33:-0.9}, slot_decay:0.07 },
+  price_history:        { type:'price',    color:'orange',
+    addr:{F45:0.45}, base:0.05, on_rem:{F45:1.7}, on_cov:{F45:-0.8}, slot_decay:0.06 },
+  price_drop_notify:    { type:'price',    color:'orange',
+    addr:{F51:0.35, F45:0.20}, base:0.08, on_rem:{F51:1.3, F45:0.6}, on_cov:{F51:-0.5}, slot_decay:0.05 },
+  recently_viewed:      { type:'decision', color:'indigo',
+    addr:{F51:0.20}, base:0.10, on_rem:{F51:0.7}, on_cov:{F51:-0.3}, slot_decay:0.05 },
+  wishlist_save:        { type:'decision', color:'indigo',
+    addr:{F51:0.30}, base:0.05, on_rem:{F51:1.2}, on_cov:{F51:-0.6}, slot_decay:0.06 },
+  expert_pick:          { type:'decision', color:'indigo',
+    addr:{F51:0.30, F33:0.15}, base:0.05, on_rem:{F51:1.4, F33:0.4}, on_cov:{F51:-0.7}, slot_decay:0.07 },
+  similar_items:        { type:'default',  color:'slate',
+    addr:{F41:0.10, F43:0.05, F51:0.05}, base:0.45, on_rem:{}, on_cov:{}, slot_decay:0.03 },
+  also_bought:          { type:'default',  color:'slate',
+    addr:{F41:0.10, F51:0.10}, base:0.40, on_rem:{}, on_cov:{}, slot_decay:0.03 },
+  trending_now:         { type:'default',  color:'slate',
+    addr:{}, base:0.30, on_rem:{}, on_cov:{}, slot_decay:0.04 },
+  personal_recs:        { type:'default',  color:'slate',
+    addr:{F43:0.10, F51:0.10}, base:0.35, on_rem:{}, on_cov:{}, slot_decay:0.04 },
+};}
+
+// EDITS_V3 — direct port of edp_evolve.py + edp_evolve_v3.py
+// Format: [widget, path, fromValue, toValue, reasoning]
+const EDITS_V3 = [
+  // F46 RETURNS CHAIN
+  ['return_explainer',    'base',          0.05, 0.12, 'F46 unmet=0.159 highest. Bump base.'],
+  ['return_explainer',    'on_rem.F46',    2.0,  2.5,  'Strengthen response to detected F46.'],
+  ['easy_returns_promise','base',          0.10, 0.15, 'Lift base for lower-slot competition.'],
+  ['easy_returns_promise','on_cov.F46',    0.0,  1.0,  'NEW synergy: fires AFTER return_explainer.'],
+  // F43 OUTFIT CHAIN
+  ['outfit_completion',   'base',          0.20, 0.10, 'Over-firing at 90.8%. Lower base.'],
+  ['style_bridge',        'on_cov.F43',    0.0,  1.4,  'NEW synergy: fires after outfit_completion.'],
+  ['occasion_lookbook',   'on_cov.F43',    0.0,  1.0,  'NEW synergy: tertiary outfit widget.'],
+  // F33 PREMIUM CHAIN
+  ['material_deep_dive',  'on_cov.F33',    0.0,  1.2,  'NEW synergy: complements brand_story.'],
+  // F45 PRICE CHAIN
+  ['price_history',       'on_cov.F45',    0.0,  1.0,  'NEW synergy: fires after value_breakdown.'],
+  ['price_history',       'base',          0.05, 0.08, 'Small base lift.'],
+  // F51 DECISION SUPPORT
+  ['recently_viewed',     'base',          0.10, 0.22, 'Was 0%. Primary context for paralyzed.'],
+  ['wishlist_save',       'base',          0.05, 0.12, 'Was 0%. Action widget for paralysis.'],
+  ['wishlist_save',       'on_cov.F51',    0.0,  1.1,  'NEW synergy: complements F51 widgets.'],
+  ['expert_pick',         'base',          0.05, 0.10, 'Bump base for F51+F33 combo.'],
+  // F32 SIZE CHAIN
+  ['size_guide',          'on_cov.F32',    0.0,  1.0,  'NEW synergy: fires after fit_reassurance.'],
+  ['size_guide',          'base',          0.05, 0.10, 'Bump base.'],
+  // ROUND 2 — F51 patch
+  ['recently_viewed',     'on_cov.F51',    0.0,  1.0,  'Round 2: NEW synergy term.'],
+  ['customers_chose',     'base',          0.10, 0.13, 'Round 2: recover its F51 carry role.'],
+];
+
+function applyEdits(modules, edits) {
+  const m = JSON.parse(JSON.stringify(modules));  // deep clone
+  for (const [widget, path, _from, to] of edits) {
+    const parts = path.split('.');
+    if (parts.length === 1) {
+      m[widget][parts[0]] = to;
+    } else {
+      const [section, key] = parts;
+      if (!m[widget][section]) m[widget][section] = {};
+      m[widget][section][key] = to;
+    }
+  }
+  return m;
+}
+
+// ============================================================================
+// LOGIC — direct port of edp_sim.py functions
+// ============================================================================
+
+function pwl(x, bps, vals) {
+  if (x <= bps[0]) return vals[0];
+  if (x >= bps[bps.length-1]) return vals[vals.length-1];
+  for (let i = 0; i < bps.length-1; i++) {
+    if (x >= bps[i] && x <= bps[i+1]) {
+      const t = (x - bps[i]) / (bps[i+1] - bps[i]);
+      return vals[i] + t * (vals[i+1] - vals[i]);
+    }
+  }
+  return 0;
+}
+
+function scoreProblems(feat) {
+  const out = {};
+  for (const p of PROBLEMS) {
+    let s = 0, wsum = 0;
+    for (const cfg of PROBLEM_SHAPES[p]) {
+      const x = feat[cfg.signal];
+      s += cfg.w * pwl(x, cfg.bps, cfg.vals);
+      wsum += cfg.w;
+    }
+    out[p] = Math.max(0, Math.min(1, s / Math.max(wsum, 1e-9)));
+  }
+  return out;
+}
+
+function scoreModule(mod, remaining, coverage, slot) {
+  let s = mod.base;
+  for (const p in (mod.on_rem || {})) s += mod.on_rem[p] * (remaining[p] || 0);
+  for (const p in (mod.on_cov || {})) s += mod.on_cov[p] * (coverage[p] || 0);
+  s -= (mod.slot_decay || 0) * slot;
+  return s;
+}
+
+function compose(feat, modules, nSlots=6) {
+  const problems = scoreProblems(feat);
+  const remaining = {...problems};
+  const coverage = Object.fromEntries(PROBLEMS.map(p => [p, 0]));
+  const page = [];
+  const used = new Set();
+  for (let slot = 0; slot < nSlots; slot++) {
+    let bestName = null, bestScore = -1e9;
+    const scores = {};
+    for (const name in modules) {
+      if (used.has(name)) continue;
+      const sc = scoreModule(modules[name], remaining, coverage, slot);
+      scores[name] = sc;
+      if (sc > bestScore) { bestScore = sc; bestName = name; }
+    }
+    page.push({ slot, name: bestName, score: bestScore, scores });
+    used.add(bestName);
+    const mod = modules[bestName];
+    for (const p in (mod.addr || {})) {
+      remaining[p] = Math.max(0, remaining[p] - mod.addr[p]);
+      coverage[p] = Math.min(1, coverage[p] + mod.addr[p]);
+    }
+  }
+  return { page, problems, remaining, coverage };
+}
+
+// ============================================================================
+// STATE & UI
+// ============================================================================
+
+let useV3 = false;
+const modulesV1 = makeModulesV1();
+const modulesV3 = applyEdits(modulesV1, EDITS_V3);
+function activeModules() { return useV3 ? modulesV3 : modulesV1; }
+
+const featState = Object.fromEntries(SIGNALS.map(s => [s.id, s.default]));
+
+// ----- Init signal sliders -----
+function buildSignals() {
+  const c = document.getElementById('signals-cont');
+  const groups = { profile: 'Customer Profile', session: 'Session Behaviour', product: 'Product' };
+  for (const gKey in groups) {
+    const heading = document.createElement('div');
+    heading.className = 'text-[9px] uppercase tracking-widest text-slate-500 font-semibold pt-1 first:pt-0';
+    heading.textContent = groups[gKey];
+    c.appendChild(heading);
+    SIGNALS.filter(s => s.group === gKey).forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'pl-1';
+      div.innerHTML = `
+        <div class="flex justify-between items-baseline mb-0.5">
+          <label class="text-slate-300 truncate mr-1">${s.name}</label>
+          <span id="${s.id}-val" class="text-blue-400 font-bold">${s.default.toFixed(2)}</span>
+        </div>
+        <input type="range" id="${s.id}" min="0" max="1" step="0.01" value="${s.default}"
+               class="w-full cursor-pointer bg-slate-800 rounded-lg">`;
+      c.appendChild(div);
+      div.querySelector('input').addEventListener('input', e => {
+        featState[s.id] = parseFloat(e.target.value);
+        document.getElementById(`${s.id}-val`).textContent = featState[s.id].toFixed(2);
+        clearActivePersona();
+        update();
+      });
+    });
+  }
+}
+
+// ----- Init persona presets -----
+function buildPresets() {
+  const c = document.getElementById('presets');
+  for (const pKey in PERSONAS) {
+    const p = PERSONAS[pKey];
+    const btn = document.createElement('button');
+    btn.id = `btn-${pKey}`;
+    btn.className = `px-2.5 py-1 rounded-full border border-${p.color}-500/40 bg-${p.color}-500/10 text-${p.color}-300 text-[10px] font-semibold hover:bg-${p.color}-500/20 hover:border-${p.color}-500/70 transition`;
+    btn.textContent = p.label;
+    btn.onclick = () => applyPersona(pKey);
+    c.appendChild(btn);
+  }
+}
+function applyPersona(pKey) {
+  const p = PERSONAS[pKey];
+  for (const sid in p.vals) {
+    featState[sid] = p.vals[sid];
+    const el = document.getElementById(sid);
+    if (el) el.value = p.vals[sid];
+    const valEl = document.getElementById(`${sid}-val`);
+    if (valEl) valEl.textContent = p.vals[sid].toFixed(2);
+  }
+  document.querySelectorAll('#presets button').forEach(b => {
+    b.classList.remove('ring-1','ring-white');
+    b.style.opacity = '0.6';
+  });
+  const active = document.getElementById(`btn-${pKey}`);
+  if (active) { active.classList.add('ring-1','ring-white'); active.style.opacity = '1'; }
+  update();
+}
+function clearActivePersona() {
+  document.querySelectorAll('#presets button').forEach(b => {
+    b.classList.remove('ring-1','ring-white');
+    b.style.opacity = '1';
+  });
+}
+
+// ----- Init problems panel -----
+function buildProblems() {
+  const c = document.getElementById('problems-cont');
+  for (const p of PROBLEMS) {
+    const meta = PROBLEM_META[p];
+    const div = document.createElement('div');
+    div.className = 'rounded border border-slate-800 bg-slate-950/50 px-2 py-1.5';
+    div.innerHTML = `
+      <div class="flex justify-between items-baseline mb-1">
+        <span class="text-[10px] font-semibold text-${meta.color}-300">${meta.name}</span>
+        <span class="mono text-[9px] text-slate-500">
+          <span id="${p}-int" class="text-${meta.color}-400">.00</span>·
+          <span id="${p}-rem" class="text-slate-300">.00</span>·
+          <span id="${p}-cov" class="text-emerald-400">.00</span>
+        </span>
+      </div>
+      <div class="space-y-0.5">
+        <div class="h-1 bg-slate-800 rounded overflow-hidden"><div id="${p}-int-bar" class="bar-anim h-full bg-${meta.color}-500" style="width:0%"></div></div>
+        <div class="h-1 bg-slate-800 rounded overflow-hidden"><div id="${p}-rem-bar" class="bar-anim h-full bg-slate-400" style="width:0%"></div></div>
+        <div class="h-1 bg-slate-800 rounded overflow-hidden"><div id="${p}-cov-bar" class="bar-anim h-full bg-emerald-500/70" style="width:0%"></div></div>
+      </div>`;
+    c.appendChild(div);
+  }
+}
+
+// ----- Init widgets panel (grouped by type) -----
+function buildWidgets() {
+  const c = document.getElementById('widgets-cont');
+  const modules = activeModules();
+  const types = {};
+  for (const name in modules) {
+    const t = modules[name].type;
+    if (!types[t]) types[t] = [];
+    types[t].push(name);
+  }
+  const typeOrder = ['size','compare','outfit','returns','premium','price','decision','default'];
+  const typeLabels = {
+    size:'Size · Fit', compare:'Comparison', outfit:'Outfit',
+    returns:'Returns', premium:'Premium · Quality', price:'Price',
+    decision:'Decision Support', default:'Defaults'
+  };
+  for (const t of typeOrder) {
+    if (!types[t]) continue;
+    const head = document.createElement('div');
+    head.className = 'text-[9px] uppercase tracking-widest text-slate-500 font-semibold mt-1';
+    head.textContent = typeLabels[t];
+    c.appendChild(head);
+    types[t].forEach(name => {
+      const mod = modules[name];
+      const div = document.createElement('div');
+      div.id = `wid-${name}`;
+      div.className = `widget-card rounded border border-slate-800 bg-slate-950/50 px-2 py-1`;
+      const addrLabel = Object.keys(mod.addr || {}).join('·') || '—';
+      div.innerHTML = `
+        <div class="flex justify-between items-baseline">
+          <span class="font-semibold text-slate-300 truncate">${name}</span>
+          <span id="${name}-score" class="mono text-[9px] text-${mod.color}-400 font-bold">0.00</span>
+        </div>
+        <div class="flex justify-between items-center gap-1.5 mt-0.5">
+          <div class="flex-1 h-0.5 bg-slate-800 rounded overflow-hidden">
+            <div id="${name}-bar" class="bar-anim h-full bg-${mod.color}-500" style="width:0%"></div>
+          </div>
+          <span class="mono text-[8px] text-slate-600 shrink-0">${addrLabel}</span>
+        </div>`;
+      c.appendChild(div);
+    });
+  }
+}
+
+// ----- Init slots panel -----
+function buildSlots() {
+  const c = document.getElementById('slots-cont');
+  c.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const div = document.createElement('div');
+    div.id = `slot-${i}`;
+    div.className = 'rounded border border-slate-800 bg-slate-950/40 px-2.5 py-2 slot-fill';
+    div.innerHTML = `
+      <div class="flex items-baseline justify-between">
+        <span class="text-[9px] mono uppercase tracking-widest text-slate-500">slot ${i+1}</span>
+        <span id="slot-${i}-score" class="mono text-[9px] text-slate-500"></span>
+      </div>
+      <div id="slot-${i}-name" class="text-[12px] font-bold text-slate-700 mt-0.5 truncate">—</div>
+      <div id="slot-${i}-addr" class="mono text-[9px] text-slate-600 mt-0.5 truncate"></div>`;
+    c.appendChild(div);
+  }
+}
+
+// ----- Update full system -----
+function update() {
+  const modules = activeModules();
+  const result = compose(featState, modules, 6);
+
+  // Problem bars
+  for (const p of PROBLEMS) {
+    const intensity = result.problems[p];
+    const remaining = result.remaining[p];
+    const coverage = result.coverage[p];
+    document.getElementById(`${p}-int`).textContent = intensity.toFixed(2);
+    document.getElementById(`${p}-rem`).textContent = remaining.toFixed(2);
+    document.getElementById(`${p}-cov`).textContent = coverage.toFixed(2);
+    document.getElementById(`${p}-int-bar`).style.width = (intensity*100) + '%';
+    document.getElementById(`${p}-rem-bar`).style.width = (remaining*100) + '%';
+    document.getElementById(`${p}-cov-bar`).style.width = (coverage*100) + '%';
+  }
+
+  // Widget panel — score each widget against initial problems (slot 0 perspective)
+  // For "library" view we score in initial state (no coverage yet) — represents potential.
+  const remInit = {...result.problems};
+  const covInit = Object.fromEntries(PROBLEMS.map(p=>[p,0]));
+  const selected = new Set(result.page.map(s => s.name));
+  let maxScore = 0.01;
+  const widScores = {};
+  for (const name in modules) {
+    const sc = scoreModule(modules[name], remInit, covInit, 0);
+    widScores[name] = sc;
+    if (sc > maxScore) maxScore = sc;
+  }
+  for (const name in modules) {
+    const mod = modules[name];
+    const sc = widScores[name];
+    document.getElementById(`${name}-score`).textContent = sc.toFixed(2);
+    const pct = Math.max(0, Math.min(100, sc / maxScore * 100));
+    document.getElementById(`${name}-bar`).style.width = pct + '%';
+    const card = document.getElementById(`wid-${name}`);
+    if (selected.has(name)) {
+      card.className = `widget-card rounded border border-${mod.color}-500/60 bg-${mod.color}-500/10 px-2 py-1`;
+    } else if (sc > 0.5) {
+      card.className = `widget-card rounded border border-slate-700 bg-slate-900 px-2 py-1`;
+    } else {
+      card.className = `widget-card rounded border border-slate-800 bg-slate-950/40 px-2 py-1 opacity-60`;
+    }
+  }
+
+  // Slots — animate fill in sequence
+  result.page.forEach((entry, i) => {
+    const mod = modules[entry.name];
+    const slot = document.getElementById(`slot-${i}`);
+    const nameEl = document.getElementById(`slot-${i}-name`);
+    const scoreEl = document.getElementById(`slot-${i}-score`);
+    const addrEl = document.getElementById(`slot-${i}-addr`);
+    slot.className = `rounded border border-${mod.color}-500/60 bg-${mod.color}-500/10 shadow-${mod.color}-500/30 shadow-md px-2.5 py-2 slot-fill slot-pop`;
+    slot.style.animationDelay = `${i * 60}ms`;
+    nameEl.className = `text-[12px] font-bold text-${mod.color}-300 mt-0.5 truncate`;
+    nameEl.textContent = entry.name;
+    scoreEl.textContent = `Σ ${entry.score.toFixed(2)}`;
+    const addrs = Object.entries(mod.addr || {})
+      .map(([p, v]) => `${p}:${v.toFixed(2)}`).join(' · ');
+    addrEl.textContent = addrs || '— default';
+  });
+
+  // GAM curves view (re-render if active)
+  if (!document.getElementById('view-curves').classList.contains('hidden')) {
+    renderCurves();
+  }
+}
+
+// ----- v1/v3 toggle -----
+function toggleVersion() {
+  useV3 = !useV3;
+  const label = document.getElementById('version-label');
+  const badge = document.getElementById('version-badge');
+  const btn = document.getElementById('btn-evolve');
+  const evolveLabel = document.getElementById('evolve-label');
+  if (useV3) {
+    label.textContent = 'v3 evolved';
+    label.className = 'text-amber-300 font-bold';
+    badge.className = 'px-2 py-1 rounded border border-amber-500/40 bg-amber-500/10 text-amber-400 uppercase tracking-widest';
+    evolveLabel.textContent = '◂ Revert to v1';
+    btn.classList.add('bg-amber-500/25','border-amber-500/70');
+    btn.classList.remove('bg-amber-500/10','border-amber-500/40');
+    btn.classList.add('v3-only-pulse');
+  } else {
+    label.textContent = 'v1 baseline';
+    label.className = 'text-slate-200 font-bold';
+    badge.className = 'px-2 py-1 rounded border border-slate-700 text-slate-500 uppercase tracking-widest';
+    evolveLabel.textContent = '▸ Apply v3';
+    btn.classList.remove('bg-amber-500/25','border-amber-500/70');
+    btn.classList.add('bg-amber-500/10','border-amber-500/40');
+    btn.classList.remove('v3-only-pulse');
+  }
+  update();
+}
+
+// ----- Tabs -----
+function switchTab(tab) {
+  const flow = document.getElementById('view-flow');
+  const curves = document.getElementById('view-curves');
+  const btnFlow = document.getElementById('tab-flow');
+  const btnCurves = document.getElementById('tab-curves');
+  if (tab === 'flow') {
+    flow.classList.remove('hidden'); curves.classList.add('hidden');
+    btnFlow.className = 'px-3 py-1.5 border-b-2 border-blue-500 text-blue-400 transition';
+    btnCurves.className = 'px-3 py-1.5 border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition';
+  } else {
+    flow.classList.add('hidden'); curves.classList.remove('hidden');
+    btnCurves.className = 'px-3 py-1.5 border-b-2 border-blue-500 text-blue-400 transition';
+    btnFlow.className = 'px-3 py-1.5 border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition';
+    renderCurves();
+  }
+}
+
+// ----- GAM curves view -----
+function renderCurves() {
+  const cont = document.getElementById('curves-cont');
+  cont.innerHTML = '';
+  const problems = scoreProblems(featState);
+  for (const p of PROBLEMS) {
+    const meta = PROBLEM_META[p];
+    const groupDiv = document.createElement('div');
+    groupDiv.className = `rounded-lg p-3 border border-${meta.color}-500/30 bg-${meta.color}-500/5`;
+    let html = `
+      <div class="flex justify-between items-end pb-2 mb-3 border-b border-${meta.color}-500/30">
+        <h3 class="text-sm font-bold text-${meta.color}-300">${meta.name}</h3>
+        <div class="text-right">
+          <span class="text-[9px] text-slate-500 uppercase tracking-widest block">Aggregate</span>
+          <span class="mono text-xl font-bold text-white">${problems[p].toFixed(2)}</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-${PROBLEM_SHAPES[p].length} gap-2">
+    `;
+    for (const cfg of PROBLEM_SHAPES[p]) {
+      const x = featState[cfg.signal];
+      const y = pwl(x, cfg.bps, cfg.vals);
+      const xRange = cfg.bps[cfg.bps.length-1] - cfg.bps[0];
+      let pathD = '';
+      cfg.bps.forEach((bp, i) => {
+        const px = 30 + ((bp - cfg.bps[0]) / xRange) * 230;
+        const py = 100 - cfg.vals[i] * 80;
+        pathD += (i === 0 ? 'M' : 'L') + ` ${px} ${py} `;
+      });
+      const curPx = 30 + ((x - cfg.bps[0]) / xRange) * 230;
+      const curPy = 100 - y * 80;
+      const colorRGB = ({cyan:'34,211,238', amber:'251,191,36', emerald:'16,185,129', fuchsia:'232,121,249', orange:'249,115,22', rose:'251,113,133', indigo:'129,140,248'})[meta.color];
+      html += `
+        <div class="bg-slate-900/80 border border-slate-700 rounded p-2">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-[10px] font-semibold text-slate-300 truncate pr-1">${cfg.title}</span>
+            <span class="mono text-[9px] text-slate-400 bg-slate-800 px-1 py-0.5 rounded">w=${(cfg.w*100).toFixed(0)}%</span>
+          </div>
+          <svg viewBox="0 0 280 120" class="w-full h-auto">
+            <line x1="30" y1="20" x2="270" y2="20" stroke="#334155" stroke-dasharray="2 2"/>
+            <line x1="30" y1="60" x2="270" y2="60" stroke="#334155" stroke-dasharray="2 2"/>
+            <line x1="30" y1="100" x2="270" y2="100" stroke="#475569" stroke-width="1.5"/>
+            <text x="22" y="24" fill="#94a3b8" font-size="9" text-anchor="end">1.0</text>
+            <text x="22" y="64" fill="#94a3b8" font-size="9" text-anchor="end">0.5</text>
+            <text x="22" y="104" fill="#94a3b8" font-size="9" text-anchor="end">0</text>
+            <path d="${pathD}" fill="none" stroke="rgb(${colorRGB})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="${curPx}" cy="${curPy}" r="5" fill="#0f172a" stroke="rgb(${colorRGB})" stroke-width="2"/>
+            <text x="${curPx}" y="${curPy - 10}" fill="white" font-size="11" font-weight="bold" text-anchor="middle">${y.toFixed(2)}</text>
+          </svg>
+          <div class="flex justify-between mono text-[8px] text-slate-500 mt-1 px-6">
+            <span>${cfg.bps[0]}</span>
+            <span class="text-blue-400 font-bold">${x.toFixed(2)}</span>
+            <span>${cfg.bps[cfg.bps.length-1]}</span>
+          </div>
+        </div>`;
+    }
+    html += '</div>';
+    groupDiv.innerHTML = html;
+    cont.appendChild(groupDiv);
+  }
+}
+
+// ----- Boot -----
+buildSignals();
+buildPresets();
+buildProblems();
+buildWidgets();
+buildSlots();
+applyPersona('size_anxious_new');  // start with a meaningful persona
+</script>
+</body>
+</html>
