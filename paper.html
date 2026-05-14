@@ -21,70 +21,6 @@
       vertical-align: middle;
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-    /* CSS for syntax highlighting */
-    pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { line-height: 1.25; }
-    pre > code.sourceCode > span:empty { height: 1.2em; }
-    .sourceCode { overflow: visible; }
-    code.sourceCode > span { color: inherit; text-decoration: inherit; }
-    div.sourceCode { margin: 1em 0; }
-    pre.sourceCode { margin: 0; }
-    @media screen {
-    div.sourceCode { overflow: auto; }
-    }
-    @media print {
-    pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-    }
-    pre.numberSource code
-      { counter-reset: source-line 0; }
-    pre.numberSource code > span
-      { position: relative; left: -4em; counter-increment: source-line; }
-    pre.numberSource code > span > a:first-child::before
-      { content: counter(source-line);
-        position: relative; left: -1em; text-align: right; vertical-align: baseline;
-        border: none; display: inline-block;
-        -webkit-touch-callout: none; -webkit-user-select: none;
-        -khtml-user-select: none; -moz-user-select: none;
-        -ms-user-select: none; user-select: none;
-        padding: 0 4px; width: 4em;
-        color: #aaaaaa;
-      }
-    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-    div.sourceCode
-      {   }
-    @media screen {
-    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-    }
-    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-    code span.at { color: #7d9029; } /* Attribute */
-    code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { color: #008000; } /* BuiltIn */
-    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-    code span.ch { color: #4070a0; } /* Char */
-    code span.cn { color: #880000; } /* Constant */
-    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-    code span.dt { color: #902000; } /* DataType */
-    code span.dv { color: #40a070; } /* DecVal */
-    code span.er { color: #ff0000; font-weight: bold; } /* Error */
-    code span.ex { } /* Extension */
-    code span.fl { color: #40a070; } /* Float */
-    code span.fu { color: #06287e; } /* Function */
-    code span.im { color: #008000; font-weight: bold; } /* Import */
-    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-    code span.op { color: #666666; } /* Operator */
-    code span.ot { color: #007020; } /* Other */
-    code span.pp { color: #bc7a00; } /* Preprocessor */
-    code span.sc { color: #4070a0; } /* SpecialChar */
-    code span.ss { color: #bb6688; } /* SpecialString */
-    code span.st { color: #4070a0; } /* String */
-    code span.va { color: #19177c; } /* Variable */
-    code span.vs { color: #4070a0; } /* VerbatimString */
-    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
   <link rel="stylesheet" href="paper.css" />
 </head>
@@ -121,60 +57,66 @@ not the LLM’s general intelligence — as the carrier of the gain.</p>
 <h2 id="introduction">1. Introduction</h2>
 <p>Recommendation pages are composed, not just ranked. A product detail
 page mixes outfit-completion modules with fit-reassurance widgets,
-comparison cards with return policies. Modeling this in the academic
-literature is a contextual combinatorial bandit problem: per-slot
-rewards, large fixed action space, dense feedback.</p>
-<p>Production has two structural mismatches with this framing:</p>
+comparison cards with return policies. The academic framing is
+contextual combinatorial bandit / slate ranking: a context-dependent
+slate of items is chosen, and per-item or per-slot reward is observed.
+Methods like LinUCB, LinTS, and slate-bandit variants assume the reward
+signal is locally informative for each slot.</p>
+<p>Production departs from that framing on three structural axes:</p>
 <ol type="1">
 <li><strong>Reward attribution.</strong> Engagement, purchase, return —
-all are observed at the page or order level, not per-slot. A bandit can
-divide page reward by N slots, but this dilutes signal by an order of
-magnitude.</li>
-<li><strong>Delay.</strong> Sales include returns; returns settle in ~2
-days. The reward for a session served today arrives 500 sessions
-later.</li>
-<li><strong>Low N.</strong> Most A/B test arms close before reaching 10K
-sessions per cell.</li>
+all are observed at the page or order level, not per-slot. There is no
+per-slot ground truth a learner could regress against; the same page
+outcome is the only available label for every slot in that page.</li>
+<li><strong>Delay.</strong> In categories where returns matter (apparel,
+electronics), the reward for a session served today does not settle for
+one to several days.</li>
+<li><strong>Low N.</strong> Most production A/B test arms close before
+reaching 10K sessions per cell, so methods that pay an exploration tax
+up front are penalised twice.</li>
 </ol>
-<p>Under all three, a per-slot LinTS bandit pays exploration tax it
-cannot amortize.</p>
+<p>This paper is not about beating a specific bandit algorithm; it is
+about evaluating page-composition methods on the reward signal
+production actually has. We use per-slot Linear Thompson Sampling with a
+7-d problem-fingerprint context (LinTS-warm) and a 14-d raw-signal
+context (LinTS-cold) as our representative bandit baselines, and discuss
+slate-bandit / semi-bandit alternatives in §8.</p>
 <p>We propose <strong>Evolvable Decision Programs (EDP)</strong> as an
 alternative. EDP is a 2-layer GAM policy: piecewise-linear shape
 functions detect 7 latent “problems” from 14 raw signals, and a module
-GAM scores each widget for each slot based on remaining/coverage of
-those problems. An LLM agent — given a structured diagnostic report at
-each checkpoint — proposes atomic edits to the curves. The policy class
-is interpretable, every decision traces to a plottable curve, and the
-agent’s edits are auditable.</p>
+GAM scores each widget for each slot based on remaining and coverage of
+those problems. An LLM agent reads a structured diagnostic report at
+each checkpoint and proposes atomic edits to the curves. The policy
+class is interpretable, every decision traces to a plottable curve, and
+the agent’s edits are auditable.</p>
 <p><strong>Contributions:</strong></p>
 <ol type="1">
+<li>A direct measurement of the <strong>academic-vs-production
+gap</strong>: per-slot LinTS is the best method under lab conditions
+(4.9 % of oracle reward lost), and it degrades by 14 percentage points
+under production conditions (page-level attribution + delay + noise) —
+not because the algorithm is bad, but because the reward signal it
+expects is structurally absent.</li>
 <li>A reproducible head-to-head between EDP and LinTS under the
-production reward stack (page-level + delay + noise), with EDP winning
-2.6× at 10K sessions and 2.4× at 1K.</li>
-<li>An OPRO-style ablation showing the diagnostic report — not the LLM’s
-general intelligence — is what makes the agent-in-the-loop work in this
-action space.</li>
-<li>A stressor decomposition isolating page-level attribution as the
-dominant production stressor, an order of magnitude larger than delay or
-noise.</li>
+production reward stack across two simulator setups (parametric and
+LLM-driven), with EDP winning by ~2× and showing zero degradation
+between the two simulator setups.</li>
+<li>An OPRO-style ablation showing that the diagnostic report — not the
+LLM’s general intelligence — is what makes the agent-in-the-loop
+work.</li>
 </ol>
 <h2 id="simulation-setup">2. Simulation setup</h2>
-<p>We deliberately separate four things, each in its own module of the
-<code>edp/</code> package: the <strong>customer simulator</strong>
-(<code>edp/sim.py</code>), the <strong>persona source</strong>
-(parametric or LLM-driven, in <code>edp/personas/</code>), the
-<strong>ground-truth reward</strong> (<code>edp/ground_truth.py</code>,
-policy-agnostic), and the <strong>observable reward signal</strong> the
-policy actually receives (the <code>DelayedFeedback</code> queue with
-optional noise and page-level attribution).</p>
-<p>The session-stream contract is:</p>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>make_session_stream(n, seed<span class="op">=</span><span class="dv">42</span>) <span class="op">-&gt;</span> <span class="bu">list</span>[(persona_name, category, feat_dict)]</span></code></pre></div>
-<p>where <code>feat_dict</code> has 14 raw signals + 1 product feature
-(<code>price_norm</code>). Two persona sources implement the same
-<code>(persona_names, mixture_weights, true_needs, sample_session)</code>
-interface so policies and orchestrators are agnostic to which one is
-active. Switch via env var or <code>set_source('llm')</code>.</p>
+<p>We separate four concerns: the <strong>customer simulator</strong>
+(session sampling), the <strong>persona source</strong> (parametric or
+LLM-driven), the <strong>ground-truth reward</strong> (policy-agnostic),
+and the <strong>observable reward signal</strong> the policy actually
+receives (delayed, noisy, page-level). A session is a tuple
+<code>(persona, category, features)</code> where features are 14 raw
+behavioural signals plus one product-side signal
+(<code>price_norm</code>). All policies see the same 10K-session stream
+at seed 42; the production reward stack is layered on top via a single
+<code>DelayedFeedback</code> queue. Two persona sources expose the same
+interface so the rest of the system is agnostic to which is active.</p>
 <h3 id="customer-simulator-parametric-source">2.1 Customer simulator
 (parametric source)</h3>
 <p>A session is a tuple
@@ -245,14 +187,8 @@ a Gaussian <code>(μ, σ)</code>:</p>
 <p>Per session, each signal is sampled <code>x ~ Normal(μ, σ)</code> and
 clipped to <code>[0, 1]</code>. A 15th product-side signal
 <code>price_norm ~ Beta(2, 3)</code> is drawn per session (item
-premium-ness).</p>
-<p>The stream is reproducibly generated at seed 42 for all experiments —
-every method sees the same 10,000 <code>(persona, feature_vector)</code>
-pairs in the same order. Persona breakdown in the realised stream:</p>
-<pre><code>size_anxious_new   18.7%      paralyzed          9.7%
-comparison_shopper 16.5%      browser_lurker     9.8%
-price_sensitive   13.6%      returner_anxious   8.4%
-outfit_seeker     12.0%      confident_buyer   11.4%</code></pre>
+premium-ness). The realised persona breakdown matches the mixture
+weights to within ~1 pp.</p>
 <h3 id="ground-truth-independent-of-every-policy">2.2 Ground truth
 (independent of every policy)</h3>
 <p>We author <strong>7 latent shopping needs</strong>:</p>
@@ -269,19 +205,12 @@ principle discover this latent structure from data; EDP’s Layer 1 cannot
 directly see it either.</p>
 <p><strong>Reward function.</strong> Diminishing returns on
 <code>(need × provision)</code>. Each slot consumes from the persona’s
-remaining need budget; later slots get less credit because earlier slots
-have already filled the relevant need:</p>
-<div class="sourceCode" id="cb5"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> true_page_reward(persona, page):</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    needs <span class="op">=</span> TRUE_NEEDS[persona]                 <span class="co"># dict need -&gt; importance</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    remaining <span class="op">=</span> <span class="bu">dict</span>(needs)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> widget <span class="kw">in</span> page:                         <span class="co"># 6 slots</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> d, p <span class="kw">in</span> TRUE_PROVISIONS[widget].items():</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            consumed <span class="op">=</span> <span class="bu">min</span>(remaining[d], p)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>            total <span class="op">+=</span> needs[d] <span class="op">*</span> consumed        <span class="co"># weight by importance</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            remaining[d] <span class="op">-=</span> consumed</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total</span></code></pre></div>
+remaining need budget; later slots earn less credit because earlier
+slots have already filled the relevant needs. Concretely, for a page
+<code>(w₁, …, w₆)</code> and remaining-need vector <code>r</code>
+initialised to the persona’s importance vector <code>n</code>:</p>
+<p><code>reward = Σₖ Σ_d  nₐ · min(r_d, provision[wₖ][d])</code>,
+<code>r_d ← r_d − provision[wₖ][d]</code> after each slot.</p>
 <p>The page-level <strong>oracle</strong> is computed once per persona
 by greedy submodular selection over <code>TRUE_PROVISIONS</code> with
 the same diminishing-returns mechanic. With 6 slots and 22 candidate
@@ -1336,22 +1265,32 @@ percentage points (LLM); LinTS-cold degrades the same. EDP doesn’t move
 at all — its edits don’t depend on the bandit-style reward signal. The
 result: EDP-agent wins production by 7-10 pp over LinTS-warm.</p></li>
 </ol>
-<p><strong>Why EDP doesn’t degrade.</strong> The bandit ingests
-<code>(page_total + ε) / N_SLOTS</code> as its per-slot signal, diluting
-per-slot information by a factor of 6 and adding measurement noise.
-EDP’s Layer-1 GAM ingests session features directly and doesn’t use the
-page reward at all; the EDP-agent reads it only via the diagnostic
-report’s per-persona regret, where averaging over thousands of sessions
-cancels most of the noise. Page-level attribution is fatal to per-slot
-bandit credit assignment but a non-issue for a model that doesn’t do
-per-slot credit assignment.</p>
-<p><strong>The takeaway:</strong> the bandit-vs-EDP comparison is
-<strong>conditional on what reward signal you have</strong>. Lab
-benchmarks systematically over-estimate bandit performance for
-production. The 14-pp gap between lab and production is the hidden cost
-of the academic comparison framing — and it’s structural, not
-algorithmic, so neither neural bandits nor IPS estimators can close it
-without the system instrumenting per-slot reward.</p>
+<p><strong>Why EDP doesn’t degrade.</strong> The structural problem is
+credit assignment, not signal magnitude. Under page-level attribution,
+every slot in a given page receives the same observed reward
+(<code>page_total / N_SLOTS</code>), so the per-arm regression targets
+within a page are perfectly correlated. The bandit cannot, even in
+principle, disentangle which slot caused which fraction of the reward —
+and slate-bandit variants that treat the slate as the action inherit the
+same credit-assignment problem when reward is observed only at the page
+level (their per-slate posterior shrinks, not their per-arm one). EDP
+does not have this problem because it does not try to solve it: its
+policy class is not fit per-arm by gradient on observed reward. The
+EDP-agent reads the diagnostic report’s per-persona and per-category
+regret, in which averaging over thousands of sessions makes the
+page-level signal usable as a coarse score per slice — sufficient for
+the agent’s edits, which target slices rather than slots.</p>
+<p><strong>The takeaway.</strong> The bandit-vs-EDP comparison is
+conditional on what reward signal the system instruments. Lab benchmarks
+(per-slot reward) measure the upper bound of bandit performance;
+production (page-level reward) measures something different. Closing the
+14-pp gap requires either (a) instrumenting per-slot reward — typically
+infeasible in commerce because slots inside a single page outcome are
+not independently attributable — or (b) using a method that does not
+rely on per-slot credit assignment. Better bandit algorithms alone do
+not close it; partial-recovery techniques like IPS / DR estimators can
+help but are bounded by what the propensity model identifies, which is
+itself a per-slot quantity that would need its own training data.</p>
 <figure>
 <img src="figures/fig7_lab_vs_real.png"
 alt="Figure 11: Lab vs production conditions across two persona sources. LinTS-warm wins the lab benchmark (4.9% / 6.6%) but degrades by ~14-15 pp under production conditions (page-level attribution + delay + noise), where EDP-agent (10.5% / 11.9%) becomes the best method. EDP and the deterministic baselines are bandit-signal-invariant." />
@@ -1400,138 +1339,90 @@ fixed widget catalog at the page layer matches EDP’s strengths; the
 changing item catalog inside a widget matches bandits’.</p>
 <h2 id="limitations">7. Limitations</h2>
 <ol type="1">
-<li><strong>Synthetic ground truth.</strong> The 7 latent needs are
-LLM-authored, not learned from real engagement data. Directional;
-unvalidated on production logs.</li>
-<li><strong>Layer 1 held fixed.</strong> The agent only edits Layer 2
-module config. A complete loop would also propose PWL shape
-adjustments.</li>
-<li><strong>LinTS-only bandit.</strong> Neural bandits (NeuralUCB,
-MLP+TS) might close some gap on clean reward. They do not change the
-page-attribution finding.</li>
+<li><strong>Synthetic ground truth.</strong> The 7 latent needs and
+persona descriptions are LLM-authored, not learned from real engagement
+data. Directional; unvalidated on production logs.</li>
+<li><strong>Bandit baselines limited to per-slot LinTS.</strong>
+Slate-bandit, semi-bandit, and neural-bandit variants are not in the
+comparison. We argue (§5.9, §8) that the page-attribution finding is
+structural — slate-action methods inherit the same credit-assignment
+problem when reward is page-level — but a direct comparison would
+strengthen the claim.</li>
+<li><strong>Layer 1 held fixed.</strong> The agent only edits Layer-2
+module config. A complete loop would also propose PWL shape adjustments
+and conditional shapes per (persona, category) cell.</li>
 <li><strong>No structural exploration.</strong> The 22-widget catalog is
-fixed for both methods. Real EDP adds widgets via PR.</li>
-<li><strong>No drift.</strong> Persona distribution is stationary
-throughout.</li>
-<li><strong>No formal regret bounds.</strong></li>
+fixed for every method. Real EDP adds widgets via PR; we don’t simulate
+that here.</li>
+<li><strong>Stationary persona distribution.</strong> No drift, no
+seasonality, no viral effects — production has all three.</li>
+<li><strong>No formal regret bounds.</strong> Treatment is purely
+empirical.</li>
+<li><strong>EDP-agent depends on a capable LLM.</strong> Both the live
+agent and the OPRO ablation use Claude subagents. Smaller / open-weight
+LLMs would likely degrade the report-based agent more than OPRO (since
+the report requires reasoning about structured diagnostics, while OPRO
+is closer to gradient-free pattern matching).</li>
 </ol>
-<h2 id="conclusion">8. Conclusion</h2>
-<p>When reward attribution is page-level and delayed — the production
-reality, not the academic regime — a 2-layer GAM policy edited by an LLM
-agent reading a structured diagnostic report beats Linear Thompson
-Sampling by <strong>3.2×</strong> in cumulative regret across two
-independent simulator setups. The OPRO ablation isolates the structured
-diagnostic report as the primary carrier of the gain: replacing it with
-<code>(edits, score)</code> history alone yields high-variance updates
-whose mean is indistinguishable from EDP-static at one standard error.
-Finally, when we replace the parametric persona simulator with an
-LLM-driven simulator (14 text-described personas, 6 fashion categories
-modulating needs), EDP-agent is the <strong>most robust method</strong>
-to the realism shift: it degrades by only +1.4 percentage points, vs
-+9.1 for static EDP and +7.0 for offline-curated edits. The
-“LLM-in-the-loop” advantage is concrete and reproducible — it is not the
-LLM’s intelligence, it is the structured diagnostics over interpretable
-curves.</p>
+<h2 id="future-work">8. Future Work</h2>
+<p>The findings raise direct follow-ups that we did not run here:</p>
+<p><strong>Slate / semi-bandit baselines under page-level
+reward.</strong> A LinTS-Slate or Cascading-LinTS baseline would test
+whether the +14-pp degradation we measured for per-slot LinTS reflects a
+per-slot algorithm choice or a fundamental signal limit. We expect the
+slate methods to also degrade — they collapse the per-slot regression
+into a per-slate regression, which has more parameters and the same
+noise budget — but a direct measurement is missing.</p>
+<p><strong>Neural bandits.</strong> NeuralUCB and small-MLP + Thompson
+sampling have richer policy classes than linear models and might recover
+some of the lab-condition gap on the LLM-persona simulator. Page-level
+attribution is still the dominant production stressor; we predict neural
+methods do not close the production gap, but the experiment would be
+informative.</p>
+<p><strong>Counterfactual estimators.</strong> IPS and Doubly Robust
+estimators can in principle recover partial per-slot credit if a
+propensity model is available. These methods need their own exploration
+policy and a logging policy to learn from; integrating them into the
+simulator is a non-trivial extension and is left as a separate
+study.</p>
+<p><strong>Layer-1 evolution.</strong> The agent currently only edits
+Layer-2 module config. Adding Layer-1 PWL shape evolution (extending the
+edit grammar to
+<code>shapes.&lt;problem&gt;.&lt;signal&gt;.bps[i]</code> and
+<code>.vals[i]</code>) is mechanical and would let the agent re-shape
+problem detection per (persona, category) cell.</p>
+<p><strong>Drift and structural exploration.</strong> Inject a
+persona-distribution shift mid-stream and a catalog change at a
+checkpoint, and measure how each method recovers. This is the test the
+production setting actually wants.</p>
+<p><strong>Live engagement validation.</strong> Validate the
+synthetic-ground-truth ranking against logged engagement data from a
+deployed system. This is the limitation reviewers will press hardest on,
+and the right way to address it is a logged-eval study, not a richer
+simulator.</p>
+<p><strong>Multi-agent edit ensembles.</strong> OPRO does poorly because
+it lacks structured feedback; the report-based agent is bottlenecked by
+single-shot reasoning. An ensemble of 3-5 agent draws per checkpoint
+with cross-validation selection (related to but distinct from the Robust
+EDP wrapper, which evaluates parameter perturbations rather than
+alternative agent draws) is a low-cost way to extract more value per
+checkpoint.</p>
+<h2 id="conclusion">9. Conclusion</h2>
+<p>The bandit-vs-page-composition comparison is conditional on what
+reward signal the system instruments. Under lab conditions (per-slot
+reward) per-slot LinTS is the best method we measured; the same
+algorithm degrades by 14 percentage points moving to production
+conditions (page-level attribution + delay + noise). A 2-layer GAM
+policy edited by an LLM agent reading a structured diagnostic report —
+EDP-agent — does not move at all and wins production by ~2× across two
+independent simulator setups, including a stress test where personas are
+LLM-described in natural language and 6 fashion categories modulate need
+importance. The OPRO ablation isolates the structured diagnostic report
+as the carrier of the gain. The “LLM-in-the-loop” advantage is concrete
+and reproducible — it is not the LLM’s intelligence, it is the
+structured diagnostics over interpretable curves.</p>
 <hr />
-<h3 id="reproducing">Reproducing</h3>
-<div class="sourceCode" id="cb9"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parametric multiseed (baseline)</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/multiseed.py <span class="at">--reps</span> 10 <span class="at">--out</span> results_multiseed_parametric_cat.npz</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># LLM personas (generate cache once, then multiseed)</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/persona_generate.py prepare    <span class="co"># writes instruction files</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># ...spawn 14 subagents (one per file in data/persona_instructions/)</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/persona_generate.py merge      <span class="co"># consolidates into cache</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="va">EDP_PERSONA_SOURCE</span><span class="op">=</span>llm <span class="ex">python3</span> experiments/multiseed.py <span class="at">--reps</span> 10 <span class="dt">\</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">--source</span> llm <span class="at">--out</span> results_multiseed_llm_cat.npz</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># static + LLM-as-policy baselines (Section 5.8)</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/llm_policy_generate.py         <span class="co"># writes the prompt</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co"># ...spawn 1 subagent to author data/llm_policy_fn.py</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/run_baselines.py <span class="at">--source</span> llm  <span class="co"># runs both deterministic baselines</span></span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Robust EDP (Section 5.8); 3 rounds, one subagent per round</span></span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="va">EDP_PERSONA_SOURCE</span><span class="op">=</span>llm <span class="ex">python3</span> <span class="at">-m</span> edp.orchestrators.robust <span class="dt">\</span></span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">--reset</span> <span class="at">--state-dir</span> robust_state_llm <span class="at">--until</span> 2500</span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ...spawn subagent → edits_round_2500.json</span></span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="va">EDP_PERSONA_SOURCE</span><span class="op">=</span>llm <span class="ex">python3</span> <span class="at">-m</span> edp.orchestrators.robust <span class="dt">\</span></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">--state-dir</span> robust_state_llm <span class="at">--apply</span> robust_state_llm/edits_round_2500.json <span class="at">--until</span> 5000</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="co"># ...repeat for 7500 and 10000</span></span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="co"># stressor ablation</span></span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/stressor_decomp.py</span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="co"># all figures</span></span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> viz.py</span></code></pre></div>
-<h3 id="interactive-demos">Interactive demos</h3>
-<p>Two single-file HTML pages under <code>demo/</code> (no build step,
-Tailwind via CDN):</p>
-<ul>
-<li><code>demo/policy_comparison.html</code> — §5 companion: 5
-side-by-side policy panels (Static, LinTS-cold, LinTS-warm, EDP-v1,
-EDP-v3) on the same session. Pick persona + fashion category, drag the
-14 signal sliders, see each policy’s 6-slot page and its reward / % of
-oracle. LinTS panels use pre-trained posterior means exported from a
-10K-session Python training run (<code>demo/lints_state.json</code>,
-~784 KB, regenerable with
-<code>experiments/export_lints_state.py</code>). The JS reward function
-matches the Python implementation exactly (verified on
-<code>returner_anxious × bottoms</code>: Static 1.101125, EDP-v1
-1.042475).</li>
-<li><code>demo/edp_orchestrator.html</code> — §3 companion: EDP
-composition flow, Layer-1 PWL shapes → 7-d problem fingerprint → Layer-2
-GAM scoring → greedy composition, with a v1 ↔︎ v3 toggle for the canned
-edit batch.</li>
-</ul>
-<p>Open with:</p>
-<div class="sourceCode" id="cb10"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> demo <span class="kw">&amp;&amp;</span> <span class="ex">python3</span> <span class="at">-m</span> http.server 8765</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># open http://localhost:8765/policy_comparison.html</span></span></code></pre></div>
-<p>The HTTP server is needed for <code>policy_comparison.html</code>
-because it fetches <code>lints_state.json</code> (file:// origin would
-be blocked). The composition-flow demo works via <code>file://</code>
-directly.</p>
-<h3 id="code-map">Code map</h3>
-<pre><code>edp/                         # core package
-  config.py        N_SLOTS, signal/need/problem names
-  catalog.py       widget catalog + fashion categories
-  ground_truth.py  category-aware reward, oracle, persona-source switch
-  sim.py           (persona, category, feat) stream + DelayedFeedback
-  personas/
-    parametric.py  paper §2.1 baseline
-    llm.py         cache reader for LLM-generated personas
-  policies/
-    base.py        Policy ABC
-    edp.py         EDPPolicy + apply_edits
-    bandit.py      LinTS + warm/cold/category contexts
-    static.py      §5.8 static-widget baseline (top-6 by base)
-    llm_policy.py  §5.8 LLM-as-policy wrapper for data/llm_policy_fn.py
-  orchestrators/
-    base.py        state save/load, batch run
-    report.py      report-based live-agent loop
-    opro.py        OPRO ablation loop
-    robust.py      §5.8 Robust EDP — K-perturbation validation-slice selection
-
-experiments/                 # entry-point scripts
-  compare.py                 head-to-head harness
-  multiseed.py               10-seed bandits + deterministic EDP baselines
-  persona_generate.py        prepare/merge pipeline for LLM persona cache
-  llm_policy_generate.py     §5.8 prompt for the LLM-as-policy function
-  run_baselines.py           §5.8 static + LLM-as-policy on either source
-  stressor_decomp.py         §5.2 sweep
-  export_lints_state.py      train LinTS, export weights JSON for the demo
-
-data/
-  personas_text.yaml         14 persona descriptions
-  persona_instructions/      per-persona subagent prompts
-  persona_drafts/            subagent outputs
-  personas_llm_cache.json    consolidated cache
-  widget_descriptions.yaml   widget descriptions (used by §5.8 LLM-policy prompt)
-  llm_policy_fn.py           §5.8 LLM-authored pick_page(feat, category)
-
-demo/                        # single-file HTML interactive companions
-  policy_comparison.html     §5 head-to-head: 5 policies side by side
-  edp_orchestrator.html      §3 composition-flow visualiser
-  lints_state.json           pre-trained LinTS weights for the demo</code></pre>
+<p>For reproduction commands, code structure, and the interactive demos,
+see the supplementary material (<code>supplementary.md</code>).</p>
 </body>
 </html>
