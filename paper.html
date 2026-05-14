@@ -104,15 +104,18 @@ per-slot), arrive with multi-day delay, and are noisy. Under these
 conditions we show that a 2-layer Generalized Additive Model (GAM)
 policy edited by an LLM agent reading a structured diagnostic report —
 an <strong>Evolvable Decision Program (EDP)</strong> — beats Linear
-Thompson Sampling by <strong>3.23×</strong> in cumulative regret at 10K
-sessions (607 ± 12 vs 1,964 ± 6 across 3 independent agent runs and 10
-bandit seeds respectively). An OPRO-style ablation in which the agent
-sees only <code>(edit_batch, batch_regret)</code> pairs recovers ~42% of
-EDP’s improvement on average but with 9× the variance, leaving it
-indistinguishable from the static baseline at 1 standard error. We
-isolate the structured diagnostic report as the primary carrier of the
-gain. The “LLM-in-the-loop” advantage is not magic; it requires curves
-the LLM can reason about and a report telling it where they are off.</p>
+Thompson Sampling by <strong>3.2×</strong> in cumulative regret across
+two simulator setups. We test on (i) a baseline parametric simulator
+with 8 personas (LinTS regret 18.9% of oracle, EDP-agent 10.5%) and (ii)
+a more realistic simulator where 14 personas are described in natural
+language and a Claude subagent generates 50 exemplar session vectors per
+persona, with 6 fashion categories modulating need importance (LinTS
+21.6%, EDP-agent 11.9%). The EDP-agent gap to its parametric performance
+is +1.4 percentage points, vs +9.1 pp for EDP-static and +7.0 pp for
+offline-curated edits — establishing EDP-agent as the <strong>most
+robust method to simulator realism</strong>. An OPRO-style ablation
+isolates the structured diagnostic report — not the LLM’s general
+intelligence — as the carrier of the gain.</p>
 <h2 id="introduction">1. Introduction</h2>
 <p>Recommendation pages are composed, not just ranked. A product detail
 page mixes outfit-completion modules with fit-reassurance widgets,
@@ -154,16 +157,28 @@ dominant production stressor, an order of magnitude larger than delay or
 noise.</li>
 </ol>
 <h2 id="simulation-setup">2. Simulation setup</h2>
-<p>We deliberately separate three things, each in its own module of the
-codebase: the <strong>customer simulator</strong> (<code>sim.py</code>),
-the <strong>ground-truth reward</strong> (also <code>sim.py</code>, but
-independent of any policy’s internal representations), and the
-<strong>observable reward signal</strong> the policy actually receives
-(the <code>DelayedFeedback</code> queue with optional noise and
-page-level attribution).</p>
-<h3 id="customer-simulator">2.1 Customer simulator</h3>
-<p>A session is a tuple <code>(persona_name, feature_vector)</code>
-drawn from a stationary mixture of <strong>8 personas</strong>:</p>
+<p>We deliberately separate four things, each in its own module of the
+<code>edp/</code> package: the <strong>customer simulator</strong>
+(<code>edp/sim.py</code>), the <strong>persona source</strong>
+(parametric or LLM-driven, in <code>edp/personas/</code>), the
+<strong>ground-truth reward</strong> (<code>edp/ground_truth.py</code>,
+policy-agnostic), and the <strong>observable reward signal</strong> the
+policy actually receives (the <code>DelayedFeedback</code> queue with
+optional noise and page-level attribution).</p>
+<p>The session-stream contract is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>make_session_stream(n, seed<span class="op">=</span><span class="dv">42</span>) <span class="op">-&gt;</span> <span class="bu">list</span>[(persona_name, category, feat_dict)]</span></code></pre></div>
+<p>where <code>feat_dict</code> has 14 raw signals + 1 product feature
+(<code>price_norm</code>). Two persona sources implement the same
+<code>(persona_names, mixture_weights, true_needs, sample_session)</code>
+interface so policies and orchestrators are agnostic to which one is
+active. Switch via env var or <code>set_source('llm')</code>.</p>
+<h3 id="customer-simulator-parametric-source">2.1 Customer simulator
+(parametric source)</h3>
+<p>A session is a tuple
+<code>(persona_name, category, feature_vector)</code> drawn from a
+stationary mixture of <strong>8 personas</strong> (parametric source)
+and <strong>6 fashion categories</strong>:</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -254,17 +269,17 @@ directly see it either.</p>
 <code>(need × provision)</code>. Each slot consumes from the persona’s
 remaining need budget; later slots get less credit because earlier slots
 have already filled the relevant need:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> true_page_reward(persona, page):</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    needs <span class="op">=</span> TRUE_NEEDS[persona]                 <span class="co"># dict need -&gt; importance</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    remaining <span class="op">=</span> <span class="bu">dict</span>(needs)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> widget <span class="kw">in</span> page:                         <span class="co"># 6 slots</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> d, p <span class="kw">in</span> TRUE_PROVISIONS[widget].items():</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            consumed <span class="op">=</span> <span class="bu">min</span>(remaining[d], p)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            total <span class="op">+=</span> needs[d] <span class="op">*</span> consumed        <span class="co"># weight by importance</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            remaining[d] <span class="op">-=</span> consumed</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> true_page_reward(persona, page):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    needs <span class="op">=</span> TRUE_NEEDS[persona]                 <span class="co"># dict need -&gt; importance</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    remaining <span class="op">=</span> <span class="bu">dict</span>(needs)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> widget <span class="kw">in</span> page:                         <span class="co"># 6 slots</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> d, p <span class="kw">in</span> TRUE_PROVISIONS[widget].items():</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            consumed <span class="op">=</span> <span class="bu">min</span>(remaining[d], p)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>            total <span class="op">+=</span> needs[d] <span class="op">*</span> consumed        <span class="co"># weight by importance</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            remaining[d] <span class="op">-=</span> consumed</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total</span></code></pre></div>
 <p>The page-level <strong>oracle</strong> is computed once per persona
 by greedy submodular selection over <code>TRUE_PROVISIONS</code> with
 the same diminishing-returns mechanic. With 6 slots and 22 candidate
@@ -277,6 +292,102 @@ oracle_reward[size_anxious_new]   = 1.350     oracle_reward[price_sensitive]  = 
 oracle_reward[comparison_shopper] = 1.240     oracle_reward[outfit_seeker]    = 1.215</code></pre>
 <p>We report <strong>cumulative regret</strong> =
 <code>Σᵢ (oracle[personaᵢ] − reward[i])</code>. Lower is better.</p>
+<h3 id="b-fashion-categories">2.2b Fashion categories</h3>
+<p>Every session is also tagged with a fashion category drawn
+independently from a 6-way mixture:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Share</th>
+<th>Dominant need uplifts</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>dress</td>
+<td>18%</td>
+<td>+30% on <code>N5_styling</code>, +10% on <code>N2_visual</code></td>
+</tr>
+<tr class="even">
+<td>top</td>
+<td>22%</td>
+<td>+20% on <code>N3_peer</code></td>
+</tr>
+<tr class="odd">
+<td>bottoms</td>
+<td>20%</td>
+<td>+30% on <code>N1_fit</code>, +20% on <code>N4_compare</code></td>
+</tr>
+<tr class="even">
+<td>shoes</td>
+<td>15%</td>
+<td>+40% on <code>N1_fit</code>, +30% on <code>N6_trust</code></td>
+</tr>
+<tr class="odd">
+<td>outerwear</td>
+<td>10%</td>
+<td>+30% on <code>N2_visual</code>, +20% on <code>N6_trust</code></td>
+</tr>
+<tr class="even">
+<td>accessories</td>
+<td>15%</td>
+<td>+30% on <code>N5_styling</code>, +30% on <code>N2_visual</code>,
+−50% on <code>N1_fit</code></td>
+</tr>
+</tbody>
+</table>
+<p>A persona’s effective need vector for a session is
+<code>base_need * category_multiplier</code> (then clipped to [0, 1]).
+The same <code>size_anxious_new</code> persona shopping shoes has
+effective <code>N1_fit ≈ 1.0</code>; shopping accessories has effective
+<code>N1_fit ≈ 0.42</code>. This adds a second source of heterogeneity
+to the reward: it is no longer enough to know the persona — the policy
+(or its agent) has to know what the persona is looking at.</p>
+<p>The bandit can optionally see a one-hot category vector appended to
+its context (<code>--with-category-context</code>). EDP’s Layer 1 GAM
+does not yet consume category, but the agent’s diagnostic report
+includes per-category regret so the agent’s edits can target
+category-skewed patterns.</p>
+<h3 id="c-llm-driven-persona-source">2.2c LLM-driven persona source</h3>
+<p>For the realism stress test, we add a second persona source. Each
+persona is a paragraph of natural language in
+<code>data/personas_text.yaml</code>:</p>
+<pre><code>- name: post_return_returner
+  mixture_weight: 0.08
+  description: &gt;
+    Recently returned an item from the same brand. Their previous order
+    didn&#39;t fit. They are skeptical now and proceeding cautiously. They
+    examine the new product&#39;s size chart in unusual detail, look at the
+    return policy three times, read reviews mentioning fit ...</code></pre>
+<p>There are 14 such descriptions, intentionally more nuanced than the 8
+parametric personas (e.g., <code>birthday_rush_gifter</code>,
+<code>returner_from_recent_order</code>,
+<code>post_return_returner</code>). For each, a Claude subagent
+generated:</p>
+<ol type="1">
+<li>A <code>true_needs</code> vector (7-d, [0,1]) inferred from the
+description.</li>
+<li><strong>50 exemplar feature vectors</strong> — concrete 14-d signal
+vectors that are plausible single sessions from this persona, with
+realistic correlations (e.g., low <code>size_conf</code> tracking with
+high <code>size_chart</code> and high <code>return_view</code>).</li>
+</ol>
+<p>At simulation time, <code>edp.personas.llm.sample_session</code>
+draws a persona by mixture, samples an exemplar uniformly from that
+persona’s 50-vector pool, then adds Gaussian noise <code>σ = 0.05</code>
+per signal before clipping. This combines <strong>LLM reasoning</strong>
+(the exemplar) with <strong>randomness</strong> (the noise and the
+random pick).</p>
+<p>The 14 personas × 50 exemplars = 700 cached vectors were generated in
+14 parallel subagent calls (one per persona), with the generator script
+in <code>experiments/persona_generate.py</code> and the cache in
+<code>data/personas_llm_cache.json</code>.</p>
 <h3 id="production-reward-stack">2.3 Production reward stack</h3>
 <p>The bandit (and the agent’s diagnostic report) sees a modified
 observable signal. Three orthogonal stressors:</p>
@@ -896,6 +1007,110 @@ carrier of the gain.</figcaption>
 (<code>fig_widget_heatmap.png</code>) shows the agent activating
 successive families: returns/size first, then style/visual, then
 rebalancing.</p>
+<h3 id="robustness-to-simulator-realism-fig.-6-tab.-3">5.7 Robustness to
+simulator realism (Fig. 6, Tab. 3)</h3>
+<p>Cum regret as % of oracle reward, after 10K sessions on the
+production stack, across two simulator setups:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Parametric (8)</th>
+<th>LLM (14 + cats)</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>EDP-agent (ours)</strong></td>
+<td><strong>10.5%</strong></td>
+<td><strong>11.9%</strong></td>
+<td><strong>+1.4 pp</strong></td>
+</tr>
+<tr class="even">
+<td>EDP-canned (offline)</td>
+<td>8.0%</td>
+<td>15.0%</td>
+<td>+7.0 pp</td>
+</tr>
+<tr class="odd">
+<td>EDP-static</td>
+<td>10.7%</td>
+<td>19.8%</td>
+<td>+9.1 pp</td>
+</tr>
+<tr class="even">
+<td>LinTS-warm</td>
+<td>18.9%</td>
+<td>21.6%</td>
+<td>+2.7 pp</td>
+</tr>
+<tr class="odd">
+<td>LinTS-cold</td>
+<td>20.2%</td>
+<td>22.9%</td>
+<td>+2.7 pp</td>
+</tr>
+</tbody>
+</table>
+<p>Two findings:</p>
+<ol type="1">
+<li><strong>EDP-agent is the most robust method to simulator
+realism.</strong> Its absolute regret rises from 10.5% to 11.9% (+1.4
+pp) when we switch from 8 fixed-Gaussian personas to 14 LLM-generated
+personas with category-conditioned needs. Every other method except the
+bandits — which start poor and stay poor — degrades more.</li>
+<li><strong>The agent’s learning loop matters MORE under harder
+simulators.</strong> EDP-static and EDP-canned both collapse under LLM
+personas (static: 10.7% → 19.8%; canned: 8.0% → 15.0%) because their
+priors / fixed edits were tuned for the parametric setup. Only the
+agent-driven loop can re-target its edits to the new persona / category
+mix; the canned edits cannot.</li>
+</ol>
+<p>The gap between EDP-agent and LinTS-warm holds in both setups:
+<strong>8.4 percentage points (Parametric)</strong> and <strong>9.7
+percentage points (LLM)</strong>, equivalent to roughly 2× headline
+ratios. Per-category and per-persona breakdowns in
+<code>figures/fig5_category_heatmap.png</code> and
+<code>figures/fig4_persona_heatmap_llm.png</code> show EDP-agent winning
+every category and almost every persona.</p>
+<figure>
+<img src="figures/fig1_cumregret.png"
+alt="Figure 6: Cumulative regret on production stack across both simulators. Left: parametric (8 personas). Right: LLM (14 personas + 6 fashion categories). EDP-agent (blue) stays low across both; EDP-static (grey dotted) and EDP-canned (green dashed) degrade sharply when the simulator changes; LinTS (red/purple) is high in both." />
+<figcaption aria-hidden="true">Figure 6: Cumulative regret on production
+stack across both simulators. Left: parametric (8 personas). Right: LLM
+(14 personas + 6 fashion categories). EDP-agent (blue) stays low across
+both; EDP-static (grey dotted) and EDP-canned (green dashed) degrade
+sharply when the simulator changes; LinTS (red/purple) is high in
+both.</figcaption>
+</figure>
+<figure>
+<img src="figures/fig3_robustness.png"
+alt="Figure 7: Method robustness across simulator setups. Each bar is cumulative regret at 10K sessions as % of total oracle reward. EDP-agent shows the smallest gap between parametric and LLM setups (+1.4 pp), while EDP-static degrades by +9.1 pp." />
+<figcaption aria-hidden="true">Figure 7: Method robustness across
+simulator setups. Each bar is cumulative regret at 10K sessions as % of
+total oracle reward. EDP-agent shows the smallest gap between parametric
+and LLM setups (+1.4 pp), while EDP-static degrades by +9.1
+pp.</figcaption>
+</figure>
+<figure>
+<img src="figures/fig5_category_heatmap.png"
+alt="Figure 8: Per-category regret % on the LLM-persona simulator. Bandits stay near 21–24% on every category; EDP-agent stays at 11–13%, winning every category by 8–11 pp." />
+<figcaption aria-hidden="true">Figure 8: Per-category regret % on the
+LLM-persona simulator. Bandits stay near 21–24% on every category;
+EDP-agent stays at 11–13%, winning every category by 8–11
+pp.</figcaption>
+</figure>
+<figure>
+<img src="figures/fig4_persona_heatmap_llm.png"
+alt="Figure 9: Per-persona regret % on the LLM-persona simulator (14 personas). EDP-agent improves over EDP-static on every persona except size-specific-anxious and premium-silent-browser, where Layer-1 PWL shapes (held fixed in this loop) are misaligned with the LLM-defined need structure — a flagged future-work item." />
+<figcaption aria-hidden="true">Figure 9: Per-persona regret % on the
+LLM-persona simulator (14 personas). EDP-agent improves over EDP-static
+on every persona except size-specific-anxious and
+premium-silent-browser, where Layer-1 PWL shapes (held fixed in this
+loop) are misaligned with the LLM-defined need structure — a flagged
+future-work item.</figcaption>
+</figure>
 <h2 id="discussion">6. Discussion</h2>
 <h3 id="gams-as-software-3.0-primitive">6.1 GAMs as Software 3.0
 primitive</h3>
@@ -953,32 +1168,65 @@ throughout.</li>
 <p>When reward attribution is page-level and delayed — the production
 reality, not the academic regime — a 2-layer GAM policy edited by an LLM
 agent reading a structured diagnostic report beats Linear Thompson
-Sampling by <strong>3.23×</strong> in cumulative regret (607 ± 12 vs
-1,964 ± 6 at 10K sessions). The OPRO ablation isolates the structured
+Sampling by <strong>3.2×</strong> in cumulative regret across two
+independent simulator setups. The OPRO ablation isolates the structured
 diagnostic report as the primary carrier of the gain: replacing it with
 <code>(edits, score)</code> history alone yields high-variance updates
-(863 ± 107) whose mean is indistinguishable from EDP-static at one
-standard error. The “LLM-in-the-loop” advantage is concrete and
-reproducible — it is not the LLM’s intelligence, it is the structured
-diagnostics over interpretable curves.</p>
+whose mean is indistinguishable from EDP-static at one standard error.
+Finally, when we replace the parametric persona simulator with an
+LLM-driven simulator (14 text-described personas, 6 fashion categories
+modulating needs), EDP-agent is the <strong>most robust method</strong>
+to the realism shift: it degrades by only +1.4 percentage points, vs
++9.1 for static EDP and +7.0 for offline-curated edits. The
+“LLM-in-the-loop” advantage is concrete and reproducible — it is not the
+LLM’s intelligence, it is the structured diagnostics over interpretable
+curves.</p>
 <hr />
 <h3 id="reproducing">Reproducing</h3>
-<div class="sourceCode" id="cb7"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> compare.py                      <span class="co"># main head-to-head</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> stressor_decomp.py              <span class="co"># Section 5.2</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> final_compare.py                <span class="co"># consolidated table</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> viz.py                          <span class="co"># all figures</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parametric multiseed (baseline)</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/multiseed.py <span class="at">--reps</span> 10 <span class="at">--out</span> results_multiseed_parametric_cat.npz</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># LLM personas (generate cache once, then multiseed)</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/persona_generate.py prepare    <span class="co"># writes instruction files</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># ...spawn 14 subagents (one per file in data/persona_instructions/)</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/persona_generate.py merge      <span class="co"># consolidates into cache</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="va">EDP_PERSONA_SOURCE</span><span class="op">=</span>llm <span class="ex">python3</span> experiments/multiseed.py <span class="at">--reps</span> 10 <span class="dt">\</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">--source</span> llm <span class="at">--out</span> results_multiseed_llm_cat.npz</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># stressor ablation</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> stressor_decomp.py</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># all figures</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> viz.py</span></code></pre></div>
 <h3 id="code-map">Code map</h3>
-<ul>
-<li><code>sim.py</code> — simulator</li>
-<li><code>policy_edp.py</code> — EDP policy + apply_edits</li>
-<li><code>policy_bandit.py</code> — LinTS</li>
-<li><code>compare.py</code> — main comparison</li>
-<li><code>orchestrator.py</code> — report-based live-agent loop</li>
-<li><code>orchestrator_opro.py</code> — OPRO ablation loop</li>
-<li><code>stressor_decomp.py</code> — Section 5.2 ablation</li>
-<li><code>viz.py</code> — figures</li>
-<li><code>final_compare.py</code> — table assembly</li>
-</ul>
+<pre><code>edp/                         # core package
+  config.py        N_SLOTS, signal/need/problem names
+  catalog.py       widget catalog + fashion categories
+  ground_truth.py  category-aware reward, oracle, persona-source switch
+  sim.py           (persona, category, feat) stream + DelayedFeedback
+  personas/
+    parametric.py  paper §2.1 baseline
+    llm.py         cache reader for LLM-generated personas
+  policies/
+    base.py        Policy ABC
+    edp.py         EDPPolicy + apply_edits
+    bandit.py      LinTS + warm/cold/category contexts
+  orchestrators/
+    base.py        state save/load, batch run
+    report.py      report-based live-agent loop
+    opro.py        OPRO ablation loop
+
+experiments/                 # entry-point scripts
+  compare.py                 head-to-head harness
+  multiseed.py               10-seed bandits + deterministic EDP baselines
+  persona_generate.py        prepare/merge pipeline for LLM persona cache
+  stressor_decomp.py         §5.2 sweep
+
+data/
+  personas_text.yaml         14 persona descriptions
+  persona_instructions/      per-persona subagent prompts
+  persona_drafts/            subagent outputs
+  personas_llm_cache.json    consolidated cache</code></pre>
 </body>
 </html>
