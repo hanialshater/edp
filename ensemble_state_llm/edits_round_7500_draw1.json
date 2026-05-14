@@ -1,0 +1,19 @@
+{
+  "note": "round 7500 draw1 — stabilization: revive truly dead widgets (return_explainer/wishlist_save/price_drop_notify), trim over-firing low r/fire (occasion_lookbook, personal_recs), patch worst cells (confident_repeat shoes/bottoms, size_specific accessories, premium shoes)",
+  "edits": [
+    {"widget": "return_explainer", "path": "base", "from": 0.22, "to": 0.55, "reason": "0% activation despite F46 trust need; raise base so it fires for post_return_returner accessories cell (25.7% regret)"},
+    {"widget": "return_explainer", "path": "on_rem.F46", "from": 2.0, "to": 2.4, "reason": "boost F46 sensitivity to win selection over low_return_alts for return-anxious shoppers"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.22, "to": 0.5, "reason": "0% activation; needed as commit option for paralyzed_wishlister and confident_repeat low-need cells"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.42, "reason": "0% activation; bargain_hunter and confident_repeat need a soft commit nudge"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.5, "to": 0.32, "reason": "14.9% activation but only 0.28 r/fire — over-firing on confident_repeat/mobile cells where it adds little"},
+    {"widget": "personal_recs", "path": "base", "from": 0.45, "to": 0.22, "reason": "lowest r/fire (0.145) yet 3.2% activation; pull back to free slots for higher-value widgets on confident_repeat"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.7, "to": 0.55, "reason": "12.7% activation crowding specialists; r/fire 0.26 is mediocre, trim modestly"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.3, "reason": "highest r/fire (0.365) but only 4.1% activation; boost so it serves size_specific_anxious accessories (34.9% regret)"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 2.8, "to": 3.1, "reason": "drive earlier slot wins for size_specific_anxious cells where regret is high"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.25, "reason": "1.4% activation but 0.33 r/fire is solid; promote for premium_silent_browser shoes (26% regret) where return concern matters"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.16, "to": 0.32, "reason": "premium_silent_browser shoes underserved; F33 quality signal is needed for premium personas"},
+    {"widget": "trending_now", "path": "base", "from": 0.4, "to": 0.18, "reason": "near-zero activation and 0.07 r/fire when it does fire; trim base to avoid wasting trend_chaser slots"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.28, "reason": "0.3% activation but solid 0.31 r/fire; revive for outfit_event_planner and trend_chaser styling needs"},
+    {"widget": "customers_chose", "path": "base", "from": 0.1, "to": 0.32, "reason": "1% activation crowded out; needed as N3_peer source for size_specific_anxious and post_return_returner accessories"}
+  ]
+}

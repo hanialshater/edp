@@ -1,0 +1,19 @@
+{
+  "note": "round 7500 draw3 — stabilization angle: revive zero-act returns/wishlist/comparison-tail widgets via base lifts and on_cov chains; specifically target shoes/accessories worst cells and confident_repeat persona by giving default and tail widgets stronger context-conditional firing rather than blanket base bumps",
+  "edits": [
+    {"widget": "return_explainer", "path": "base", "from": 0.22, "to": 0.55, "reason": "0% activation despite serving size_specific_anxious & post_return_returner (worst regret personas); needs base lift to compete with low_return_alts"},
+    {"widget": "return_explainer", "path": "on_rem.F32", "from": 0.0, "to": 0.9, "reason": "NEW: trust-via-returns also addresses fit anxiety for size_specific_anxious accessories cell (34.9% regret)"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.35, "reason": "0% activation; cheap trust filler for shoes/outerwear cells where N6_trust multiplier is high (1.3, 1.2)"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.22, "to": 0.55, "reason": "0% activation; paralyzed_wishlister and mobile_evening have N7_commit=0.95/0.70 but widget never fires"},
+    {"widget": "wishlist_save", "path": "on_cov.F41", "from": 0.0, "to": 0.7, "reason": "NEW synergy: wishlist becomes more valuable after comparison reduces F41, capturing commit moment"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.4, "reason": "0% activation; bargain_hunter (N4_compare=0.85, N7_commit=0.55) needs commitment hook beyond price_history"},
+    {"widget": "similar_items", "path": "base", "from": 0.18, "to": 0.45, "reason": "0% activation; lightweight default to fill slot 5/6 for confident_repeat shoes (50.8% regret) where heavy specialists overshoot"},
+    {"widget": "also_bought", "path": "base", "from": 0.15, "to": 0.42, "reason": "0% activation; trend_chaser (N3_peer=0.82) and confident_repeat need cheap peer/commit signal"},
+    {"widget": "personal_recs", "path": "base", "from": 0.45, "to": 0.25, "reason": "r/fire=0.1454 is worst non-zero; over-firing on confident_repeat without payoff, demote to make room for similar_items/also_bought"},
+    {"widget": "trending_now", "path": "on_rem.F43", "from": 0.0, "to": 0.6, "reason": "NEW: trend_chaser shoes/accessories need stylistic peer cue when F43 outfit-viz remaining is high"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.5, "to": 0.32, "reason": "highest activation 14.9% but mid r/fire 0.2785; trim crowding in confident_repeat (fires 216/216) to surface diverse defaults"},
+    {"widget": "customers_chose", "path": "base", "from": 0.1, "to": 0.38, "reason": "1.0% activation; size_specific_anxious accessories N3_peer=0.78×1.10 needs peer signal that comparison_card lacks"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.32, "reason": "0.3% activation; outfit_event_planner shoes/outerwear underserved on F43 chain after outfit_completion"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.0, "to": 0.28, "reason": "0.2% activation; loses to occasion_lookbook every time despite stronger N5_styling provision (0.70 vs 0.50)"}
+  ]
+}

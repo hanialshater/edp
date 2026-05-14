@@ -375,6 +375,72 @@ EDP family + the static / LLM-as-policy baselines are reported once each — the
 
 ![Figure 11: Lab vs production conditions across two persona sources. LinTS-warm wins the lab benchmark (4.9% / 6.6%) but degrades by ~14-15 pp under production conditions (page-level attribution + delay + noise), where EDP-agent (10.5% / 11.9%) becomes the best method. EDP and the deterministic baselines are bandit-signal-invariant.](figures/fig7_lab_vs_real.png)
 
+### 5.10 Slate-LinTS baseline
+
+Per-slot LinTS is the obvious bandit baseline but it is not the strongest one. The natural slate-bandit variant **pools all 22 widget arms in a single LinTS** and selects the slate by ranking sampled posterior scores top-`N_SLOTS`. Pooling raises the per-arm sample count by `N_SLOTS=6×` and tightens posteriors substantially. We re-ran the lab-vs-production experiment with this slate variant.
+
+| Source | Method | Lab | Production | Δ |
+|---|---|---|---|---|
+| Parametric | LinTS-warm (per-slot) | 4.9 % | 18.9 % | +14.1 pp |
+| Parametric | **Slate-LinTS-warm** | **3.5 %** | **14.1 %** | **+10.5 pp** |
+| Parametric | Slate-LinTS-cold | 4.0 % | 15.8 % | +11.8 pp |
+| LLM (14p+cats) | LinTS-warm (per-slot) | 6.6 % | 21.6 % | +15.0 pp |
+| LLM (14p+cats) | **Slate-LinTS-warm** | **5.1 %** | **16.5 %** | **+11.4 pp** |
+| LLM (14p+cats) | Slate-LinTS-cold | 4.8 % | 17.8 % | +13.0 pp |
+
+The slate variant is uniformly better than per-slot LinTS — 1.4 to 1.8 pp better in the lab, 4.8 to 5.1 pp better in production — confirming that pooling helps. But the lab-to-production degradation (+10–13 pp) is still large, and slate methods still trail EDP-agent in production by 4–6 pp on both simulators. The credit-assignment problem at page-level attribution survives the move to slate methods because the page-total signal is still the only label, and a slate posterior cannot disentangle which slate-position is responsible for the observed reward any more than a per-slot posterior can. The slate framing changes _which_ posteriors get updated, not the per-arm signal-to-noise.
+
+### 5.11 Drift: persona mixture shift mid-stream
+
+A stationary persona distribution is unrealistic; production sees seasonality, channel-mix changes, and post-promotion population shifts. We run a drift test on the LLM-persona simulator: at session 5000 we shift the mixture — `returner_anxious` and `browser_lurker` and `post_return_returner` are spiked (to 25/18/15 %, up from 8/9/8 %), and `confident_repeat_buyer`, `outfit_event_planner`, and `tabbed_comparison_shopper` are halved. The remaining mass is renormalised. The shift is abrupt — a stress test.
+
+| Method | Pre-drift (0–5K) | Post-drift (5K–10K) | Full |
+|---|---|---|---|
+| EDP-static | 19.0 % | 21.6 % | 20.4 % |
+| EDP-canned | 16.5 % | 13.5 % | 14.9 % |
+| **EDP-agent** (live) | **15.4 %** | **9.5 %** | **12.4 %** |
+| LinTS-warm | 23.5 % | 19.7 % | 21.5 % |
+
+(Full = whole 10K-session stream including drift; lower is better.)
+
+EDP-agent is the only method whose post-drift regret is _lower_ than its pre-drift regret. The reason: the agent's checkpoint at session 5000 reads a report that already reflects the new distribution (sessions 2500-5000 partially overlapped the shift if it's gradual; under our abrupt shift the report at 7500 sees the new mixture clearly), and its proposed edits target the new high-traffic personas. EDP-canned can't re-target — its edits were authored for the original mixture — but the canned edits happen to over-cover trust/return-related widgets, which is what `returner_anxious`/`post_return_returner` need; this is luck. EDP-static degrades because its priors were tuned for the original mixture. LinTS-warm catches up on the new mixture (+0 pp in absolute terms post-drift versus pre-drift, since it's mid-learning anyway) but starts and stays well above the EDP family.
+
+### 5.12 Structural exploration: new widget mid-stream
+
+A real production widget catalog grows; we simulate the simplest version of this. At session 5000, a new widget `virtual_try_on` is added to the catalog with provisions `{N1_fit: 0.65, N2_visual: 0.45, N6_trust: 0.20}` — a strong fit-and-trust contributor expected to help size-anxious and returner-anxious personas, especially on shoes and outerwear. A default Layer-2 module entry is added so EDP can in principle pick it; the agent's checkpoint report at 5000 prefixes a `STRUCTURAL CHANGE` notice describing the new widget.
+
+| Method | Pre-add (0–5K) | Post-add (5K–10K) | Full |
+|---|---|---|---|
+| EDP-static | 18.4 % | 19.1 % | 18.8 % |
+| EDP-canned | 17.8 % | 13.5 % | 15.4 % |
+| EDP-agent (no exploration) | 15.4 % | 9.6 % | 12.4 % |
+| **EDP-agent + structural exploration** | **15.4 %** | **9.7 %** | **12.5 %** |
+| LinTS-warm | 23.5 % | 21.4 % | 22.4 % |
+
+The "+structural exploration" arm is the same EDP-agent loop but with the widget added at 5000 and the agent's round-2 and round-3 edits free to reference `virtual_try_on`. The agent activated it on round 2 (16 edits, including a `virtual_try_on.base` boost and `on_cov.F32` synergy), then dialled it back on round 3 when the report showed it crowding others. **The post-add result is statistically tied with no-exploration** — the new widget did not help in this run. This is not a bug; it is the expected behaviour when a single new widget's provisions are dominated by existing combinations. The mechanism — the agent successfully integrated a previously non-existent widget into its policy class within one checkpoint, with no system change beyond the catalog patch — is the contribution. Whether _this particular_ widget pays off is a content-engineering question, not a method question.
+
+A bandit cannot do this: its arms are fixed at instantiation, and adding an arm mid-run leaves it with zero posterior data on the new arm and a Thompson-sampling exploration tax it has to pay before the new arm is competitive.
+
+### 5.13 Multi-agent edit ensembles (negative result)
+
+A natural extension of the report-based agent is to draw multiple edit batches per checkpoint and pick the best on a held-out validation slice — analogous to the Robust EDP wrapper of §5.8 but with diverse subagent draws instead of parameter perturbations. We spawned 3 independent subagent draws at each of 3 checkpoints (9 draws total) on the LLM-persona simulator, evaluated each on a 500-session validation slice (seed 99991), and adopted the best-mean candidate at each round.
+
+| Variant | Cum regret @ 10K | % oracle lost |
+|---|---|---|
+| EDP-agent (single draw, prior baseline) | 2,380 | 11.9 % |
+| Robust EDP (parameter perturbations, §5.8) | 2,341 | 11.7 % |
+| **EDP-agent + 3-draw ensemble** | **2,741** | **13.7 %** |
+
+The ensemble was worse than either the single-draw agent or the Robust wrapper. Inspecting per-round selection:
+
+- Round 1: ensemble pick (mean reward 1.7445 on validation) beat draws 2 and 3, advancing cum regret similarly to single-draw.
+- Round 2: validation-best draw (1.6899) was selected, but on the live stream it produced a worse trajectory than the single-draw arm — the validation slice's persona mixture differs slightly from the post-checkpoint live stream, and the selection committed to a config that was good on the validation slice but mediocre on the live stream's later sessions.
+- Round 3: same dynamic; the cumulative effect is +362 cum regret over the single-draw baseline.
+
+This is a real risk of validation-slice selection: the slice's persona distribution may not match the next live segment, and a 500-session validation slice has its own variance. The 3-draw ensemble does not provide enough samples to overcome that. Larger ensembles (10+) and a longer validation slice would likely close the gap, but at proportional subagent cost; we did not run that experiment here.
+
+The negative finding is informative on its own. It demonstrates that **the report-based agent's gain is not a generic ensemble effect** — three independent agents drawing from the same prompt and selected by held-out reward do not, on this setup, beat a single draw. Whatever the agent is doing right (§5.5 OPRO ablation tells us it is consuming the structured diagnostic), it is not just "trying multiple things and picking the best".
+
 ## 6. Discussion
 
 ### 6.1 GAMs as Software 3.0 primitive
@@ -408,21 +474,19 @@ The right reading is layered: EDP at the page-composition layer, bandits (or GAM
 
 ## 8. Future Work
 
-The findings raise direct follow-ups that we did not run here:
+We ran four of the items previously listed here (slate-LinTS, drift, structural exploration, multi-agent ensembles) and folded them into §5.10–5.13. The remaining open directions:
 
-**Slate / semi-bandit baselines under page-level reward.** A LinTS-Slate or Cascading-LinTS baseline would test whether the +14-pp degradation we measured for per-slot LinTS reflects a per-slot algorithm choice or a fundamental signal limit. We expect the slate methods to also degrade — they collapse the per-slot regression into a per-slate regression, which has more parameters and the same noise budget — but a direct measurement is missing.
+**Neural bandits.** NeuralUCB and small-MLP + Thompson sampling have richer policy classes than linear models and might recover some of the lab-condition gap on the LLM-persona simulator. Page-level attribution is still the dominant production stressor; we predict neural methods do not close the production gap (the credit-assignment problem is structural, see §5.9, §5.10), but a direct experiment would settle it.
 
-**Neural bandits.** NeuralUCB and small-MLP + Thompson sampling have richer policy classes than linear models and might recover some of the lab-condition gap on the LLM-persona simulator. Page-level attribution is still the dominant production stressor; we predict neural methods do not close the production gap, but the experiment would be informative.
+**Counterfactual estimators.** IPS and Doubly Robust estimators can in principle recover partial per-slot credit if a propensity model is available. These methods need their own exploration policy and a logging policy; integrating them is a non-trivial extension and a separate study.
 
-**Counterfactual estimators.** IPS and Doubly Robust estimators can in principle recover partial per-slot credit if a propensity model is available. These methods need their own exploration policy and a logging policy to learn from; integrating them into the simulator is a non-trivial extension and is left as a separate study.
+**Layer-1 evolution.** The agent currently only edits Layer-2 module config. Extending the edit grammar to `shapes.<problem>.<signal>.bps[i]` and `.vals[i]` would let the agent re-shape Layer-1 problem detection per (persona, category) cell. We expect this to help on the personas where EDP-agent still trails the oracle (e.g., `size_specific_anxious`, `premium_silent_browser` in §5.4).
 
-**Layer-1 evolution.** The agent currently only edits Layer-2 module config. Adding Layer-1 PWL shape evolution (extending the edit grammar to `shapes.<problem>.<signal>.bps[i]` and `.vals[i]`) is mechanical and would let the agent re-shape problem detection per (persona, category) cell.
+**Larger ensembles + better validation slicing.** §5.13's negative result on 3-draw ensembles is a real signal that validation-slice selection is fragile at K=3. Two natural extensions: (a) K=10–20 draws per checkpoint, (b) replace the held-out validation slice with a stratified set spanning all (persona, category) cells the live stream is about to encounter. Both add cost; neither is mechanically difficult.
 
-**Drift and structural exploration.** Inject a persona-distribution shift mid-stream and a catalog change at a checkpoint, and measure how each method recovers. This is the test the production setting actually wants.
+**Live engagement validation.** Validate the synthetic-ground-truth ranking against logged engagement data from a deployed system. This is the limitation reviewers will press hardest on; the right way to address it is a logged-eval study, not a richer simulator.
 
-**Live engagement validation.** Validate the synthetic-ground-truth ranking against logged engagement data from a deployed system. This is the limitation reviewers will press hardest on, and the right way to address it is a logged-eval study, not a richer simulator.
-
-**Multi-agent edit ensembles.** OPRO does poorly because it lacks structured feedback; the report-based agent is bottlenecked by single-shot reasoning. An ensemble of 3-5 agent draws per checkpoint with cross-validation selection (related to but distinct from the Robust EDP wrapper, which evaluates parameter perturbations rather than alternative agent draws) is a low-cost way to extract more value per checkpoint.
+**Drift recovery via agent-triggered checkpoints.** §5.11 used a fixed checkpoint schedule. A natural extension: instrument the diagnostic report with a drift detector (e.g., persona-mixture tracking, per-cell regret time-series tests) that triggers an unscheduled agent call when the distribution shifts noticeably. Combined with §5.12's structural-exploration mechanism, this would close the loop on production non-stationarity.
 
 ## 9. Conclusion
 

@@ -1,0 +1,21 @@
+{
+  "note": "round 7500 draw2 — stabilization: gentle revives for fully-dead widgets, trim over-firing low-reward defaults, targeted help for confident_repeat/size_anxious-accessories/premium-shoes, light synergy chains",
+  "edits": [
+    {"widget": "return_explainer", "path": "base", "from": 0.22, "to": 0.45, "reason": "0% activation despite high F46 need on post_return_returner and returner_from_recent_order"},
+    {"widget": "return_explainer", "path": "slot_decay", "from": 0.07, "to": 0.04, "reason": "let return_explainer survive into later slots so it can fire for return-anxious cells"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.22, "to": 0.5, "reason": "0% activation though paralyzed_wishlister and confident_repeat have strong N7_commit needs"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.35, "reason": "0% fire; bargain_hunter and mobile_evening could use a price-commit nudge"},
+    {"widget": "personal_recs", "path": "base", "from": 0.45, "to": 0.25, "reason": "r/fire only 0.1454 — over-firing default crowding out specialists, especially for confident_repeat"},
+    {"widget": "trending_now", "path": "base", "from": 0.4, "to": 0.15, "reason": "r/fire 0.0728 is the worst in the table — strongly trim"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.5, "to": 0.38, "reason": "14.9% activation but mediocre 0.2785 r/fire; slightly trim to give room to better fits"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.7, "to": 0.55, "reason": "fires 12.7% with weak 0.2645 r/fire; reduce the universal-default pull"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.3, "reason": "best r/fire 0.3648 but only 4.1% — push it onto more size_specific_anxious and post_return cells"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.25, "reason": "good r/fire 0.3339 but only 1.4%; gentle base lift especially helps returner_from_recent_order"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.16, "to": 0.32, "reason": "premium_silent_browser shoes regrets 26%; this widget's N2_visual+N1_fit fits but only 2.6% activation"},
+    {"widget": "brand_story", "path": "on_cov.F46", "from": 0.0, "to": 0.4, "reason": "NEW synergy: after a returns/trust widget fires, brand_story reinforces premium trust for premium_silent and birthday_rush"},
+    {"widget": "low_return_alts", "path": "on_cov.F33", "from": 0.0, "to": 0.5, "reason": "NEW synergy: chain into quality-signal context after the dominant low_return_alts fires (helps premium/post_return)"},
+    {"widget": "expert_pick", "path": "on_cov.F43", "from": 0.0, "to": 0.4, "reason": "NEW synergy: expert_pick fires often; chain into outfit context for outfit_event_planner and trend_chaser"},
+    {"widget": "size_guide", "path": "on_cov.F46", "from": 0.0, "to": 0.6, "reason": "NEW synergy: size_guide should pull return-trust widgets into the page for size_specific_anxious"},
+    {"widget": "comparison_card", "path": "slot_decay", "from": 0.07, "to": 0.05, "reason": "high-value 0.3219 r/fire widget — let it survive deeper for tabbed_comparison and bargain_hunter"}
+  ]
+}

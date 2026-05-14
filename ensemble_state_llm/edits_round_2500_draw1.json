@@ -1,0 +1,21 @@
+{
+  "note": "round 2500 draw1 — revive dead widgets, boost low-need personas, dampen over-firing defaults",
+  "edits": [
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.28, "reason": "over-fires 15.4% with low r/fire 0.25; dampen default"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.25, "reason": "10.1% activation but only 0.21 r/fire; reduce default pressure"},
+    {"widget": "trending_now", "path": "base", "from": 0.3, "to": 0.18, "reason": "weak r/fire 0.085, drop priority"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.22, "reason": "low r/fire 0.13 over 4% slots; lower"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.1, "to": 0.35, "reason": "0% activation; raise so it can compete on F46-need personas"},
+    {"widget": "easy_returns_promise", "path": "on_cov.F46", "from": 0.0, "to": 0.9, "reason": "NEW synergy: chain after return_explainer/low_return_alts cover F46"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.3, "reason": "0% activation; paralyzed_wishlister/mobile evening need commit action"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.1, "to": 0.28, "reason": "0% fires; useful late-slot context for confident_repeat_buyer"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.25, "reason": "0% activation; should help paralyzed and corporate_uniform"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.22, "reason": "0% fires despite size_specific_anxious & shoes/bottoms high regret"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.05, "to": 0.2, "reason": "0% fires; premium_silent_browser needs N2_visual support"},
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.2, "reason": "0% activation; bargain_hunter and tabbed_comparison need price signals"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.08, "to": 0.22, "reason": "0% fires; outfit_event_planner & dress regret 20%"},
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.22, "reason": "0% fires; hesitant_first_buyer N6_trust=0.92 underserved"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 2.2, "to": 2.5, "reason": "shoes/bottoms (F32 fit anxiety) at 25%/21% regret; strengthen"},
+    {"widget": "comparison_card", "path": "slot_decay", "from": 0.04, "to": 0.07, "reason": "fires too often early at 12.6%; let other widgets in later slots"}
+  ]
+}

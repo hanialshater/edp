@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 draw3 — third angle: surface dead specialists via base + slot_decay relief, sharpen confident_repeat/trend_chaser/corporate_uniform fixes, add chained on_cov synergies after dominant winners",
+  "edits": [
+    {"widget": "size_guide", "path": "base", "from": 0.18, "to": 0.55, "reason": "0% activation; needs strong base to surface for size_specific_anxious shoes/bottoms cells"},
+    {"widget": "size_guide", "path": "slot_decay", "from": 0.1, "to": 0.04, "reason": "high decay buries it after slot 0; flatten to compete in mid-slots"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.18, "to": 0.5, "reason": "0% activation; outfit_event_planner/trend_chaser need styling diversity beyond outfit_completion"},
+    {"widget": "personal_recs", "path": "base", "from": 0.1, "to": 0.42, "reason": "0% activation; confident_repeat_buyer (worst persona, 26.6% regret) needs lightweight default that fits low-need profile"},
+    {"widget": "trending_now", "path": "base", "from": 0.08, "to": 0.38, "reason": "0% activation; trend_chaser top cell at 26.1% regret needs N3_peer/N5_styling minor lift"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.32, "reason": "0.2% activation; trend_chaser and outfit_event_planner need second outfit-channel widget"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.22, "to": 0.45, "reason": "0.1% activation; paralyzed_wishlister N7_commit=0.95 yet wishlist_save never fires"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.3, "reason": "1.8% activation but r/fire 0.36 (highest); returner_from_recent_order shoes/bottoms cells underserved"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.2, "to": 0.1, "reason": "12.2% activation but appears in nearly every persona top-5 indiscriminately; reduce to free slots for specialists"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.2, "to": 0.12, "reason": "12.8% activation, dominates even non-outfit personas (confident_repeat, hesitant_first); trim to allow targeted widgets"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.28, "to": 0.12, "reason": "1.9% activation with r/fire 0.116 (worst non-zero); over-baseline crowds confident_repeat sessions"},
+    {"widget": "comparison_card", "path": "on_cov.F45", "from": 0, "to": 0.6, "reason": "NEW synergy: after comparison fires, lift price-confusion follow-ups for bargain_hunter/tabbed_comparison"},
+    {"widget": "value_breakdown", "path": "base", "from": 0.05, "to": 0.28, "reason": "1.3% activation, premium_silent_browser only sees it 97/170; needs lift for F45 coverage"},
+    {"widget": "fit_reassurance", "path": "on_cov.F46", "from": 0, "to": 0.5, "reason": "NEW synergy: fit_reassurance addresses trust which chains into return-hesitation reduction"},
+    {"widget": "expert_pick", "path": "on_rem.F33", "from": 0.4, "to": 1.1, "reason": "lift expert_pick for premium_silent_browser quality-signal need (14.5% regret)"},
+    {"widget": "return_explainer", "path": "slot_decay", "from": 0.07, "to": 0.04, "reason": "post_return_returner shoes/bottoms cells at 22-23% regret; let return_explainer survive deeper slots"}
+  ]
+}

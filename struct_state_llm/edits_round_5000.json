@@ -1,0 +1,18 @@
+{
+  "note": "round 5000 — activate virtual_try_on for high-N1_fit personas on shoes/outerwear without crowding fit_reassurance/size_guide",
+  "edits": [
+    {"widget": "virtual_try_on", "path": "base", "from": 0.05, "to": 0.45, "reason": "lift baseline so 0% widget can compete for slots on fit-anxious personas"},
+    {"widget": "virtual_try_on", "path": "on_rem.F32", "from": 1.6, "to": 2.4, "reason": "strong N1_fit provision should respond to size-anxiety remaining"},
+    {"widget": "virtual_try_on", "path": "on_rem.F46", "from": 0.5, "to": 1.4, "reason": "N6_trust=0.20 plus fit-preview reduces return hesitation"},
+    {"widget": "virtual_try_on", "path": "on_rem.F43", "from": 0.0, "to": 1.2, "reason": "N2_visual=0.45 makes try-on serve outfit visualization, important for outerwear"},
+    {"widget": "virtual_try_on", "path": "on_cov.F32", "from": -0.6, "to": -1.1, "reason": "stronger anti-redundancy so it does not stack on top of fit_reassurance/size_guide"},
+    {"widget": "virtual_try_on", "path": "on_cov.F46", "from": 0.0, "to": 0.6, "reason": "synergy: fire after return_explainer/easy_returns_promise have addressed F46"},
+    {"widget": "virtual_try_on", "path": "slot_decay", "from": 0.06, "to": 0.04, "reason": "premium-fit deserves later-slot eligibility on shoes/outerwear pages"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": -1.6, "reason": "tighten so size_guide yields slot to virtual_try_on once F32 partially covered"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.35, "reason": "0% activation despite strong F32 priors — boost so it stays in rotation alongside try-on"},
+    {"widget": "low_return_alts", "path": "on_cov.F32", "from": 0.0, "to": 0.5, "reason": "synergy: after low_return_alts addresses returner anxiety, encourage try-on to follow"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.4, "to": 0.25, "reason": "over-firing across nearly every persona with mediocre r/fire 0.30 — make room for try-on"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.35, "to": 0.22, "reason": "highest activation 15.8% but only 0.30 r/fire — trim to free shoe/outerwear slots"},
+    {"widget": "return_explainer", "path": "on_cov.F32", "from": 0.9, "to": 1.2, "reason": "stronger positive cross-cov pulls virtual_try_on in after return_explainer for post_return_returner"}
+  ]
+}
