@@ -1,0 +1,17 @@
+{
+  "note": "round 3 — moderate base lifts (smaller than round 1), minimal decay tweaks, fewer total edits",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 0.3, "reason": "moderate baseline lift"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 0.25, "reason": "moderate baseline lift"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.0, "to": 0.3, "reason": "moderate baseline lift"},
+    {"widget": "return_explainer", "path": "base", "from": 0.0, "to": 0.3, "reason": "moderate baseline lift"},
+    {"widget": "comparison_card", "path": "base", "from": 0.0, "to": 0.25, "reason": "moderate baseline lift"},
+    {"widget": "value_breakdown", "path": "base", "from": 0.0, "to": 0.2, "reason": "moderate baseline lift"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.0, "to": 0.25, "reason": "moderate baseline lift"},
+    {"widget": "expert_pick", "path": "base", "from": 0.0, "to": 0.2, "reason": "moderate baseline lift"},
+    {"widget": "similar_items", "path": "base", "from": 0.0, "to": 0.25, "reason": "moderate baseline lift"},
+    {"widget": "personal_recs", "path": "base", "from": 0.0, "to": 0.25, "reason": "moderate baseline lift"},
+    {"widget": "fit_reassurance", "path": "slot_decay", "from": 0.0, "to": -0.1, "reason": "light decay reduction"},
+    {"widget": "low_return_alts", "path": "slot_decay", "from": 0.0, "to": -0.08, "reason": "light decay reduction"}
+  ]
+}

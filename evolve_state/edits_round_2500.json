@@ -1,0 +1,21 @@
+{
+  "note": "round 2500 — revive dead returns/size/material widgets and add synergy chains to attack returner_anxious (27.3%) and size_anxious_new (18.1%) regret",
+  "edits": [
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.35, "reason": "0% activation despite high r/fire (0.207); returner_anxious needs N6_trust=0.85 and this is the strongest trust provider"},
+    {"widget": "return_explainer", "path": "on_rem.F46", "from": 2.0, "to": 2.6, "reason": "boost so it fires earlier when F46 remaining is high (returner_anxious)"},
+    {"widget": "easy_returns_promise", "path": "on_cov.F46", "from": -0.5, "to": 0.9, "reason": "NEW synergy: fire AFTER return_explainer has built F46 coverage, doubling trust reinforcement for returner_anxious"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.1, "to": 0.25, "reason": "0% activation despite 0.204 r/fire; lift baseline so it competes in late slots"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.4, "reason": "0% activation but size_anxious_new (18.1% regret, N=463) needs N1_fit=0.85 — size_guide is the second-strongest fit provider"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": 0.6, "reason": "NEW synergy: chain after fit_reassurance establishes F32 coverage instead of competing with it"},
+    {"widget": "size_guide", "path": "on_rem.F46", "from": 0.0, "to": 0.5, "reason": "size_anxious_new also has N6_trust=0.55; size_guide's commit signal helps returner_anxious indirectly"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.25, "reason": "covers BOTH size_anxious_new (N1_fit) and returner_anxious (N1_fit=0.55) — lift baseline"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.05, "to": 0.3, "reason": "0% activation; browser_lurker (N2_visual=0.45) and confident_buyer (N2_visual=0.45) need visual content"},
+    {"widget": "material_deep_dive", "path": "on_cov.F33", "from": 0.0, "to": 0.7, "reason": "NEW synergy: chain after brand_story (which already fires 9.0%) to deepen quality signal for browser/confident"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.2, "to": 0.05, "reason": "15.1% activation but only 0.165 r/fire — over-firing on size_anxious_new and browser_lurker who don't need styling"},
+    {"widget": "outfit_completion", "path": "on_rem.F43", "from": 1.8, "to": 2.3, "reason": "compensate base cut by making it more targeted: only fire when F43 is actually high (outfit_seeker, confident_buyer)"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.2, "reason": "0% activation; paralyzed and browser_lurker have N7_commit need; wishlist_save provides N7_commit=0.55"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.08, "to": 0.2, "reason": "0% activation but outfit_seeker (N5_styling=0.85) needs more styling diversity beyond outfit_completion"},
+    {"widget": "trending_now", "path": "base", "from": 0.3, "to": 0.15, "reason": "1.3% activation with 0.088 r/fire — worst reward/fire; reduce its default-tier weight"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.32, "reason": "15.7% activation crowding out targeted widgets; lower default so problem-aware widgets can win slots"}
+  ]
+}

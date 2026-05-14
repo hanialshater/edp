@@ -1,0 +1,35 @@
+{
+  "note": "Round 1 — derived from session 0-2500 analysis. Targets returner_anxious (27%) and size_anxious_new (18%) regret. Activates dead specialty widgets via base bumps + on_cov synergy.",
+  "edits": [
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.15,
+     "reason": "0% activation despite returner_anxious driving 27% regret. Strongest base bump."},
+    {"widget": "return_explainer", "path": "on_rem.F46", "from": 2.0, "to": 2.8,
+     "reason": "Stronger response when F46 is detected"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.10, "to": 0.18,
+     "reason": "Companion widget needs higher base"},
+    {"widget": "easy_returns_promise", "path": "on_cov.F46", "from": 0.0, "to": 1.0,
+     "reason": "NEW synergy: fires after return_explainer establishes coverage"},
+
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.12,
+     "reason": "0% activation, size_anxious_new under-served"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": 0.0, "to": 1.0,
+     "reason": "NEW synergy: fires after fit_reassurance"},
+
+    {"widget": "style_bridge", "path": "on_cov.F43", "from": 0.0, "to": 1.4,
+     "reason": "0% activation but 0.55 reward/fire when forced. Synergy with outfit_completion."},
+    {"widget": "occasion_lookbook", "path": "on_cov.F43", "from": 0.0, "to": 1.0,
+     "reason": "Tertiary outfit, NEW synergy"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.20, "to": 0.10,
+     "reason": "Over-firing at 15.1% with mediocre reward 0.16/fire — make room for better outfit widgets"},
+
+    {"widget": "material_deep_dive", "path": "on_cov.F33", "from": 0.0, "to": 1.2,
+     "reason": "Confident_buyer under-served on premium content"},
+
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.12,
+     "reason": "0% activation despite paralysis-relevant"},
+    {"widget": "wishlist_save", "path": "on_cov.F51", "from": 0.0, "to": 1.0,
+     "reason": "NEW synergy"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.10, "to": 0.18,
+     "reason": "Was 0% but should anchor paralyzed users"}
+  ]
+}

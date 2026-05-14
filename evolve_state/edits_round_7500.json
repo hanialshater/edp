@@ -1,0 +1,17 @@
+{
+  "note": "round 7500 — stabilize: pull back over-firing brand_story/style_bridge/occasion_lookbook, revive outfit_completion/easy_returns_promise/similar_items, fix size_anxious_new composition",
+  "edits": [
+    {"widget": "brand_story", "path": "base", "from": 0.45, "to": 0.22, "reason": "Over-firing at 13.3% (top widget) with mediocre r/fire 0.1761; dominates personas (size_anxious_new, outfit_seeker, browser_lurker) that don't actually need F33"},
+    {"widget": "style_bridge", "path": "base", "from": 0.4, "to": 0.22, "reason": "Over-firing at 12.7% with mediocre r/fire 0.1758; appearing as top-5 for size_anxious_new which has no F43 need"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.5, "to": 0.25, "reason": "Base too high (0.5) for r/fire 0.1798; trim to make room for problem-aware widgets"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.05, "to": 0.22, "reason": "Dead (0%) despite highest N5_styling provision (0.70) — should serve outfit_seeker, who currently gets style_bridge instead"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.05, "to": 0.18, "reason": "Dead (0%) but addresses returner_anxious (N6_trust=0.45); revive as light returns companion"},
+    {"widget": "similar_items", "path": "base", "from": 0.15, "to": 0.25, "reason": "Dead (0%) default widget; modest bump to fill final slots for comparison_shopper/browser_lurker"},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.0, "to": 2.6, "reason": "size_anxious_new still highest regret (8.6%); strengthen size_guide on F32 so it outranks brand_story in size-anxious composition"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.25, "to": 0.32, "reason": "Strong r/fire 0.1886 across many personas; small bump helps size_anxious_new where it's currently #4 instead of #1"},
+    {"widget": "trending_now", "path": "base", "from": 0.5, "to": 0.35, "reason": "Default at 6.7% with weakest r/fire 0.1477 among actives; trim to free slots for problem-aware widgets"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.25, "reason": "Default firing at 2.2% with poor r/fire 0.1004; trim to free slots"},
+    {"widget": "expert_pick", "path": "base", "from": 0.35, "to": 0.42, "reason": "Best r/fire in pool (0.2010) but only 3.9% activation; modest bump for paralyzed (top widget already, push further)"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.18, "reason": "Dead (0%) despite hitting both F32 and F46 (size_anxious_new + returner_anxious overlap)"}
+  ]
+}
