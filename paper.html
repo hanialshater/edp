@@ -1302,11 +1302,52 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="va">EDP_PERSONA_SOURCE</span><span class="op">=</span>llm <span class="ex">python3</span> experiments/multiseed.py <span class="at">--reps</span> 10 <span class="dt">\</span></span>
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">--source</span> llm <span class="at">--out</span> results_multiseed_llm_cat.npz</span>
 <span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># stressor ablation</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> stressor_decomp.py</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># all figures</span></span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> viz.py</span></code></pre></div>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># static + LLM-as-policy baselines (Section 5.8)</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/llm_policy_generate.py         <span class="co"># writes the prompt</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co"># ...spawn 1 subagent to author data/llm_policy_fn.py</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/run_baselines.py <span class="at">--source</span> llm  <span class="co"># runs both deterministic baselines</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Robust EDP (Section 5.8); 3 rounds, one subagent per round</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="va">EDP_PERSONA_SOURCE</span><span class="op">=</span>llm <span class="ex">python3</span> <span class="at">-m</span> edp.orchestrators.robust <span class="dt">\</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">--reset</span> <span class="at">--state-dir</span> robust_state_llm <span class="at">--until</span> 2500</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ...spawn subagent → edits_round_2500.json</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="va">EDP_PERSONA_SOURCE</span><span class="op">=</span>llm <span class="ex">python3</span> <span class="at">-m</span> edp.orchestrators.robust <span class="dt">\</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">--state-dir</span> robust_state_llm <span class="at">--apply</span> robust_state_llm/edits_round_2500.json <span class="at">--until</span> 5000</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="co"># ...repeat for 7500 and 10000</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="co"># stressor ablation</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> experiments/stressor_decomp.py</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="co"># all figures</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> viz.py</span></code></pre></div>
+<h3 id="interactive-demos">Interactive demos</h3>
+<p>Two single-file HTML pages under <code>demo/</code> (no build step,
+Tailwind via CDN):</p>
+<ul>
+<li><code>demo/policy_comparison.html</code> — §5 companion: 5
+side-by-side policy panels (Static, LinTS-cold, LinTS-warm, EDP-v1,
+EDP-v3) on the same session. Pick persona + fashion category, drag the
+14 signal sliders, see each policy’s 6-slot page and its reward / % of
+oracle. LinTS panels use pre-trained posterior means exported from a
+10K-session Python training run (<code>demo/lints_state.json</code>,
+~784 KB, regenerable with
+<code>experiments/export_lints_state.py</code>). The JS reward function
+matches the Python implementation exactly (verified on
+<code>returner_anxious × bottoms</code>: Static 1.101125, EDP-v1
+1.042475).</li>
+<li><code>demo/edp_orchestrator.html</code> — §3 companion: EDP
+composition flow, Layer-1 PWL shapes → 7-d problem fingerprint → Layer-2
+GAM scoring → greedy composition, with a v1 ↔︎ v3 toggle for the canned
+edit batch.</li>
+</ul>
+<p>Open with:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> demo <span class="kw">&amp;&amp;</span> <span class="ex">python3</span> <span class="at">-m</span> http.server 8765</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># open http://localhost:8765/policy_comparison.html</span></span></code></pre></div>
+<p>The HTTP server is needed for <code>policy_comparison.html</code>
+because it fetches <code>lints_state.json</code> (file:// origin would
+be blocked). The composition-flow demo works via <code>file://</code>
+directly.</p>
 <h3 id="code-map">Code map</h3>
 <pre><code>edp/                         # core package
   config.py        N_SLOTS, signal/need/problem names
@@ -1320,21 +1361,34 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="
     base.py        Policy ABC
     edp.py         EDPPolicy + apply_edits
     bandit.py      LinTS + warm/cold/category contexts
+    static.py      §5.8 static-widget baseline (top-6 by base)
+    llm_policy.py  §5.8 LLM-as-policy wrapper for data/llm_policy_fn.py
   orchestrators/
     base.py        state save/load, batch run
     report.py      report-based live-agent loop
     opro.py        OPRO ablation loop
+    robust.py      §5.8 Robust EDP — K-perturbation validation-slice selection
 
 experiments/                 # entry-point scripts
   compare.py                 head-to-head harness
   multiseed.py               10-seed bandits + deterministic EDP baselines
   persona_generate.py        prepare/merge pipeline for LLM persona cache
+  llm_policy_generate.py     §5.8 prompt for the LLM-as-policy function
+  run_baselines.py           §5.8 static + LLM-as-policy on either source
   stressor_decomp.py         §5.2 sweep
+  export_lints_state.py      train LinTS, export weights JSON for the demo
 
 data/
   personas_text.yaml         14 persona descriptions
   persona_instructions/      per-persona subagent prompts
   persona_drafts/            subagent outputs
-  personas_llm_cache.json    consolidated cache</code></pre>
+  personas_llm_cache.json    consolidated cache
+  widget_descriptions.yaml   widget descriptions (used by §5.8 LLM-policy prompt)
+  llm_policy_fn.py           §5.8 LLM-authored pick_page(feat, category)
+
+demo/                        # single-file HTML interactive companions
+  policy_comparison.html     §5 head-to-head: 5 policies side by side
+  edp_orchestrator.html      §3 composition-flow visualiser
+  lints_state.json           pre-trained LinTS weights for the demo</code></pre>
 </body>
 </html>

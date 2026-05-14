@@ -422,12 +422,51 @@ python3 experiments/persona_generate.py merge      # consolidates into cache
 EDP_PERSONA_SOURCE=llm python3 experiments/multiseed.py --reps 10 \
     --source llm --out results_multiseed_llm_cat.npz
 
+# static + LLM-as-policy baselines (Section 5.8)
+python3 experiments/llm_policy_generate.py         # writes the prompt
+# ...spawn 1 subagent to author data/llm_policy_fn.py
+python3 experiments/run_baselines.py --source llm  # runs both deterministic baselines
+
+# Robust EDP (Section 5.8); 3 rounds, one subagent per round
+EDP_PERSONA_SOURCE=llm python3 -m edp.orchestrators.robust \
+    --reset --state-dir robust_state_llm --until 2500
+# ...spawn subagent → edits_round_2500.json
+EDP_PERSONA_SOURCE=llm python3 -m edp.orchestrators.robust \
+    --state-dir robust_state_llm --apply robust_state_llm/edits_round_2500.json --until 5000
+# ...repeat for 7500 and 10000
+
 # stressor ablation
-python3 stressor_decomp.py
+python3 experiments/stressor_decomp.py
 
 # all figures
 python3 viz.py
 ```
+
+### Interactive demos
+
+Two single-file HTML pages under `demo/` (no build step, Tailwind via CDN):
+
+- `demo/policy_comparison.html` — §5 companion: 5 side-by-side policy panels
+  (Static, LinTS-cold, LinTS-warm, EDP-v1, EDP-v3) on the same session.
+  Pick persona + fashion category, drag the 14 signal sliders, see each
+  policy's 6-slot page and its reward / % of oracle. LinTS panels use
+  pre-trained posterior means exported from a 10K-session Python training run
+  (`demo/lints_state.json`, ~784 KB, regenerable with
+  `experiments/export_lints_state.py`). The JS reward function matches the
+  Python implementation exactly (verified on `returner_anxious × bottoms`:
+  Static 1.101125, EDP-v1 1.042475).
+- `demo/edp_orchestrator.html` — §3 companion: EDP composition flow, Layer-1
+  PWL shapes → 7-d problem fingerprint → Layer-2 GAM scoring → greedy
+  composition, with a v1 ↔ v3 toggle for the canned edit batch.
+
+Open with:
+```bash
+cd demo && python3 -m http.server 8765
+# open http://localhost:8765/policy_comparison.html
+```
+The HTTP server is needed for `policy_comparison.html` because it fetches
+`lints_state.json` (file:// origin would be blocked). The composition-flow
+demo works via `file://` directly.
 
 ### Code map
 
@@ -444,20 +483,33 @@ edp/                         # core package
     base.py        Policy ABC
     edp.py         EDPPolicy + apply_edits
     bandit.py      LinTS + warm/cold/category contexts
+    static.py      §5.8 static-widget baseline (top-6 by base)
+    llm_policy.py  §5.8 LLM-as-policy wrapper for data/llm_policy_fn.py
   orchestrators/
     base.py        state save/load, batch run
     report.py      report-based live-agent loop
     opro.py        OPRO ablation loop
+    robust.py      §5.8 Robust EDP — K-perturbation validation-slice selection
 
 experiments/                 # entry-point scripts
   compare.py                 head-to-head harness
   multiseed.py               10-seed bandits + deterministic EDP baselines
   persona_generate.py        prepare/merge pipeline for LLM persona cache
+  llm_policy_generate.py     §5.8 prompt for the LLM-as-policy function
+  run_baselines.py           §5.8 static + LLM-as-policy on either source
   stressor_decomp.py         §5.2 sweep
+  export_lints_state.py      train LinTS, export weights JSON for the demo
 
 data/
   personas_text.yaml         14 persona descriptions
   persona_instructions/      per-persona subagent prompts
   persona_drafts/            subagent outputs
   personas_llm_cache.json    consolidated cache
+  widget_descriptions.yaml   widget descriptions (used by §5.8 LLM-policy prompt)
+  llm_policy_fn.py           §5.8 LLM-authored pick_page(feat, category)
+
+demo/                        # single-file HTML interactive companions
+  policy_comparison.html     §5 head-to-head: 5 policies side by side
+  edp_orchestrator.html      §3 composition-flow visualiser
+  lints_state.json           pre-trained LinTS weights for the demo
 ```
