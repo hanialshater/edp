@@ -1234,6 +1234,91 @@ distinct things “evolvable” buys you (the other is updating coefficients
 within a fixed class). Our infrastructure now supports both; the
 empirical value of Layer-1 edits requires more careful evaluation than a
 single trial provides.</p>
+<h3 id="e-generality-check-non-submodular-reward">5.4e Generality check:
+non-submodular reward</h3>
+<p>A reviewer would correctly note that diminishing-returns-on-(need ×
+provision) is exactly the structure adaptive-submodular composition is
+designed for. To test whether the architecture advantage survives
+outside the submodular regime, we add a <em>substitutes penalty</em>:
+any page that contains two widgets of the same <code>type</code> family
+(e.g. two returns widgets, two outfit widgets) loses
+<code>α = 0.15</code> per same-type pair from its reward. This breaks
+the greedy-best-next optimum and creates a genuinely non-submodular
+reward landscape (some widgets are substitutes for, not complements to,
+each other).</p>
+<p>Re-running every method on the parametric simulator with this
+modified reward under the same production stack (page-level, delay=500,
+σ=0.20):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Submodular regret</th>
+<th>Non-submodular regret</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EDP-static</td>
+<td>10.7 %</td>
+<td>23.7 %</td>
+<td>+13.0 pp</td>
+</tr>
+<tr class="even">
+<td>LinTS-warm</td>
+<td>18.9 ± 0.1 %</td>
+<td>26.8 ± 0.1 %</td>
+<td>+7.9 pp</td>
+</tr>
+<tr class="odd">
+<td>Slate-LinTS-warm</td>
+<td>14.1 %</td>
+<td>21.1 ± 0.2 %</td>
+<td>+7.0 pp</td>
+</tr>
+<tr class="even">
+<td>CombLinUCB-warm</td>
+<td>10.5 ± 0.1 %</td>
+<td>17.4 ± 0.2 %</td>
+<td>+6.9 pp</td>
+</tr>
+<tr class="odd">
+<td>EDP-agent (single-rep)</td>
+<td>7.9 %</td>
+<td>14.7 %</td>
+<td>+6.8 pp</td>
+</tr>
+<tr class="even">
+<td><strong>Bayesian-EDP</strong></td>
+<td><strong>7.6 ± 0.3 %</strong></td>
+<td><strong>11.9 %</strong></td>
+<td><strong>+4.3 pp</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Two findings:</p>
+<ol type="1">
+<li><p><strong>The architecture advantage persists.</strong>
+Bayesian-EDP still beats every bandit by 5.5–14.9 pp, EDP-agent still
+beats LinTS-warm by 12 pp. The “right architecture for slate problems”
+claim is not solely an artefact of the submodular-reward fit.</p></li>
+<li><p><strong>The bandit gap actually widens.</strong> Under submodular
+reward Bayesian-EDP beat CombLinUCB by 2.9 pp on parametric; under
+non-submodular reward it beats CombLinUCB by 5.5 pp. The reason: under
+page-level attribution, bandits cannot disentangle which widget
+<em>pair</em> in a page incurred the substitutes penalty — that’s a
+per-arm-interaction signal, even less informative than a per-arm signal.
+The credit-assignment problem we identified in §5.2 is more severe when
+the reward function has cross-slot interactions, not less.</p></li>
+</ol>
+<p>EDP-static degrades the most (+13 pp) because its hand-authored
+module config didn’t anticipate the substitutes structure and freely
+composes same-type widgets; the agent-edited variants degrade less
+because the agent reads per-widget activation in the diagnostic report
+and can dial down over-firing types. The result is single-trial for the
+deterministic methods and N=3 for the bandits — enough to establish the
+qualitative pattern, not a clean magnitude claim.</p>
 <h3 id="per-persona-and-per-category-breakdowns">5.5 Per-persona and
 per-category breakdowns</h3>
 <p>The aggregate numbers in §5.1 hide where each method wins or loses.
@@ -1803,14 +1888,17 @@ doesn’t neutralise shared semantic substrate inside the LLM family. A
 clean check would generate <code>TRUE_PROVISIONS</code> with a different
 LLM family (GPT, Gemini) or perturb provisions adversarially; we have
 not done either.</p></li>
-<li><p><strong>Submodular reward is exactly what EDP assumes.</strong>
+<li><p><strong>Submodular reward is partly what EDP assumes.</strong>
 Diminishing returns on <code>(need × provision)</code> is the structure
 adaptive-submodular composition is designed for. GreedyLinTS (§5.4c)
-inherits the same structural fit. The “right architecture wins” claim is
-partially “the architecture matching the reward structure wins”. A
-non-submodular reward — substitutes, threshold effects, or interaction
-terms across slots — would test generality and is left as future
-work.</p></li>
+inherits the same structural fit. §5.4e adds one non-submodular
+experiment (substitutes penalty <code>α=0.15</code> per same-type-pair)
+and shows the architecture advantage persists: Bayesian-EDP still beats
+every bandit by 5–15 pp under the non-submodular reward, and the gap
+<em>widens</em> vs the strongest bandit (3 pp → 5.5 pp) because
+page-level attribution makes the cross-slot interaction term even harder
+for bandits to learn. Other non-submodular regimes (threshold effects,
+full bilinear interactions, complementarity) are untested.</p></li>
 <li><p><strong>Combinatorial bandits tested up to CombLinUCB.</strong>
 Neural bandits (NeuralUCB, MLP+TS) and counterfactual estimators (IPS,
 DR) are not in the comparison. The page-attribution finding is

@@ -1,0 +1,29 @@
+{
+  "alpha": 0.15,
+  "cells": {
+    "edp_static": {
+      "mean_pct": 23.66666511453932,
+      "sem_pct": 0.0
+    },
+    "edp_agent": {
+      "mean_pct": 14.66906476522561,
+      "sem_pct": 0.0
+    },
+    "bayesian_edp": {
+      "mean_pct": 11.926409709038616,
+      "sem_pct": 0.0
+    },
+    "lints_warm": {
+      "mean_pct": 26.841471829519165,
+      "sem_pct": 0.07455318511103802
+    },
+    "slate_warm": {
+      "mean_pct": 21.11195588762455,
+      "sem_pct": 0.16902724071642222
+    },
+    "comb_warm": {
+      "mean_pct": 17.424822102668685,
+      "sem_pct": 0.24480748375803635
+    }
+  }
+}
