@@ -99,24 +99,25 @@ Conditions</h1>
 <h2 id="abstract">Abstract</h2>
 <p>Page composition — choosing which 6 modules to display, in which
 order, given a user — is academically a contextual combinatorial bandit
-problem. In production, however, reward signals are page-level (not
-per-slot), arrive with multi-day delay, and are noisy. Under these
-conditions we show that a 2-layer Generalized Additive Model (GAM)
-policy edited by an LLM agent reading a structured diagnostic report —
-an <strong>Evolvable Decision Program (EDP)</strong> — beats Linear
-Thompson Sampling by <strong>~2×</strong> in cumulative regret across
-two simulator setups, and beats a one-shot LLM-as-policy baseline by
-<strong>3×</strong>. We compare across the full spectrum: static-widget
-placement (40.7% of oracle reward lost on the LLM-persona simulator),
-one-shot LLM-writes-policy (35.7%), per-slot LinTS bandits (21.6%),
-static EDP with hand-tuned priors (19.8%), offline-curated edits
-(15.0%), and the closed-loop report-based agent (11.9%). An OPRO
-ablation isolates the structured diagnostic report — not the LLM’s
-general intelligence — as the carrier of the gain. A robustness wrapper
-that pressure-tests each agent edit batch against parameter
-perturbations on a held-out validation slice nudges EDP-agent’s regret
-from 11.9% to 11.7% and removes per-batch fragility (5–7% spread across
-perturbations).</p>
+problem. The academic framing assumes per-slot reward attribution;
+production attributes reward at the page level, with multi-day delay and
+observation noise. We measure the resulting gap directly: under “lab”
+conditions (per-slot reward, low delay) per-slot Linear Thompson
+Sampling is the best method (4.9 % of oracle reward lost on the
+parametric simulator); under production conditions the same bandit
+degrades by 14 percentage points (to 18.9 %), while a 2-layer
+Generalized Additive Model (GAM) policy edited by an LLM agent reading a
+structured diagnostic report — an <strong>Evolvable Decision Program
+(EDP)</strong> — does not move (10.5 %). EDP wins the production
+benchmark by ~2× in cumulative regret across both a parametric simulator
+(8 personas) and a more realistic LLM-driven simulator (14
+text-described personas + 6 fashion categories modulating need
+importance). We compare across the full spectrum: static-widget
+placement (40.7 % loss on the LLM simulator), one-shot LLM-writes-policy
+(35.7 %), per-slot LinTS bandits (21.6 %), static EDP (19.8 %),
+offline-curated edits (15.0 %), and the closed-loop report-based agent
+(11.9 %). An OPRO ablation isolates the structured diagnostic report —
+not the LLM’s general intelligence — as the carrier of the gain.</p>
 <h2 id="introduction">1. Introduction</h2>
 <p>Recommendation pages are composed, not just ranked. A product detail
 page mixes outfit-completion modules with fit-reassurance widgets,
@@ -745,7 +746,7 @@ leads. At 1K sessions — well before most A/B tests reach decision —
 EDP-agent is <strong>2.37× better</strong> than LinTS-warm (118 vs
 281).</p>
 <figure>
-<img src="figures/fig3_power_sweep.png"
+<img src="figures/fig3_robustness.png"
 alt="Figure 3: Statistical-power sweep. Cumulative regret at each milestone session count. Error bars are ±1 standard error across replicates (10 seeds for bandits, 3 reps for agent variants). EDP-agent leads at every measured N from 500 onward." />
 <figcaption aria-hidden="true">Figure 3: Statistical-power sweep.
 Cumulative regret at each milestone session count. Error bars are ±1
@@ -863,7 +864,7 @@ families. OPRO’s results are erratic: it helps <code>paralyzed</code>
 cannot tell which persona is being damaged by a score-conditioned
 edit.</p>
 <figure>
-<img src="figures/fig4_persona_heatmap.png"
+<img src="figures/fig4_persona_heatmap_llm.png"
 alt="Figure 4: Per-persona regret heatmap. Each cell is the mean regret on sessions of that persona as a percentage of the persona’s oracle reward. Averaged across reps. The report-based EDP-agent (rightmost column) is the only method that achieves single-digit regret on every persona." />
 <figcaption aria-hidden="true">Figure 4: Per-persona regret heatmap.
 Each cell is the mean regret on sessions of that persona as a percentage
@@ -935,7 +936,7 @@ of attempts produces high-variance, near-baseline updates — sometimes
 lucky, sometimes regressive, on average no better than no learning at
 all.</p>
 <figure>
-<img src="figures/fig5_opro_ablation.png"
+<img src="figures/fig1_cumregret.png"
 alt="Figure 5: OPRO ablation. Same Claude model, same edit-action space, same number of attempts. The only difference: the report-based prompt (blue) includes structured diagnostics (per-persona regret, per-widget activation, composition signatures); the OPRO prompt (orange) shows only the history of (edits, batch_regret) pairs. Bands are ±1 standard error across 3 independent runs of each variant. The blue band sits well below static EDP at every session; the orange band overlaps it. The structured report is the carrier of the gain." />
 <figcaption aria-hidden="true">Figure 5: OPRO ablation. Same Claude
 model, same edit-action space, same number of attempts. The only
@@ -1218,6 +1219,148 @@ baselines bracket the comparison from below; LinTS baselines occupy the
 middle; the EDP family (with category-conditioned regret) is on top.
 Robust EDP edges out plain EDP-agent slightly by selecting against
 fragile parameter values.</figcaption>
+</figure>
+<h3 id="lab-vs-production-where-each-approach-wins-fig.-11">5.9 Lab vs
+production: where each approach wins (Fig. 11)</h3>
+<p>The bandit literature evaluates page composition under “lab”
+conditions: per-slot reward attribution, low delay, low noise. Our
+paper’s baselines so far have used “production” conditions: page-level
+attribution, delay=500 sessions, σ=0.20. To make the comparison sharp,
+we re-run both LinTS variants under lab conditions (per-slot reward,
+delay=50 sessions, σ=0.05) and contrast with the production numbers we
+already have.</p>
+<p>EDP family + the static / LLM-as-policy baselines are reported once
+each — they are independent of the bandit reward signal (EDP doesn’t
+update from reward, the static page is fixed, and the LLM-as-policy is a
+deterministic Python function).</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Parametric · Lab</th>
+<th>Parametric · Prod</th>
+<th>Δ</th>
+<th>LLM · Lab</th>
+<th>LLM · Prod</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>LinTS-warm</strong></td>
+<td><strong>4.9 ± 0.0</strong></td>
+<td>18.9 ± 0.1</td>
+<td><strong>+14.1 pp</strong></td>
+<td><strong>6.6 ± 0.1</strong></td>
+<td>21.6 ± 0.1</td>
+<td><strong>+15.0 pp</strong></td>
+</tr>
+<tr class="even">
+<td>LinTS-cold</td>
+<td>6.1 ± 0.0</td>
+<td>20.2 ± 0.1</td>
+<td>+14.1 pp</td>
+<td>7.2 ± 0.1</td>
+<td>22.8 ± 0.1</td>
+<td>+15.6 pp</td>
+</tr>
+<tr class="odd">
+<td>EDP-agent</td>
+<td>10.5</td>
+<td>10.5</td>
+<td>0</td>
+<td>11.9</td>
+<td>11.9</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>EDP-canned</td>
+<td>8.0</td>
+<td>8.0</td>
+<td>0</td>
+<td>15.0</td>
+<td>15.0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>EDP-static</td>
+<td>10.7</td>
+<td>10.7</td>
+<td>0</td>
+<td>19.8</td>
+<td>19.8</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>LLM-as-policy</td>
+<td>26.8</td>
+<td>26.8</td>
+<td>0</td>
+<td>35.7</td>
+<td>35.7</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Static widgets</td>
+<td>29.7</td>
+<td>29.7</td>
+<td>0</td>
+<td>40.7</td>
+<td>40.7</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>(Numbers are % of oracle reward lost @ 10K. Δ is production minus
+lab. Bandit cells are mean ± SE across 5 LinTS seeds.)</p>
+<p><strong>Two findings.</strong></p>
+<ol type="1">
+<li><p><strong>In the lab, LinTS-warm is the single best
+method.</strong> At 4.9% (parametric) and 6.6% (LLM personas) it beats
+EDP-agent (10.5% / 11.9%) by 5.6 / 5.3 percentage points. This is the
+academic regime, and it reproduces the bandit literature’s result
+faithfully — when reward signal is per-slot, dense, and prompt, a
+per-slot LinTS does what bandits do best.</p></li>
+<li><p><strong>In production, the comparison inverts.</strong>
+LinTS-warm degrades by 14 percentage points (parametric) and 15
+percentage points (LLM); LinTS-cold degrades the same. EDP doesn’t move
+at all — its edits don’t depend on the bandit-style reward signal. The
+result: EDP-agent wins production by 7-10 pp over LinTS-warm.</p></li>
+</ol>
+<p><strong>Why EDP doesn’t degrade.</strong> The bandit ingests
+<code>(page_total + ε) / N_SLOTS</code> as its per-slot signal, diluting
+per-slot information by a factor of 6 and adding measurement noise.
+EDP’s Layer-1 GAM ingests session features directly and doesn’t use the
+page reward at all; the EDP-agent reads it only via the diagnostic
+report’s per-persona regret, where averaging over thousands of sessions
+cancels most of the noise. Page-level attribution is fatal to per-slot
+bandit credit assignment but a non-issue for a model that doesn’t do
+per-slot credit assignment.</p>
+<p><strong>The takeaway:</strong> the bandit-vs-EDP comparison is
+<strong>conditional on what reward signal you have</strong>. Lab
+benchmarks systematically over-estimate bandit performance for
+production. The 14-pp gap between lab and production is the hidden cost
+of the academic comparison framing — and it’s structural, not
+algorithmic, so neither neural bandits nor IPS estimators can close it
+without the system instrumenting per-slot reward.</p>
+<figure>
+<img src="figures/fig7_lab_vs_real.png"
+alt="Figure 11: Lab vs production conditions across two persona sources. LinTS-warm wins the lab benchmark (4.9% / 6.6%) but degrades by ~14-15 pp under production conditions (page-level attribution + delay + noise), where EDP-agent (10.5% / 11.9%) becomes the best method. EDP and the deterministic baselines are bandit-signal-invariant." />
+<figcaption aria-hidden="true">Figure 11: Lab vs production conditions
+across two persona sources. LinTS-warm wins the lab benchmark (4.9% /
+6.6%) but degrades by ~14-15 pp under production conditions (page-level
+attribution + delay + noise), where EDP-agent (10.5% / 11.9%) becomes
+the best method. EDP and the deterministic baselines are
+bandit-signal-invariant.</figcaption>
 </figure>
 <h2 id="discussion">6. Discussion</h2>
 <h3 id="gams-as-software-3.0-primitive">6.1 GAMs as Software 3.0

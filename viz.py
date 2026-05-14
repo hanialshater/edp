@@ -470,6 +470,100 @@ def fig6_all_baselines(parametric_path='results_multiseed_parametric_cat.npz',
     print('  fig6_all_baselines.png')
 
 
+# ============================================================================
+# fig7: lab-vs-real per-method on each persona source
+# ============================================================================
+def fig7_lab_vs_real(json_path='results_lab_vs_real.json',
+                      parametric_baselines='results_baselines_parametric.npz',
+                      llm_baselines='results_baselines_llm.npz',
+                      parametric_path='results_multiseed_parametric_cat.npz',
+                      llm_path='results_multiseed_llm_cat.npz'):
+    if not os.path.exists(json_path):
+        print('  fig7 SKIP (no results_lab_vs_real.json)')
+        return
+    with open(json_path) as f:
+        data = json.load(f)
+
+    # EDP family + static + llm-policy are condition-invariant — pull from
+    # existing per-source baselines.
+    def edp_pcts(multiseed_path, baselines_path, agent_dir):
+        if not os.path.exists(multiseed_path):
+            return {}
+        bd = load_multiseed(multiseed_path)
+        oracle = bd['oracle']
+        total_o = float(oracle.sum())
+        out = {}
+        for k in ['edp_static', 'edp_canned']:
+            out[k] = float((oracle - bd[k]).sum()) / total_o * 100
+        agent = load_orch_rewards(f'{agent_dir}/state.json', len(oracle))
+        if agent.shape[0] > 0:
+            out['edp_agent'] = float((oracle[None, :] - agent).sum(axis=1).mean()) / total_o * 100
+        if os.path.exists(baselines_path):
+            bl = np.load(baselines_path)
+            for k in ['static_policy', 'llm_policy']:
+                if k in bl.files:
+                    out[k] = float((oracle - bl[k]).sum()) / total_o * 100
+        return out
+
+    p_edp = edp_pcts(parametric_path, parametric_baselines, 'evolve_state')
+    l_edp = edp_pcts(llm_path, llm_baselines, 'evolve_state_llm')
+
+    # Build a wide table: method × (parametric_lab, parametric_prod, llm_lab, llm_prod)
+    methods = ['edp_agent', 'edp_canned', 'edp_static',
+                'bandit_warm', 'bandit_cold', 'llm_policy', 'static_policy']
+    rows = {}
+    for m in methods:
+        row = {'parametric_lab': None, 'parametric_prod': None,
+                'llm_lab': None, 'llm_prod': None}
+        if m in ('bandit_warm', 'bandit_cold'):
+            row['parametric_lab']  = data['parametric']['lab'][m]['mean_pct']
+            row['parametric_prod'] = data['parametric']['production'][m]['mean_pct']
+            row['llm_lab']         = data['llm']['lab'][m]['mean_pct']
+            row['llm_prod']        = data['llm']['production'][m]['mean_pct']
+        else:
+            v_p = p_edp.get(m); v_l = l_edp.get(m)
+            row['parametric_lab'] = row['parametric_prod'] = v_p
+            row['llm_lab'] = row['llm_prod'] = v_l
+        rows[m] = row
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), sharey=True)
+    for ax, source, title in zip(axes, ['parametric', 'llm'],
+                                   ['Parametric (8 personas)',
+                                    'LLM (14 personas + 6 categories)']):
+        x = np.arange(len(methods))
+        width = 0.4
+        lab_vals  = [rows[m][f'{source}_lab']  for m in methods]
+        prod_vals = [rows[m][f'{source}_prod'] for m in methods]
+        b1 = ax.bar(x - width/2, lab_vals,  width, color='#5b9bd5',
+                     edgecolor='white', label='Lab  (per-slot reward, delay=50, σ=0.05)')
+        b2 = ax.bar(x + width/2, prod_vals, width, color='#c0392b',
+                     edgecolor='white', label='Production  (page-level, delay=500, σ=0.20)')
+        for b, v in zip(b1, lab_vals):
+            if v is not None:
+                ax.text(b.get_x() + b.get_width()/2, v + 0.5, f'{v:.1f}',
+                        ha='center', fontsize=8.0)
+        for b, v in zip(b2, prod_vals):
+            if v is not None:
+                ax.text(b.get_x() + b.get_width()/2, v + 0.5, f'{v:.1f}',
+                        ha='center', fontsize=8.0)
+        ax.set_xticks(x)
+        ax.set_xticklabels([LABELS[m] for m in methods], rotation=20, ha='right')
+        ax.set_title(title)
+        ax.set_axisbelow(True)
+        if source == 'parametric':
+            ax.set_ylabel('% of oracle reward lost @ 10K')
+        ax.set_ylim(top=max(max(filter(None, lab_vals)),
+                              max(filter(None, prod_vals))) * 1.18)
+    axes[0].legend(loc='upper left')
+    fig.suptitle('Lab vs production conditions  ·  EDP is condition-invariant; '
+                  'bandits degrade by ~14 pp moving from lab to production',
+                  fontsize=11.5, y=1.02)
+    fig.tight_layout()
+    fig.savefig(f'{FIG_DIR}/fig7_lab_vs_real.png')
+    plt.close(fig)
+    print('  fig7_lab_vs_real.png')
+
+
 def main():
     print(f'Generating figures into {FIG_DIR}/')
     fig1_cumregret_both()
@@ -478,6 +572,7 @@ def main():
     fig4_persona_heatmap_llm()
     fig5_category_heatmap()
     fig6_all_baselines()
+    fig7_lab_vs_real()
     print('done.')
 
 
