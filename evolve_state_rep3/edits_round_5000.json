@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 — dial back overfiring style_bridge/return_explainer, revive dead outfit/premium/price/action widgets, boost size_anxious serving",
+  "edits": [
+    {"widget": "style_bridge", "path": "base", "from": 0.35, "to": 0.2, "reason": "Fires 15.3% across all personas but moderate r/fire 0.174; dial back so outfit_completion/occasion_lookbook can compete on F43."},
+    {"widget": "outfit_completion", "path": "base", "from": 0.2, "to": 0.55, "reason": "0% activation despite high N5_styling provision (0.70); needs higher base to break into outfit_seeker pages."},
+    {"widget": "outfit_completion", "path": "on_rem.F43", "from": 1.8, "to": 2.3, "reason": "Boost F43 hunger so outfit_completion fires first on outfit_seeker before style_bridge saturates."},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.35, "reason": "size_anxious_new has highest regret 11.3%; fit_reassurance only 8.5% act but high N1_fit provision — needs stronger base."},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.5, "to": 2.8, "reason": "size_anxious_new still under-served on F32; size_guide r/fire 0.184 is best — pull it in harder."},
+    {"widget": "brand_story", "path": "base", "from": 0.1, "to": 0.45, "reason": "0% activation; F33 has dead widget — boost base to compete with material_deep_dive for premium signal."},
+    {"widget": "wishlist_save", "path": "base", "from": 0.35, "to": 0.7, "reason": "0% activation but r/fire 0.231 is excellent for paralyzed/F51 commit; needs base boost to fire."},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.45, "to": 0.7, "reason": "Only 0.3% activation despite r/fire 0.232 (highest of returns); needs base lift to coexist with return_explainer."},
+    {"widget": "return_explainer", "path": "base", "from": 0.55, "to": 0.35, "reason": "Over-firing at 16.4% across non-F46 personas; trim base so easy_returns_promise and others can win F46 slots."},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.35, "reason": "0.2% activation but r/fire 0.223 strong; boost base for returner_anxious/size_anxious overlap (F32+F46)."},
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.4, "reason": "0% activation; price_sensitive currently leans on value_breakdown only — give F45 a second strong option."},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.35, "reason": "0% activation; F51 commit-action chain needs this for paralyzed/price-sensitive overlap."},
+    {"widget": "similar_items", "path": "base", "from": 0.25, "to": 0.0, "reason": "r/fire 0.131 (lowest among firers); reduce base so meaningful widgets occupy late slots."},
+    {"widget": "also_bought", "path": "base", "from": 0.2, "to": -0.1, "reason": "r/fire 0.074 — worst performer; suppress to free slot 6 for revived widgets."},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.4, "to": 0.55, "reason": "Only 2.4% activation but r/fire 0.182 solid; boost so outfit_seeker gets diverse F43 coverage."},
+    {"widget": "comparison_card", "path": "base", "from": 0.05, "to": 0.2, "reason": "Strong r/fire 0.179 and core to comparison_shopper/price_sensitive; modest base bump compensates for style_bridge dial-back so it still wins early slot."}
+  ]
+}

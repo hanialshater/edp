@@ -1,0 +1,21 @@
+{
+  "note": "round 2 — amplify problem-targeted on_rem/on_cov, drop weak base positives, deepen suppressions",
+  "edits": [
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 0.0, "to": 1.8, "reason": "amplify strongest signal type"},
+    {"widget": "low_return_alts", "path": "on_rem.F33", "from": 0.0, "to": 1.6, "reason": "amplify return remediation"},
+    {"widget": "return_explainer", "path": "on_rem.F43", "from": 0.0, "to": 1.7, "reason": "amplify return-policy remedy"},
+    {"widget": "personal_recs", "path": "on_rem.F51", "from": 0.0, "to": 1.5, "reason": "amplify personalization remedy"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 0.0, "to": 1.2, "reason": "second size-related remedy"},
+    {"widget": "easy_returns_promise", "path": "on_rem.F43", "from": 0.0, "to": 1.0, "reason": "shift cover->rem for returns"},
+    {"widget": "value_breakdown", "path": "on_cov.F41", "from": 0.0, "to": 1.3, "reason": "boost value cover"},
+    {"widget": "customers_chose", "path": "on_cov.F45", "from": 0.0, "to": 1.4, "reason": "boost social-proof cover"},
+    {"widget": "outfit_completion", "path": "on_cov.F46", "from": 0.0, "to": 1.1, "reason": "boost complementary cover"},
+    {"widget": "style_bridge", "path": "on_cov.F46", "from": 0.0, "to": 0.8, "reason": "second cover for F46"},
+    {"widget": "comparison_card", "path": "on_cov.F41", "from": 0.0, "to": 0.9, "reason": "second cover for F41"},
+    {"widget": "expert_pick", "path": "on_cov.F45", "from": 0.0, "to": 0.7, "reason": "second cover for F45"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.0, "to": -0.9, "reason": "deeper suppression noisy"},
+    {"widget": "brand_story", "path": "base", "from": 0.0, "to": -0.8, "reason": "deeper suppression generic"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": -0.6, "reason": "suppress trending noise"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.0, "to": -0.5, "reason": "suppress likely-noisy base"}
+  ]
+}

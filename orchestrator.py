@@ -33,7 +33,7 @@ from sim import (N_SLOTS, ORACLE_REWARDS, make_session_stream,
 from policy_edp import (EDPPolicy, make_problem_shapes, make_modules,
                         apply_edits, score_problems, PROBLEMS, PROBLEM_NAMES)
 
-STATE_DIR = 'evolve_state'
+STATE_DIR = os.environ.get('EDP_STATE_DIR', 'evolve_state')
 os.makedirs(STATE_DIR, exist_ok=True)
 
 
@@ -322,7 +322,14 @@ def main():
     ap.add_argument('--apply', type=str, default=None, help='edits JSON path')
     ap.add_argument('--reset', action='store_true')
     ap.add_argument('--seed', type=int, default=42)
+    ap.add_argument('--state-dir', type=str, default=None,
+                    help='override the state directory (default $EDP_STATE_DIR or evolve_state)')
     args = ap.parse_args()
+
+    if args.state_dir:
+        global STATE_DIR
+        STATE_DIR = args.state_dir
+        os.makedirs(STATE_DIR, exist_ok=True)
 
     if args.reset and os.path.exists(state_path()):
         os.remove(state_path())

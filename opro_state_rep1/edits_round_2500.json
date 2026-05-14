@@ -1,0 +1,21 @@
+{
+  "note": "round 2500 — blind exploration: spread positive base bumps across diverse widget families plus a few targeted on_rem boosts and small slot_decay tweaks",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 1.1, "reason": "explore: reassurance often reduces returns"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 1.2, "reason": "explore: sizing aid for fit problems"},
+    {"widget": "low_return_alts", "path": "on_rem.F32", "from": 0.0, "to": 1.4, "reason": "explore: alt items on remorse"},
+    {"widget": "comparison_card", "path": "base", "from": 0.0, "to": 0.9, "reason": "explore: comparison reduces buyer regret"},
+    {"widget": "value_breakdown", "path": "on_rem.F43", "from": 0.0, "to": 1.0, "reason": "explore: value framing for price remorse"},
+    {"widget": "return_explainer", "path": "on_cov.F45", "from": 0.0, "to": 0.8, "reason": "explore: clarify returns when covered"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.0, "to": 0.7, "reason": "explore: baseline reassurance"},
+    {"widget": "material_deep_dive", "path": "on_rem.F41", "from": 0.0, "to": 1.0, "reason": "explore: material info on remorse"},
+    {"widget": "expert_pick", "path": "base", "from": 0.0, "to": 0.8, "reason": "explore: authority signal"},
+    {"widget": "similar_items", "path": "on_rem.F46", "from": 0.0, "to": 1.1, "reason": "explore: alternatives on remorse"},
+    {"widget": "customers_chose", "path": "base", "from": 0.0, "to": 0.6, "reason": "explore: social proof"},
+    {"widget": "outfit_completion", "path": "slot_decay", "from": 0.0, "to": -0.3, "reason": "explore: gentle decay tweak"},
+    {"widget": "personal_recs", "path": "on_cov.F51", "from": 0.0, "to": 0.9, "reason": "explore: tailored recs on coverage"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": 0.5, "reason": "explore: mild momentum signal"},
+    {"widget": "style_bridge", "path": "on_rem.F33", "from": 0.0, "to": 1.0, "reason": "explore: style mediation on remorse"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.0, "to": 0.6, "reason": "explore: low-friction save option"}
+  ]
+}

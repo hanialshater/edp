@@ -1,0 +1,19 @@
+{
+  "note": "round 7500 — stabilization: dampen overfiring outfit/brand/wishlist, revive silent style_bridge/material/customers_chose/occasion, soften default trim",
+  "edits": [
+    {"widget": "outfit_completion", "path": "base", "from": 0.55, "to": 0.35, "reason": "16.6% activation across all personas including size_anxious/returner_anxious where F43 is not the need; pull back"},
+    {"widget": "brand_story", "path": "base", "from": 0.45, "to": 0.25, "reason": "15.2% activation flooding size_anxious_new despite F33 mismatch; trim generic firing"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.7, "to": 0.5, "reason": "15.9% activation, low r/fire 0.17 — overserving as universal action widget"},
+    {"widget": "style_bridge", "path": "base", "from": 0.2, "to": 0.45, "reason": "0% activation despite valid F43 provision; revive for outfit_seeker variety"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.4, "to": 0.55, "reason": "0% activation, fully crowded out by brand_story on F33; revive premium alternative"},
+    {"widget": "occasion_lookbook", "path": "on_rem.F43", "from": 1.4, "to": 1.9, "reason": "0% activation, lost to outfit_completion; lift F43 weight so it fires when F43 high"},
+    {"widget": "customers_chose", "path": "base", "from": 0.1, "to": 0.35, "reason": "0% activation but strong r/fire 0.227 when it does fire; lift base"},
+    {"widget": "customers_chose", "path": "on_rem.F51", "from": 1.2, "to": 1.6, "reason": "give it a stronger pull on paralyzed's F51 need to compete with wishlist_save"},
+    {"widget": "value_breakdown", "path": "base", "from": 0.05, "to": 0.3, "reason": "0.9% activation, price_sensitive at 9.8% regret needs F45 coverage"},
+    {"widget": "expert_pick", "path": "base", "from": 0.4, "to": 0.55, "reason": "0.3% activation but highest r/fire 0.231; revive for paralyzed F51"},
+    {"widget": "comparison_card", "path": "on_rem.F45", "from": 0.7, "to": 1.2, "reason": "price_sensitive 9.8% regret; comparison_card should fire harder on F45 secondary"},
+    {"widget": "trending_now", "path": "base", "from": -0.2, "to": -0.4, "reason": "default with no addr/provisions; push further down so others can fire"},
+    {"widget": "similar_items", "path": "base", "from": 0.0, "to": -0.2, "reason": "default crowding score floor; trim further to clear room"},
+    {"widget": "also_bought", "path": "base", "from": -0.1, "to": -0.3, "reason": "low-reward default; deepen negative to free slots for revived widgets"}
+  ]
+}

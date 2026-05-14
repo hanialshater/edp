@@ -1,0 +1,20 @@
+{
+  "note": "round 7500 — stabilize: trim over-firing fit/style/expert defaults, revive dead F43/F33/F51 widgets, rebalance for confident_buyer & outfit_seeker",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.45, "to": 0.32, "reason": "over-fires (15.2%) across non-fit personas like confident_buyer/comparison_shopper — pull base down"},
+    {"widget": "style_bridge", "path": "base", "from": 0.35, "to": 0.22, "reason": "top widget at 16% activation across nearly every persona — trim base to free slots"},
+    {"widget": "expert_pick", "path": "base", "from": 0.55, "to": 0.42, "reason": "over-firing at 14.3% even for non-paralyzed personas — reduce default lift"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.0, "to": 0.28, "reason": "dead (0%) but outfit_seeker has 5.5% regret and needs F43 coverage"},
+    {"widget": "outfit_completion", "path": "on_rem.F43", "from": 1.8, "to": 2.2, "reason": "boost F43 pull so outfit_completion competes with style_bridge"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.1, "to": 0.32, "reason": "dead (0%) — brand_story dominates F33; revive for browser_lurker visual/styling needs"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.5, "to": 0.6, "reason": "dead (0%) despite high r/fire (0.2291) — paralyzed needs N7_commit"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.35, "to": 0.48, "reason": "dead (0%) despite strong r/fire (0.2273) — price_sensitive needs N7_commit"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.3, "to": 0.42, "reason": "dead (0%) — useful context for browser_lurker / confident_buyer low-need pages"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.5, "to": 0.38, "reason": "low r/fire (0.1434) at 5.3% activation — pull back to free slot for higher-value widgets"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.22, "reason": "lowest r/fire (0.1120) of any firing widget — trim default to free slot"},
+    {"widget": "return_explainer", "path": "base", "from": 0.1, "to": 0.22, "reason": "near-dead (1.2%) but top r/fire (0.2145) — modest lift for returner_anxious"},
+    {"widget": "size_guide", "path": "base", "from": 0.35, "to": 0.45, "reason": "near-dead (1.5%) but strong r/fire (0.2075) — size_anxious_new still has 4.2% regret"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.28, "to": 0.38, "reason": "near-dead (0.3%) but r/fire 0.1729 — outfit_seeker needs F43 diversity (5.5% regret)"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.18, "reason": "highest r/fire (0.2196) at only 2.9% activation — strong synergy widget under-fires"}
+  ]
+}

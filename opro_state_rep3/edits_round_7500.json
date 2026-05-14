@@ -1,0 +1,21 @@
+{
+  "note": "round 7500 — extrapolate the 2500->5000 gradient: amplify positives/negatives further, deepen decay, add wishlist/price_history suppress",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.0, "to": 2.0, "reason": "extend amplification trend"},
+    {"widget": "size_guide", "path": "base", "from": 0.0, "to": 1.7, "reason": "extend sizing amplification"},
+    {"widget": "low_return_alts", "path": "on_rem.F32", "from": 0.0, "to": 2.4, "reason": "push F32 anchor higher"},
+    {"widget": "return_explainer", "path": "on_rem.F33", "from": 0.0, "to": 2.2, "reason": "push F33 further"},
+    {"widget": "easy_returns_promise", "path": "on_rem.F41", "from": 0.0, "to": 2.0, "reason": "push F41 further"},
+    {"widget": "comparison_card", "path": "on_cov.F43", "from": 0.0, "to": 2.3, "reason": "push F43 decisive aid"},
+    {"widget": "value_breakdown", "path": "on_cov.F45", "from": 0.0, "to": 2.1, "reason": "push F45 value"},
+    {"widget": "customers_chose", "path": "on_cov.F46", "from": 0.0, "to": 1.9, "reason": "push F46 social proof"},
+    {"widget": "expert_pick", "path": "on_cov.F51", "from": 0.0, "to": 1.8, "reason": "push F51 authority"},
+    {"widget": "trending_now", "path": "base", "from": 0.0, "to": -1.6, "reason": "deepen distractor suppress further"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.0, "to": -1.4, "reason": "deepen suppress"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.0, "to": -1.1, "reason": "deeper generic-recall suppress"},
+    {"widget": "also_bought", "path": "base", "from": 0.0, "to": -1.0, "reason": "deeper cross-sell suppress"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.0, "to": -0.8, "reason": "add new distractor suppress"},
+    {"widget": "price_history", "path": "base", "from": 0.0, "to": -0.7, "reason": "add another distractor suppress"},
+    {"widget": "similar_items", "path": "slot_decay", "from": 0.0, "to": 1.3, "reason": "deepen redundancy decay"}
+  ]
+}

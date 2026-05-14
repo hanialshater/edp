@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 — activate dead fit/visual/return widgets for high-regret size_anxious/outfit_seeker/browser_lurker, trim over-firing style_bridge/return_explainer/also_bought",
+  "edits": [
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.7, "reason": "size_anxious has 12.3% regret yet fit_reassurance only fires 0.1% — boost base to compete with size_guide"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 2.2, "to": 2.7, "reason": "Strengthen F32 pull so fit_reassurance activates for size_anxious_new"},
+    {"widget": "outfit_completion", "path": "base", "from": 0.2, "to": 0.8, "reason": "outfit_seeker 9.3% regret and outfit_completion fires only 1% — strong base boost to enter slates"},
+    {"widget": "outfit_completion", "path": "on_rem.F43", "from": 1.8, "to": 2.4, "reason": "Boost F43 to fire for outfit_seeker high need"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.25, "to": 0.7, "reason": "Dead at 0% but addresses N5_styling+N2_visual for outfit_seeker"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.45, "to": 0.9, "reason": "returner_anxious 7.2% regret and easy_returns_promise only 0.2% — needs to chain after return_explainer"},
+    {"widget": "easy_returns_promise", "path": "on_cov.F46", "from": -0.5, "to": 0.6, "reason": "Flip to positive synergy so easy_returns_promise rides return_explainer coverage instead of being suppressed"},
+    {"widget": "brand_story", "path": "base", "from": 0.1, "to": 0.8, "reason": "Completely dead at 0% but key N2_visual provider for browser_lurker"},
+    {"widget": "brand_story", "path": "on_rem.F33", "from": 1.9, "to": 2.5, "reason": "Strengthen F33 pull so brand_story competes with material_deep_dive"},
+    {"widget": "style_bridge", "path": "base", "from": 0.35, "to": 0.0, "reason": "Over-firing at 16.3% across all personas including non-styling — pull base down sharply"},
+    {"widget": "style_bridge", "path": "on_rem.F43", "from": 2.0, "to": 1.5, "reason": "Reduce F43 dominance so outfit_completion/occasion_lookbook can win some slots"},
+    {"widget": "return_explainer", "path": "base", "from": 0.55, "to": 0.2, "reason": "Firing 16.5% across all personas; trim base to free slots for fit/visual widgets"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.05, "reason": "6.9% activation with worst r/fire 0.1504 — over-firing default, drop base"},
+    {"widget": "similar_items", "path": "base", "from": 0.2, "to": -0.1, "reason": "Lowest r/fire 0.1030 — suppress this filler"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.55, "reason": "Dead 0% despite strong 0.2329 r/fire when seen — N7_commit for paralyzed and N3_peer chain"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.5, "reason": "Dead 0% but addresses N6_trust+N1_fit needed by returner_anxious and size_anxious"}
+  ]
+}

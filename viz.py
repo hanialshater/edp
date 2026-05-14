@@ -1,191 +1,372 @@
 """
-Figures for the paper.
+Paper-quality figures for the bandit-vs-EDP comparison.
 
-Produces (saved as PNGs in figures/):
-  - fig1_cumregret.png       — cum regret over time, all 6 methods
-  - fig2_stressor.png        — bandit cum regret per stressor condition
-  - fig3_power_sweep.png     — cum regret at milestone N
-  - fig4_persona_heatmap.png — per-persona regret % by method
-  - fig5_opro_ablation.png   — report-agent vs OPRO trajectory
-  - fig6_evolution.png       — per-round batch regret + edit counts
-  - fig7_widget_activation.png — widget activation heatmap across rounds
+Loads multi-seed bandit data + 3-rep EDP-agent/OPRO trajectories and produces
+conference-paper-quality plots with error bands and consistent styling.
 
-All figures are loaded from saved data files; no simulation reruns needed.
+Five core figures (production-conditions story):
+  fig1_cumregret.png       — main figure: cum regret over 10k sessions, all
+                              methods, with shaded standard-error bands
+  fig2_stressor.png        — section 5.2: bandit regret per reward condition
+  fig3_power_sweep.png     — section 5.3: cum regret at milestone N with bands
+  fig4_persona_heatmap.png — section 5.4: per-persona regret % by method
+  fig5_opro_ablation.png   — section 5.5: agent vs OPRO with bands
+
+Drops the earlier weak figures (fig6 per-batch bars and fig7 widget heatmap).
 """
 from __future__ import annotations
+import glob
 import json
 import os
-import re
 import numpy as np
 import matplotlib
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
-from sim import make_session_stream, ORACLE_REWARDS, TRUE_NEEDS, WIDGETS
+from sim import make_session_stream, ORACLE_REWARDS, TRUE_NEEDS
 
 FIG_DIR = 'figures'
 os.makedirs(FIG_DIR, exist_ok=True)
 
+# Conference-paper-quality matplotlib defaults
 plt.rcParams.update({
-    'figure.dpi': 110,
-    'savefig.dpi': 150,
-    'font.size': 10,
-    'axes.titlesize': 11,
-    'axes.labelsize': 10,
+    'figure.dpi': 130,
+    'savefig.dpi': 200,
+    'savefig.bbox': 'tight',
+    'savefig.pad_inches': 0.08,
+    'font.family': 'sans-serif',
+    'font.sans-serif': ['DejaVu Sans', 'Arial', 'Helvetica'],
+    'font.size': 10.5,
+    'axes.titlesize': 11.5,
+    'axes.labelsize': 10.5,
     'axes.spines.top': False,
     'axes.spines.right': False,
+    'axes.labelpad': 4,
+    'xtick.labelsize': 9.5,
+    'ytick.labelsize': 9.5,
+    'legend.fontsize': 9.5,
+    'legend.frameon': False,
+    'legend.borderpad': 0.3,
+    'axes.grid': True,
+    'grid.alpha': 0.22,
+    'grid.linestyle': '-',
+    'grid.linewidth': 0.5,
+    'lines.linewidth': 1.8,
 })
 
-METHOD_STYLE = {
-    'edp_evolved_agent':   dict(color='#1f77b4', linestyle='-',  linewidth=2.0, label='EDP-agent (live, report-based)'),
-    'edp_evolved_canned':  dict(color='#2ca02c', linestyle='--', linewidth=1.5, label='EDP-canned'),
-    'edp_evolved_opro':    dict(color='#ff7f0e', linestyle='-',  linewidth=1.7, label='EDP-OPRO (ablation)'),
-    'edp_static':          dict(color='#7f7f7f', linestyle=':',  linewidth=1.5, label='EDP-static'),
-    'bandit_warm':         dict(color='#d62728', linestyle='-',  linewidth=2.0, label='LinTS-warm (production)'),
-    'bandit_cold':         dict(color='#8c564b', linestyle='--', linewidth=1.5, label='LinTS-cold'),
+# Consistent palette — colorblind-friendly, also legible in greyscale
+# (EDP family: blues/teals; bandit family: red/brown; static/OPRO: grey/orange)
+COLORS = {
+    'edp_agent':    '#1b5e8c',   # deep blue
+    'edp_canned':   '#2e8b57',   # sea green
+    'edp_opro':     '#e08214',   # orange
+    'edp_static':   '#5a5a5a',   # grey
+    'bandit_warm':  '#c0392b',   # red
+    'bandit_cold':  '#7d3c98',   # purple (less common, distinguishable)
+}
+LINESTYLE = {
+    'edp_agent':   '-',
+    'edp_canned':  '--',
+    'edp_opro':    '-',
+    'edp_static':  ':',
+    'bandit_warm': '-',
+    'bandit_cold': '--',
+}
+LABELS = {
+    'edp_agent':   'EDP-agent  (report-based, ours)',
+    'edp_canned':  'EDP-canned  (offline-curated edits)',
+    'edp_opro':    'EDP-OPRO  (ablation: no diagnostic)',
+    'edp_static':  'EDP-static  (no online update)',
+    'bandit_warm': 'LinTS-warm  (production stack)',
+    'bandit_cold': 'LinTS-cold  (production stack)',
 }
 
 
-def load_all():
-    """Returns (oracle, methods_dict) keyed by method name -> per-session reward."""
-    npz = np.load('results_prod_stack.npz', allow_pickle=True)
-    oracle = npz['oracle']
-    methods = {
-        'edp_static':         npz['edp_static'],
-        'edp_evolved_canned': npz['edp_evolved'],
-        'bandit_warm':        npz['bandit_warm'],
-        'bandit_cold':        npz['bandit_cold'],
-    }
-    with open('evolve_state/state.json') as f:
-        methods['edp_evolved_agent'] = np.array(json.load(f)['rewards'])
-    with open('opro_state/state.json') as f:
-        methods['edp_evolved_opro'] = np.array(json.load(f)['rewards'])
-    return oracle, methods
+# ---------- Data loaders ----------
+def load_bandits_multiseed(path='results_multiseed.npz'):
+    """Returns dict with oracle, edp_static, edp_canned, bandit_warm (R,N), bandit_cold (R,N)."""
+    d = np.load(path)
+    return {k: d[k] for k in d.files}
+
+
+def load_agent_reps(prefix: str, n: int) -> np.ndarray:
+    """
+    Stack reward trajectories from all replicate directories matching
+    `{prefix}_rep*/state.json`. Returns (n_reps, n) array.
+    """
+    dirs = sorted(glob.glob(f'{prefix}_rep*'))
+    out = []
+    for d in dirs:
+        path = os.path.join(d, 'state.json')
+        if not os.path.exists(path):
+            continue
+        with open(path) as f:
+            s = json.load(f)
+        arr = np.array(s['rewards'])
+        if len(arr) >= n:
+            out.append(arr[:n])
+    if not out:
+        return np.zeros((0, n))
+    return np.stack(out)
 
 
 def cum_regret(r, o):
     return np.cumsum(o - r)
 
 
-# ---------- Fig 1: cumulative regret over time ----------
+def cum_regret_band(reps: np.ndarray, oracle: np.ndarray):
+    """
+    Given reps of shape (R, N), returns (mean_cumregret_per_session,
+                                          stderr_cumregret_per_session).
+    """
+    cr_per_rep = np.cumsum(oracle[None, :] - reps, axis=1)  # (R, N)
+    mean = cr_per_rep.mean(axis=0)
+    sem = cr_per_rep.std(axis=0, ddof=1) / np.sqrt(cr_per_rep.shape[0]) if cr_per_rep.shape[0] > 1 else np.zeros_like(mean)
+    return mean, sem
+
+
+def plot_method(ax, x, mean, sem, key, **kwargs):
+    ax.plot(x, mean, color=COLORS[key], linestyle=LINESTYLE[key],
+            label=LABELS[key], **kwargs)
+    if sem is not None and np.any(sem > 0):
+        ax.fill_between(x, mean - sem, mean + sem,
+                         color=COLORS[key], alpha=0.18, linewidth=0)
+
+
+# ============================================================================
+# Fig 1: cumulative regret over time, all methods, with error bands
+# ============================================================================
 def fig_cumregret():
-    oracle, methods = load_all()
+    bd = load_bandits_multiseed()
+    oracle = bd['oracle']
+    n = len(oracle)
+    x = np.arange(1, n + 1)
+
+    agent = load_agent_reps('evolve_state', n)
+    opro = load_agent_reps('opro_state', n)
+
     fig, ax = plt.subplots(figsize=(8.5, 5.0))
-    order = ['bandit_cold', 'bandit_warm', 'edp_static', 'edp_evolved_opro',
-             'edp_evolved_canned', 'edp_evolved_agent']
-    for m in order:
-        ax.plot(np.arange(1, len(oracle) + 1), cum_regret(methods[m], oracle),
-                **METHOD_STYLE[m])
-    # Vertical lines at agent checkpoints
+
+    # Bandits with bands (10 seeds)
+    m, s = cum_regret_band(bd['bandit_cold'], oracle)
+    plot_method(ax, x, m, s, 'bandit_cold')
+    m, s = cum_regret_band(bd['bandit_warm'], oracle)
+    plot_method(ax, x, m, s, 'bandit_warm')
+
+    # Static / canned: deterministic, one trace
+    plot_method(ax, x, cum_regret(bd['edp_static'], oracle), None, 'edp_static')
+    plot_method(ax, x, cum_regret(bd['edp_canned'], oracle), None, 'edp_canned')
+
+    # OPRO with bands (3 reps)
+    if opro.shape[0] > 0:
+        m, s = cum_regret_band(opro, oracle)
+        plot_method(ax, x, m, s, 'edp_opro')
+
+    # EDP-agent with bands (3 reps) -- LAST so it sits on top
+    if agent.shape[0] > 0:
+        m, s = cum_regret_band(agent, oracle)
+        plot_method(ax, x, m, s, 'edp_agent', linewidth=2.4)
+
+    # Checkpoint markers for the EDP agents
     for chk in (2500, 5000, 7500):
-        ax.axvline(chk, color='gray', alpha=0.3, linestyle=':', linewidth=0.8)
+        ax.axvline(chk, color='black', alpha=0.12, linestyle='-', linewidth=0.5)
+
     ax.set_xlabel('Session #')
-    ax.set_ylabel('Cumulative regret (vs oracle)')
-    ax.set_title('Cumulative regret over 10K sessions  (page-level reward, delay=500, σ=0.2)')
-    ax.legend(loc='upper left', fontsize=9)
-    ax.grid(alpha=0.25)
-    ax.set_xlim(0, len(oracle))
+    ax.set_ylabel('Cumulative regret  (vs oracle)')
+    ax.set_title('Cumulative regret over 10K sessions  ·  page-level reward, '
+                 'delay=500, σ=0.2  ·  bands = ±1 SE')
+    ax.legend(loc='upper left', ncol=1)
+    ax.set_xlim(0, n)
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     fig.savefig(f'{FIG_DIR}/fig1_cumregret.png')
     plt.close(fig)
     print('  fig1_cumregret.png')
 
 
-# ---------- Fig 2: stressor decomposition ----------
+# ============================================================================
+# Fig 2: stressor decomposition (single-axis ablation on LinTS-warm)
+# ============================================================================
 def fig_stressor():
     if not os.path.exists('stressor_results.json'):
-        print('  fig2_stressor.png  SKIP (run stressor_decomp.py first)')
+        print('  fig2 SKIP (no stressor_results.json)')
         return
     with open('stressor_results.json') as f:
         S = json.load(f)
-    labels = list(S.keys())
-    crs = [S[l]['cum_regret_10k'] for l in labels]
-    short = [
-        l.replace(' (delay=0, sigma=0)', '').replace(' (per-slot, ', ' (')
-         .replace(' (sigma=0)', '').replace('sigma=', 'σ=')
-        for l in labels
+    # Reorder for narrative: clean, single-axis effects, then combined
+    order_keys = [
+        'clean (per-slot, delay=0, sigma=0)',
+        '+noise sigma=0.2 (per-slot, delay=0)',
+        '+delay=500 (per-slot, sigma=0)',
+        '+delay=1000 (per-slot, sigma=0)',
+        '+page-attribution (delay=0, sigma=0)',
+        '+page +delay=500 (sigma=0)',
+        '+page +noise=0.2 (delay=0)',
+        'full prod stack (page +delay=500 +noise=0.2)',
     ]
-    fig, ax = plt.subplots(figsize=(9.0, 4.5))
-    # Color: red gradient with intensity ~ regret
-    norm_crs = (np.array(crs) - min(crs)) / (max(crs) - min(crs) + 1e-9)
-    colors = plt.cm.Reds(0.35 + 0.55 * norm_crs)
-    bars = ax.barh(range(len(short)), crs, color=colors, edgecolor='white')
+    crs = [S[k]['cum_regret_10k'] for k in order_keys]
+    display = [
+        'clean baseline',
+        '+noise σ=0.2',
+        '+delay=500',
+        '+delay=1000',
+        '+page-attribution',
+        '+page +delay=500',
+        '+page +noise=0.2',
+        'full prod stack',
+    ]
+    # Color: blue for benign stressors, red for page-attr stressors
+    is_page = ['page' in k for k in order_keys]
+    colors = ['#5a5a5a' if i == 0 else ('#c0392b' if p else '#7fb3d5')
+              for i, p in enumerate(is_page)]
+
+    fig, ax = plt.subplots(figsize=(8.5, 4.0))
+    y = np.arange(len(crs))
+    bars = ax.barh(y, crs, color=colors, edgecolor='white', linewidth=0.8)
     for i, (b, cr) in enumerate(zip(bars, crs)):
-        ax.text(cr + 25, i, f'{cr:.0f}', va='center', fontsize=9)
-    ax.set_yticks(range(len(short)))
-    ax.set_yticklabels(short, fontsize=9)
+        ax.text(cr + 30, i, f'{cr:.0f}', va='center', fontsize=9.5)
+    ax.set_yticks(y)
+    ax.set_yticklabels(display)
     ax.invert_yaxis()
-    ax.set_xlabel('Cumulative regret @ 10K sessions')
-    ax.set_title('Stressor decomposition — LinTS-warm under each reward condition')
-    ax.grid(axis='x', alpha=0.25)
+    ax.set_xlabel('Cumulative regret @ 10K sessions  (LinTS-warm)')
+    ax.set_title('Stressor decomposition — page-level attribution is the dominant axis')
+    # Custom legend
+    from matplotlib.patches import Patch
+    handles = [
+        Patch(facecolor='#5a5a5a', label='clean (baseline)'),
+        Patch(facecolor='#7fb3d5', label='delay / noise only'),
+        Patch(facecolor='#c0392b', label='page-level attribution'),
+    ]
+    ax.legend(handles=handles, loc='lower right')
+    ax.set_axisbelow(True)
     fig.tight_layout()
     fig.savefig(f'{FIG_DIR}/fig2_stressor.png')
     plt.close(fig)
     print('  fig2_stressor.png')
 
 
-# ---------- Fig 3: low-N statistical power ----------
+# ============================================================================
+# Fig 3: statistical-power sweep — cum regret at milestone N with bands
+# ============================================================================
 def fig_power_sweep():
-    oracle, methods = load_all()
+    bd = load_bandits_multiseed()
+    oracle = bd['oracle']
+    n = len(oracle)
+    agent = load_agent_reps('evolve_state', n)
+    opro = load_agent_reps('opro_state', n)
+
     milestones = [500, 1000, 2500, 5000, 7500, 10000]
-    fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    order = ['edp_evolved_agent', 'edp_evolved_canned', 'edp_evolved_opro',
-             'edp_static', 'bandit_warm', 'bandit_cold']
-    width = 0.13
+
+    def cr_at(r1d, m):
+        return float(cum_regret(r1d, oracle)[m - 1])
+
+    def cr_at_band(reps, m):
+        if reps.shape[0] == 0:
+            return float('nan'), 0.0
+        vals = np.array([cr_at(reps[i], m) for i in range(reps.shape[0])])
+        return float(vals.mean()), float(vals.std(ddof=1) / np.sqrt(len(vals))) if len(vals) > 1 else 0.0
+
+    methods_order = ['edp_agent', 'edp_canned', 'edp_opro', 'edp_static',
+                      'bandit_warm', 'bandit_cold']
+
+    data = {k: ([], []) for k in methods_order}  # method -> (means, sems)
+    for m in milestones:
+        data['edp_static'][0].append(cr_at(bd['edp_static'], m))
+        data['edp_static'][1].append(0.0)
+        data['edp_canned'][0].append(cr_at(bd['edp_canned'], m))
+        data['edp_canned'][1].append(0.0)
+        for key, reps in [('bandit_warm', bd['bandit_warm']),
+                           ('bandit_cold', bd['bandit_cold'])]:
+            mu, se = cr_at_band(reps, m)
+            data[key][0].append(mu)
+            data[key][1].append(se)
+        mu, se = cr_at_band(agent, m)
+        data['edp_agent'][0].append(mu)
+        data['edp_agent'][1].append(se)
+        mu, se = cr_at_band(opro, m)
+        data['edp_opro'][0].append(mu)
+        data['edp_opro'][1].append(se)
+
+    fig, ax = plt.subplots(figsize=(8.0, 4.6))
     x = np.arange(len(milestones))
-    for i, m in enumerate(order):
-        crs = [cum_regret(methods[m], oracle)[ms - 1] for ms in milestones]
-        offset = (i - len(order) / 2 + 0.5) * width
-        ax.bar(x + offset, crs, width, color=METHOD_STYLE[m]['color'],
-               label=METHOD_STYLE[m]['label'])
+    width = 0.13
+    for i, k in enumerate(methods_order):
+        means, sems = data[k]
+        offset = (i - len(methods_order) / 2 + 0.5) * width
+        bars = ax.bar(x + offset, means, width, color=COLORS[k],
+                       yerr=sems, capsize=2.5, error_kw={'linewidth': 0.7},
+                       edgecolor='white', linewidth=0.5, label=LABELS[k])
+
     ax.set_xticks(x)
-    ax.set_xticklabels([f'{m}' for m in milestones])
-    ax.set_xlabel('Session count')
+    ax.set_xticklabels([f'{m:,}' for m in milestones])
+    ax.set_xlabel('Sessions observed')
     ax.set_ylabel('Cumulative regret')
-    ax.set_title('Cumulative regret at each statistical-power milestone')
-    ax.legend(loc='upper left', fontsize=8.5, ncol=2)
-    ax.grid(axis='y', alpha=0.25)
+    ax.set_title('Statistical-power sweep — cum regret at each milestone N')
+    ax.legend(loc='upper left', ncol=2)
+    ax.set_axisbelow(True)
     fig.tight_layout()
     fig.savefig(f'{FIG_DIR}/fig3_power_sweep.png')
     plt.close(fig)
     print('  fig3_power_sweep.png')
 
 
-# ---------- Fig 4: per-persona regret heatmap ----------
+# ============================================================================
+# Fig 4: per-persona regret heatmap
+# ============================================================================
 def fig_persona_heatmap():
-    oracle, methods = load_all()
-    stream = make_session_stream(len(oracle), seed=42)
-    personas = sorted(TRUE_NEEDS.keys(), key=lambda p: -ORACLE_REWARDS[p])
-    order = ['bandit_cold', 'bandit_warm', 'edp_static', 'edp_evolved_opro',
-             'edp_evolved_canned', 'edp_evolved_agent']
-
-    matrix = np.zeros((len(personas), len(order)))
+    bd = load_bandits_multiseed()
+    oracle = bd['oracle']
+    n = len(oracle)
+    stream = make_session_stream(n, seed=42)
     persona_arr = np.array([p for p, _ in stream])
+
+    # Methods to display (deterministic or mean-of-reps)
+    agent = load_agent_reps('evolve_state', n)
+    opro = load_agent_reps('opro_state', n)
+
+    def mean_reps(reps):
+        return reps.mean(axis=0) if reps.shape[0] else np.zeros(n)
+
+    methods = {
+        'bandit_cold':  bd['bandit_cold'].mean(axis=0),
+        'bandit_warm':  bd['bandit_warm'].mean(axis=0),
+        'edp_static':   bd['edp_static'],
+        'edp_opro':     mean_reps(opro),
+        'edp_canned':   bd['edp_canned'],
+        'edp_agent':    mean_reps(agent),
+    }
+    order = ['bandit_cold', 'bandit_warm', 'edp_static', 'edp_opro',
+             'edp_canned', 'edp_agent']
+
+    # Order personas by oracle reward magnitude (largest -> smallest)
+    personas = sorted(TRUE_NEEDS.keys(), key=lambda p: -ORACLE_REWARDS[p])
+    matrix = np.zeros((len(personas), len(order)))
     for j, m in enumerate(order):
         r = methods[m]
         for i, persona in enumerate(personas):
             mask = (persona_arr == persona)
             if not mask.any():
                 continue
-            regret_pct = (oracle[mask] - r[mask]).mean() / oracle[mask].mean() * 100
-            matrix[i, j] = regret_pct
+            matrix[i, j] = (oracle[mask] - r[mask]).mean() / oracle[mask].mean() * 100
 
-    fig, ax = plt.subplots(figsize=(8.5, 4.5))
-    im = ax.imshow(matrix, aspect='auto', cmap='YlOrRd', vmin=0,
-                    vmax=max(20, matrix.max()))
+    fig, ax = plt.subplots(figsize=(9.0, 4.6))
+    vmax = max(20.0, np.percentile(matrix, 99))
+    im = ax.imshow(matrix, aspect='auto', cmap='YlOrRd', vmin=0, vmax=vmax)
     ax.set_xticks(range(len(order)))
-    ax.set_xticklabels([METHOD_STYLE[m]['label'] for m in order],
-                        rotation=20, ha='right', fontsize=9)
+    ax.set_xticklabels([LABELS[k].split('  ')[0] for k in order],
+                        rotation=18, ha='right')
     ax.set_yticks(range(len(personas)))
-    ax.set_yticklabels(personas, fontsize=9)
+    ax.set_yticklabels(personas)
     for i in range(len(personas)):
         for j in range(len(order)):
-            color = 'white' if matrix[i, j] > 12 else 'black'
-            ax.text(j, i, f'{matrix[i, j]:.1f}', ha='center', va='center',
-                    fontsize=8.5, color=color)
-    ax.set_title('Per-persona regret (% of oracle reward) by method')
-    cbar = fig.colorbar(im, ax=ax, fraction=0.04)
+            v = matrix[i, j]
+            color = 'white' if v > vmax * 0.55 else 'black'
+            ax.text(j, i, f'{v:.1f}', ha='center', va='center',
+                    fontsize=9, color=color)
+    ax.set_title('Per-persona regret  (% of oracle reward)  ·  averaged across reps')
+    cbar = fig.colorbar(im, ax=ax, fraction=0.035, pad=0.02)
     cbar.set_label('% regret')
     fig.tight_layout()
     fig.savefig(f'{FIG_DIR}/fig4_persona_heatmap.png')
@@ -193,145 +374,52 @@ def fig_persona_heatmap():
     print('  fig4_persona_heatmap.png')
 
 
-# ---------- Fig 5: OPRO ablation focus ----------
+# ============================================================================
+# Fig 5: OPRO ablation — focused 3-method comparison with bands
+# ============================================================================
 def fig_opro_ablation():
-    oracle, methods = load_all()
-    fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    for m in ['edp_evolved_agent', 'edp_evolved_opro', 'edp_static']:
-        ax.plot(np.arange(1, len(oracle) + 1),
-                cum_regret(methods[m], oracle),
-                **METHOD_STYLE[m])
+    bd = load_bandits_multiseed()
+    oracle = bd['oracle']
+    n = len(oracle)
+    x = np.arange(1, n + 1)
+
+    agent = load_agent_reps('evolve_state', n)
+    opro = load_agent_reps('opro_state', n)
+
+    fig, ax = plt.subplots(figsize=(8.0, 4.6))
+    plot_method(ax, x, cum_regret(bd['edp_static'], oracle), None, 'edp_static')
+    if opro.shape[0] > 0:
+        m, s = cum_regret_band(opro, oracle)
+        plot_method(ax, x, m, s, 'edp_opro')
+    if agent.shape[0] > 0:
+        m, s = cum_regret_band(agent, oracle)
+        plot_method(ax, x, m, s, 'edp_agent', linewidth=2.4)
+
     for chk in (2500, 5000, 7500):
-        ax.axvline(chk, color='gray', alpha=0.4, linestyle=':')
-        ax.text(chk, ax.get_ylim()[1] * 0.05 if False else 30,
-                f'round at {chk}', rotation=90, fontsize=8,
-                color='gray', va='bottom')
+        ax.axvline(chk, color='black', alpha=0.18, linestyle='-', linewidth=0.6)
+        ax.text(chk, 50, f'edit round  →', rotation=90, va='bottom',
+                fontsize=8, color='gray', alpha=0.7)
+
     ax.set_xlabel('Session #')
     ax.set_ylabel('Cumulative regret')
-    ax.set_title('OPRO ablation: agent with diagnostic report vs (edits, score) history only')
-    ax.legend(loc='upper left', fontsize=9)
-    ax.grid(alpha=0.25)
+    ax.set_title('OPRO ablation  ·  same agent, action space, model — '
+                 'only the prompt content differs  ·  bands = ±1 SE')
+    ax.legend(loc='upper left')
+    ax.set_xlim(0, n)
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     fig.savefig(f'{FIG_DIR}/fig5_opro_ablation.png')
     plt.close(fig)
     print('  fig5_opro_ablation.png')
 
 
-# ---------- Fig 6: evolution trajectory (batch regret per round) ----------
-def fig_evolution():
-    with open('evolve_state/state.json') as f:
-        a = json.load(f)
-    with open('opro_state/state.json') as f:
-        b = json.load(f)
-
-    checkpoints = [0, 2500, 5000, 7500, 10000]
-    def batches(state):
-        rs = state['rewards']
-        os_ = state['oracle']
-        out = []
-        for i in range(len(checkpoints) - 1):
-            lo, hi = checkpoints[i], checkpoints[i + 1]
-            if hi > len(rs):
-                break
-            br = sum(os_[lo:hi]) - sum(rs[lo:hi])
-            out.append(br)
-        return out
-
-    a_batches = batches(a)
-    b_batches = batches(b)
-    rounds = ['R0\n(baseline)', 'R1', 'R2', 'R3']
-    x = np.arange(len(rounds))
-    width = 0.35
-
-    fig, ax = plt.subplots(figsize=(7.0, 4.5))
-    ax.bar(x - width / 2, a_batches, width, color=METHOD_STYLE['edp_evolved_agent']['color'],
-            label='Report-based agent', edgecolor='white')
-    ax.bar(x + width / 2, b_batches, width, color=METHOD_STYLE['edp_evolved_opro']['color'],
-            label='OPRO ablation', edgecolor='white')
-    for i, (av, bv) in enumerate(zip(a_batches, b_batches)):
-        ax.text(i - width / 2, av + 5, f'{av:.0f}', ha='center', fontsize=9)
-        ax.text(i + width / 2, bv + 5, f'{bv:.0f}', ha='center', fontsize=9)
-    ax.set_xticks(x)
-    ax.set_xticklabels(rounds)
-    ax.set_ylabel('Batch regret (2500-session window)')
-    ax.set_title('Per-batch regret across evolution rounds')
-    ax.legend(fontsize=9)
-    ax.grid(axis='y', alpha=0.25)
-    fig.tight_layout()
-    fig.savefig(f'{FIG_DIR}/fig6_evolution.png')
-    plt.close(fig)
-    print('  fig6_evolution.png')
-
-
-# ---------- Fig 7: widget activation across rounds (report-agent only) ----------
-def parse_widget_act_from_report(path: str) -> dict[str, float]:
-    """Extract widget activation % from a report markdown file."""
-    out = {w: 0.0 for w in WIDGETS}
-    with open(path) as f:
-        lines = f.readlines()
-    in_widget_section = False
-    for line in lines:
-        if 'Widget activation rate' in line:
-            in_widget_section = True
-            continue
-        if in_widget_section:
-            # Either a widget data line or the next section header
-            if line.strip().startswith('##') or line.strip().startswith('-'):
-                break
-            m = re.match(r'\s+(\S+)\s+([0-9.]+)\s+', line)
-            if m:
-                w, pct = m.group(1), float(m.group(2))
-                if w in out:
-                    out[w] = pct
-    return out
-
-
-def fig_widget_activation():
-    rounds = [2500, 5000, 7500, 10000]
-    data = []
-    for ms in rounds:
-        path = f'evolve_state/report_at_{ms}.md'
-        if not os.path.exists(path):
-            return
-        data.append(parse_widget_act_from_report(path))
-    # Sort widgets by activation at round 0 (descending)
-    order = sorted(WIDGETS, key=lambda w: -data[0].get(w, 0.0))
-    matrix = np.zeros((len(order), len(rounds)))
-    for j, d in enumerate(data):
-        for i, w in enumerate(order):
-            matrix[i, j] = d.get(w, 0.0)
-
-    fig, ax = plt.subplots(figsize=(7.5, 9.0))
-    im = ax.imshow(matrix, aspect='auto', cmap='Blues', vmin=0, vmax=20)
-    ax.set_xticks(range(len(rounds)))
-    ax.set_xticklabels([f'After R{j}\n(@{rounds[j]})' for j in range(len(rounds))],
-                        fontsize=9)
-    ax.set_yticks(range(len(order)))
-    ax.set_yticklabels(order, fontsize=8.5)
-    for i in range(len(order)):
-        for j in range(len(rounds)):
-            v = matrix[i, j]
-            color = 'white' if v > 12 else 'black'
-            ax.text(j, i, f'{v:.1f}' if v > 0.05 else '·',
-                    ha='center', va='center', fontsize=8, color=color)
-    ax.set_title('Widget activation (% of all slots) across report-agent rounds')
-    cbar = fig.colorbar(im, ax=ax, fraction=0.04)
-    cbar.set_label('activation %')
-    fig.tight_layout()
-    fig.savefig(f'{FIG_DIR}/fig7_widget_activation.png')
-    plt.close(fig)
-    print('  fig7_widget_activation.png')
-
-
 def main():
-    print(f'Generating figures into {FIG_DIR}/')
+    print(f'Generating figures into {FIG_DIR}/  (paper-quality, multi-seed)')
     fig_cumregret()
     fig_stressor()
     fig_power_sweep()
     fig_persona_heatmap()
     fig_opro_ablation()
-    fig_evolution()
-    fig_widget_activation()
     print('done.')
 
 
