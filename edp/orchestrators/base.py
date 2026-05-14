@@ -47,7 +47,8 @@ class Orchestrator:
 
     def run_batch(self, state, until_idx, seed=42):
         stream = make_session_stream(until_idx, seed=seed)
-        policy = EDPPolicy(modules=state['modules'])
+        policy = EDPPolicy(modules=state['modules'],
+                            shapes=state.get('shapes'))
         rewards = list(state['rewards'])
         oracle = list(state['oracle'])
         sessions = list(state['sessions'])
@@ -75,17 +76,25 @@ class Orchestrator:
         return state
 
     def apply_edits_from_file(self, state, path, **extras):
+        from edp.policies.edp import apply_shape_edits, make_problem_shapes
         with open(path) as f:
             data = json.load(f)
         edit_tuples = [
             (e['widget'], e['path'], e.get('from', 0.0),
              e['to'], e.get('reason', ''))
-            for e in data['edits']
+            for e in data.get('edits', [])
         ]
         state['modules'] = apply_edits(state['modules'], edit_tuples)
+        # Layer-1 PWL shape edits (optional)
+        shape_edits = data.get('shape_edits', [])
+        if shape_edits:
+            shapes = state.get('shapes') or make_problem_shapes()
+            state['shapes'] = apply_shape_edits(shapes, shape_edits)
         state['edit_history'].append({
             'session': state['session_idx'],
-            'count': len(edit_tuples),
+            'count': len(edit_tuples) + len(shape_edits),
+            'module_count': len(edit_tuples),
+            'shape_count': len(shape_edits),
             'note': data.get('note', ''),
             **extras,
         })

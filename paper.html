@@ -1046,6 +1046,76 @@ Bayesian-EDP hyperparameters (<code>η=5×10⁻⁴, λ=0</code> for
 GreedyLinTS), this lab-vs-prod inversion is small but consistent across
 seeds. A GreedyLinTS-specific hyperparameter sweep would close the lab
 regret further.)</p>
+<h3
+id="d-layer-1-pwl-evolution-capability-added-no-win-in-single-trial">5.4d
+Layer-1 PWL evolution (capability added; no win in single-trial)</h3>
+<p>EDP-agent so far has only edited Layer-2 (the module GAM). Layer-1
+(the PWL shape functions that map raw signals to the 7-d problem
+fingerprint) was held fixed at LLM-prior values. We extend the agent’s
+edit grammar to also edit Layer-1: a <code>shape_edits</code> array
+alongside <code>edits</code> in the JSON, with paths like
+<code>weight</code>, <code>vals.&lt;i&gt;</code>,
+<code>bps.&lt;i&gt;</code> rooted at <code>(problem, signal)</code>.
+Mechanically the change is small (a few lines in
+<code>apply_shape_edits</code> and the prompt template); the agent’s
+reasoning surface widens substantially.</p>
+<p>Single-trial run on the LLM-persona simulator, 3 checkpoints, 35
+total edits (27 Layer-2 + 8 Layer-1 across the three rounds):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Variant</th>
+<th>Cum regret @ 10K</th>
+<th>% oracle lost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EDP-agent (Layer-2 only)</td>
+<td>2,380</td>
+<td>11.9 %</td>
+</tr>
+<tr class="even">
+<td>Bayesian-EDP</td>
+<td>2,200 ± 35</td>
+<td>11.0 ± 0.2 %</td>
+</tr>
+<tr class="odd">
+<td><strong>EDP-agent (Layer-1 + Layer-2)</strong></td>
+<td><strong>2,714</strong></td>
+<td><strong>13.6 %</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The Layer-1 capability <strong>does not improve performance</strong>
+in this single trial; it slightly regresses. The agent diagnosed
+plausible Layer-1 issues each round (F33 zoom for
+<code>premium_silent_browser</code>, F41 tab_switch dampening for
+over-detected comparison sessions, F32 size_chart weight for
+<code>corporate_uniform_buyer</code>) and made conservative shape edits,
+but the simultaneous Layer-2 edits in the same batch differed from the
+Layer-2-only run’s edits enough that the net trajectory was worse. We do
+not attribute this to a Layer-1-specific failure — both arms come from
+independent agent draws and live-stream variance is large at
+single-trial.</p>
+<p><strong>The mechanism works, the value doesn’t (yet).</strong> Two
+tractable improvements left as future work:</p>
+<ol type="1">
+<li><strong>Separate Layer-1 and Layer-2 checkpoints.</strong> Currently
+the agent emits both edit types in one batch and we evaluate the
+combined effect. Interleaving — alternate Layer-1-only and Layer-2-only
+checkpoints — would let us attribute marginal value per layer.</li>
+<li><strong>Layer-1-specific diagnostics in the report.</strong> The
+current report shows per-persona regret and per-widget activation but
+not “what fraction of high-regret sessions had under-detected
+<code>F32</code>?”. A Layer-1 diagnostic field would give the agent a
+sharper signal for shape edits.</li>
+</ol>
+<p>The honest reading: extending the policy class is one of the two
+distinct things “evolvable” buys you (the other is updating coefficients
+within a fixed class). Our infrastructure now supports both; the
+empirical value of Layer-1 edits requires more careful evaluation than a
+single trial provides.</p>
 <h3 id="per-persona-and-per-category-breakdowns">5.5 Per-persona and
 per-category breakdowns</h3>
 <p>The aggregate numbers in §5.1 hide where each method wins or loses.
@@ -1586,14 +1656,16 @@ estimators can in principle recover partial per-slot credit if a
 propensity model is available. These methods need their own exploration
 policy and a logging policy; integrating them is a non-trivial extension
 and a separate study.</p>
-<p><strong>Layer-1 evolution.</strong> The agent currently only edits
-Layer-2 module config. Extending the edit grammar to
-<code>shapes.&lt;problem&gt;.&lt;signal&gt;.bps[i]</code> and
-<code>.vals[i]</code> would let the agent re-shape Layer-1 problem
-detection per (persona, category) cell. We expect this to help on the
-personas where EDP-agent still trails the oracle (e.g.,
-<code>size_specific_anxious</code>, <code>premium_silent_browser</code>
-in §5.4).</p>
+<p><strong>Layer-1-aware diagnostics + interleaved checkpoints.</strong>
+§5.4d added the Layer-1 PWL-edit capability and observed no single-trial
+improvement. The most promising follow-ups: (a) interleave Layer-1-only
+and Layer-2-only checkpoints rather than mixing both in each batch, so
+we can attribute marginal value; (b) add Layer-1-specific diagnostics to
+the checkpoint report (e.g., “X% of high-regret sessions had problem F32
+detected at &lt;0.3 despite N1_fit &gt; 0.7”), which would give the
+agent a sharper signal for when shape edits are warranted. Per-(persona,
+category) conditional shape functions are a structural step beyond and a
+separate future item.</p>
 <p><strong>Larger ensembles + better validation slicing.</strong>
 §5.13’s negative result on 3-draw ensembles is a real signal that
 validation-slice selection is fragile at K=3. Two natural extensions:

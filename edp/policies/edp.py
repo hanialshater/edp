@@ -19,37 +19,45 @@ def pwl(x: float, bps, vals) -> float:
 
 
 def make_problem_shapes():
+    """
+    Layer-1 PWL shape registry. Each (problem, signal) is a dict with
+    `bps` (breakpoints), `vals` (PWL values at breakpoints), and `weight`.
+    Editable via apply_shape_edits paths like `F32.size_chart.weight`,
+    `F32.size_chart.vals.2`, etc.
+    """
+    def s(bps, vals, w):
+        return {'bps': list(bps), 'vals': list(vals), 'weight': w}
     return {
         'F32': {
-            'size_chart':    ([0, .2, .5, .8, 1], [0, .1, .45, .75, .95], 0.45),
-            'size_conf_inv': ([0, .3, .6, 1],     [.95, .6, .25, .05],    0.30),
-            'return_hist':   ([0, .2, .5, 1],     [0, .1, .4, .7],        0.25),
+            'size_chart':    s([0, .2, .5, .8, 1], [0, .1, .45, .75, .95], 0.45),
+            'size_conf_inv': s([0, .3, .6, 1],     [.95, .6, .25, .05],    0.30),
+            'return_hist':   s([0, .2, .5, 1],     [0, .1, .4, .7],        0.25),
         },
         'F33': {
-            'zoom':          ([0, .3, .6, 1],     [0, .15, .5, .85],      0.55),
-            'price_norm':    ([0, .3, .6, 1],     [0, .2, .5, .8],        0.45),
+            'zoom':          s([0, .3, .6, 1],     [0, .15, .5, .85],      0.55),
+            'price_norm':    s([0, .3, .6, 1],     [0, .2, .5, .8],        0.45),
         },
         'F41': {
-            'tab_switch':    ([0, .2, .5, .8, 1], [0, .1, .5, .85, .95],  0.55),
-            'revisit':       ([0, .3, .6, 1],     [0, .2, .55, .8],       0.25),
-            'price_dwell':   ([0, .3, .6, 1],     [0, .1, .35, .55],      0.20),
+            'tab_switch':    s([0, .2, .5, .8, 1], [0, .1, .5, .85, .95],  0.55),
+            'revisit':       s([0, .3, .6, 1],     [0, .2, .55, .8],       0.25),
+            'price_dwell':   s([0, .3, .6, 1],     [0, .1, .35, .55],      0.20),
         },
         'F43': {
-            'style_stretch': ([0, .3, .6, 1],     [0, .2, .6, .95],       0.65),
-            'mobile':        ([0, .5, 1],         [0, .3, .55],           0.35),
+            'style_stretch': s([0, .3, .6, 1],     [0, .2, .6, .95],       0.65),
+            'mobile':        s([0, .5, 1],         [0, .3, .55],           0.35),
         },
         'F45': {
-            'price_dwell':   ([0, .3, .6, .9, 1], [0, .15, .5, .8, .95],  0.50),
-            'price_sens':    ([0, .4, .7, 1],     [0, .2, .55, .85],      0.50),
+            'price_dwell':   s([0, .3, .6, .9, 1], [0, .15, .5, .8, .95],  0.50),
+            'price_sens':    s([0, .4, .7, 1],     [0, .2, .55, .85],      0.50),
         },
         'F46': {
-            'return_view':   ([0, .2, .5, 1],     [0, .15, .55, .9],      0.55),
-            'return_hist':   ([0, .2, .5, 1],     [0, .15, .5, .8],       0.45),
+            'return_view':   s([0, .2, .5, 1],     [0, .15, .55, .9],      0.55),
+            'return_hist':   s([0, .2, .5, 1],     [0, .15, .5, .8],       0.45),
         },
         'F51': {
-            'cart_osc':      ([0, .2, .5, 1],     [0, .15, .55, .9],      0.45),
-            'wishlist':      ([0, .3, .6, 1],     [0, .1, .4, .7],        0.30),
-            'revisit':       ([0, .3, .6, 1],     [0, .1, .4, .65],       0.25),
+            'cart_osc':      s([0, .2, .5, 1],     [0, .15, .55, .9],      0.45),
+            'wishlist':      s([0, .3, .6, 1],     [0, .1, .4, .7],        0.30),
+            'revisit':       s([0, .3, .6, 1],     [0, .1, .4, .65],       0.25),
         },
     }
 
@@ -125,7 +133,15 @@ def score_problems(feat: dict, shapes: dict) -> dict:
     out = {}
     for prob, sigs in shapes.items():
         s, w_sum = 0.0, 0.0
-        for sig_name, (bps, vals, w) in sigs.items():
+        for sig_name, cfg in sigs.items():
+            # Backward-compat: accept either the new dict form
+            # {'bps': ..., 'vals': ..., 'weight': ...} or a 3-tuple.
+            if isinstance(cfg, dict):
+                bps, vals, w = cfg['bps'], cfg['vals'], cfg['weight']
+            else:
+                bps, vals, w = cfg
+            if w == 0:
+                continue
             x = feat['size_conf'] if sig_name == 'size_conf_inv' else feat.get(sig_name, 0.0)
             s += w * pwl(x, bps, vals)
             w_sum += w
@@ -166,18 +182,38 @@ def compose(feat: dict, shapes: dict, modules: dict) -> list[str]:
 
 
 # ---------- Code-edit application ----------
-def _set_dot(d: dict, path: str, value: float):
+def _set_dot(d: dict, path: str, value):
+    """
+    Set a dotted path inside a nested dict. Numeric path segments are
+    treated as list indices (e.g. `vals.2` indexes vals[2]).
+    """
     parts = path.split('.')
     cur = d
-    for p in parts[:-1]:
-        if p not in cur or not isinstance(cur[p], dict):
-            cur[p] = {}
+    for i, p in enumerate(parts[:-1]):
+        is_idx = p.isdigit()
+        nxt = parts[i + 1]
+        nxt_is_idx = nxt.isdigit()
+        if is_idx:
+            cur = cur[int(p)]
+            continue
+        if p not in cur or (not isinstance(cur[p], dict) and not nxt_is_idx):
+            cur[p] = {} if not nxt_is_idx else []
         cur = cur[p]
-    cur[parts[-1]] = value
+    last = parts[-1]
+    if last.isdigit():
+        cur[int(last)] = value
+    else:
+        cur[last] = value
 
 
 def apply_edits(modules: dict, edits: list) -> dict:
-    """edits: list of (widget, path, from, to, reason). Returns a NEW dict."""
+    """
+    Apply Layer-2 (module) edits.
+
+    edits: list of (widget, path, from, to, reason) tuples or
+           dicts {widget, path, [from], to, [reason]}.
+    Returns a NEW modules dict (deep-copied).
+    """
     out = copy.deepcopy(modules)
     for e in edits:
         if isinstance(e, dict):
@@ -187,6 +223,45 @@ def apply_edits(modules: dict, edits: list) -> dict:
         if widget not in out:
             continue
         _set_dot(out[widget], path, to)
+    return out
+
+
+def apply_shape_edits(shapes: dict, edits: list) -> dict:
+    """
+    Apply Layer-1 (PWL shape) edits.
+
+    Each edit dict has: {problem, signal, path, [from], to, [reason]}.
+    `path` is one of:
+      - 'weight'         (scalar)
+      - 'bps.<i>'        (i-th breakpoint, scalar; must remain monotonic
+                          increasing in [0, 1])
+      - 'vals.<i>'       (i-th PWL value, scalar in [0, 1])
+
+    Returns a NEW shapes dict (deep-copied).
+    """
+    out = copy.deepcopy(shapes)
+    for e in edits:
+        prob = e['problem']
+        sig = e['signal']
+        path = e['path']
+        to = e['to']
+        if prob not in out or sig not in out[prob]:
+            # Allow ADDING a new (problem, signal) entry
+            if 'bps' in e and 'vals' in e and 'weight' in e:
+                out.setdefault(prob, {})[sig] = {
+                    'bps': list(e['bps']), 'vals': list(e['vals']),
+                    'weight': float(e['weight']),
+                }
+                continue
+            else:
+                continue
+        cfg = out[prob][sig]
+        # Convert tuple form to dict form if needed (back-compat).
+        if not isinstance(cfg, dict):
+            bps, vals, w = cfg
+            cfg = {'bps': list(bps), 'vals': list(vals), 'weight': w}
+            out[prob][sig] = cfg
+        _set_dot(cfg, path, to)
     return out
 
 
@@ -208,3 +283,16 @@ class EDPPolicy(Policy):
 
     def apply_edit_batch(self, edits: list):
         self.modules = apply_edits(self.modules, edits)
+
+    def apply_shape_edit_batch(self, shape_edits: list):
+        self.shapes = apply_shape_edits(self.shapes, shape_edits)
+
+
+def load_shape_edits_json(path: str):
+    """
+    Loads a Layer-1 edit batch JSON. Same shape as Layer-2 except each
+    edit has fields {problem, signal, path, [from], to, [reason]}.
+    """
+    with open(path) as f:
+        data = json.load(f)
+    return data.get('shape_edits', []), data.get('note', '')

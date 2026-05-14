@@ -1,0 +1,21 @@
+{
+  "note": "round 5000 — kill bad defaults for confident_repeat_buyer, fix material_deep_dive miscalibration, revive size_guide for corporate_uniform_buyer, dampen F41 over-detection on premium_silent_browser",
+  "edits": [
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.28, "reason": "r/fire 0.175 — over-firing default hurts confident_repeat_buyer where it dominates the page"},
+    {"widget": "personal_recs", "path": "base", "from": 0.22, "to": 0.10, "reason": "r/fire 0.115 — defaults over-fire on low-need sessions, drag oracle gap"},
+    {"widget": "trending_now", "path": "base", "from": 0.18, "to": 0.08, "reason": "r/fire 0.067 — worst default, rarely justified"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.32, "reason": "13.3% activation but only 0.258 r/fire — clip its dominance, let problem widgets win more often"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.18, "to": 0.08, "reason": "r/fire 0.093 — when it fires it's wrong; let on_rem on F33 carry it instead"},
+    {"widget": "material_deep_dive", "path": "on_rem.F33", "from": 1.7, "to": 2.1, "reason": "complement base cut so it still wins when F33 truly remains"},
+    {"widget": "size_guide", "path": "base", "from": 0.18, "to": 0.30, "reason": "0% activation — fit_reassurance shadows it; raise base so it competes for corporate_uniform_buyer/size sessions"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": -0.6, "reason": "softer self-cov so size_guide can co-fire with fit_reassurance instead of being locked out"},
+    {"widget": "fit_reassurance", "path": "on_rem.F46", "from": 0.6, "to": 1.0, "reason": "returner_from_recent_order×shoes regret 29% — fit_reassurance addresses both F32 and F46"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.15, "reason": "r/fire 0.357 (best of all) but only 4.5% activation — under-fires on F46 sessions"},
+    {"widget": "expert_pick", "path": "base", "from": 0.18, "to": 0.26, "reason": "r/fire 0.352 but only 0.5% activation — strong widget that's losing the greedy race"}
+  ],
+  "shape_edits": [
+    {"problem": "F41", "signal": "price_dwell", "path": "weight", "from": 0.2, "to": 0.10, "reason": "F41 over-fires for premium_silent_browser (comparison_card 169/170) — price_dwell shouldn't strongly imply comparison friction"},
+    {"problem": "F32", "signal": "size_chart", "path": "vals.1", "from": 0.1, "to": 0.25, "reason": "corporate_uniform_buyer has high N1_fit but moderate size_chart usage — lift mid-low end so F32 detects sooner"},
+    {"problem": "F33", "signal": "zoom", "path": "vals.2", "from": 0.6, "to": 0.75, "reason": "premium_silent_browser still 23.7% regret — push F33 detection harder at moderate zoom usage"}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "note": "round 7500 — stabilize: trim defaults still over-firing on confident_repeat_buyer, fix comparison_card universal-firing, pull back size_guide over-correction, address corporate_uniform_buyer F32 gap",
+  "edits": [
+    {"widget": "also_bought", "path": "base", "from": 0.32, "to": 0.24, "reason": "still 9.3% act with r/fire 0.227 and fires 216/216 for confident_repeat_buyer — trim further to free slots"},
+    {"widget": "similar_items", "path": "base", "from": 0.28, "to": 0.20, "reason": "r/fire 0.130 (worst non-zero); still over-firing as default for confident_repeat_buyer (162/216) and mobile_evening_browser"},
+    {"widget": "comparison_card", "path": "base", "from": 0.05, "to": -0.05, "reason": "fires 100% for premium_silent_browser (143/143) and corporate_uniform_buyer (126/126) — addr+on_rem still carry it when F41 truly remains"},
+    {"widget": "size_guide", "path": "base", "from": 0.30, "to": 0.22, "reason": "round-2 over-correction: r/fire only 0.113 when it fires — pull base back, let on_rem.F32 trigger it"},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.0, "to": 2.4, "reason": "complement base cut so size_guide still wins for corporate_uniform_buyer/size_specific_anxious when F32 truly remains"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.18, "reason": "r/fire 0.333 (top-tier) but missing from returner_from_recent_order top-5 despite N1_fit=0.78 N6_trust=0.88"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.20, "to": 0.12, "reason": "r/fire 0.198 (poor) at 2.1% — over-firing default-style; let on_rem carry it"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.7, "to": 2.0, "reason": "paralyzed_wishlister (N7=0.95) only gets wishlist_save 3.1% — push harder where F51 truly remains"},
+    {"widget": "expert_pick", "path": "on_rem.F51", "from": 1.4, "to": 1.7, "reason": "r/fire 0.301 solid but only 4.5% — strengthen for paralyzed_wishlister & confident_repeat_buyer decision support"}
+  ],
+  "shape_edits": [
+    {"problem": "F41", "signal": "tab_switch", "path": "vals.1", "from": 0.1, "to": 0.05, "reason": "comparison_card fires 100% for premium_silent_browser/corporate_uniform_buyer — F41 still over-detecting at low tab_switch"},
+    {"problem": "F32", "signal": "size_chart", "path": "weight", "from": 0.45, "to": 0.55, "reason": "corporate_uniform_buyer (N1_fit=0.85, 32.8% regret on bottoms/outerwear/shoes) still under-served by F32 widgets"}
+  ]
+}

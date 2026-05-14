@@ -329,6 +329,27 @@ The honest reading: **most of the production-stack advantage is the EDP architec
 
 (Aside: GreedyLinTS's parametric production regret 12.8 % is *better* than its lab regret 14.4 % on the LLM simulator. This is not an error — under page-level attribution the SGD signal averages over more sessions per update; under per-slot reward in the lab, the SGD signal is fresher but per-arm variance dominates. With the canonical Bayesian-EDP hyperparameters (`η=5×10⁻⁴, λ=0` for GreedyLinTS), this lab-vs-prod inversion is small but consistent across seeds. A GreedyLinTS-specific hyperparameter sweep would close the lab regret further.)
 
+### 5.4d Layer-1 PWL evolution (capability added; no win in single-trial)
+
+EDP-agent so far has only edited Layer-2 (the module GAM). Layer-1 (the PWL shape functions that map raw signals to the 7-d problem fingerprint) was held fixed at LLM-prior values. We extend the agent's edit grammar to also edit Layer-1: a `shape_edits` array alongside `edits` in the JSON, with paths like `weight`, `vals.<i>`, `bps.<i>` rooted at `(problem, signal)`. Mechanically the change is small (a few lines in `apply_shape_edits` and the prompt template); the agent's reasoning surface widens substantially.
+
+Single-trial run on the LLM-persona simulator, 3 checkpoints, 35 total edits (27 Layer-2 + 8 Layer-1 across the three rounds):
+
+| Variant | Cum regret @ 10K | % oracle lost |
+|---|---|---|
+| EDP-agent (Layer-2 only) | 2,380 | 11.9 % |
+| Bayesian-EDP | 2,200 ± 35 | 11.0 ± 0.2 % |
+| **EDP-agent (Layer-1 + Layer-2)** | **2,714** | **13.6 %** |
+
+The Layer-1 capability **does not improve performance** in this single trial; it slightly regresses. The agent diagnosed plausible Layer-1 issues each round (F33 zoom for `premium_silent_browser`, F41 tab_switch dampening for over-detected comparison sessions, F32 size_chart weight for `corporate_uniform_buyer`) and made conservative shape edits, but the simultaneous Layer-2 edits in the same batch differed from the Layer-2-only run's edits enough that the net trajectory was worse. We do not attribute this to a Layer-1-specific failure — both arms come from independent agent draws and live-stream variance is large at single-trial.
+
+**The mechanism works, the value doesn't (yet).** Two tractable improvements left as future work:
+
+1. **Separate Layer-1 and Layer-2 checkpoints.** Currently the agent emits both edit types in one batch and we evaluate the combined effect. Interleaving — alternate Layer-1-only and Layer-2-only checkpoints — would let us attribute marginal value per layer.
+2. **Layer-1-specific diagnostics in the report.** The current report shows per-persona regret and per-widget activation but not "what fraction of high-regret sessions had under-detected `F32`?". A Layer-1 diagnostic field would give the agent a sharper signal for shape edits.
+
+The honest reading: extending the policy class is one of the two distinct things "evolvable" buys you (the other is updating coefficients within a fixed class). Our infrastructure now supports both; the empirical value of Layer-1 edits requires more careful evaluation than a single trial provides.
+
 ### 5.5 Per-persona and per-category breakdowns
 
 The aggregate numbers in §5.1 hide where each method wins or loses. On the LLM-persona simulator (averaging across reps for stochastic methods):
@@ -475,7 +496,7 @@ We ran four of the items previously listed here (slate-LinTS, drift, structural 
 
 **Counterfactual estimators.** IPS and Doubly Robust estimators can in principle recover partial per-slot credit if a propensity model is available. These methods need their own exploration policy and a logging policy; integrating them is a non-trivial extension and a separate study.
 
-**Layer-1 evolution.** The agent currently only edits Layer-2 module config. Extending the edit grammar to `shapes.<problem>.<signal>.bps[i]` and `.vals[i]` would let the agent re-shape Layer-1 problem detection per (persona, category) cell. We expect this to help on the personas where EDP-agent still trails the oracle (e.g., `size_specific_anxious`, `premium_silent_browser` in §5.4).
+**Layer-1-aware diagnostics + interleaved checkpoints.** §5.4d added the Layer-1 PWL-edit capability and observed no single-trial improvement. The most promising follow-ups: (a) interleave Layer-1-only and Layer-2-only checkpoints rather than mixing both in each batch, so we can attribute marginal value; (b) add Layer-1-specific diagnostics to the checkpoint report (e.g., "X% of high-regret sessions had problem F32 detected at <0.3 despite N1_fit > 0.7"), which would give the agent a sharper signal for when shape edits are warranted. Per-(persona, category) conditional shape functions are a structural step beyond and a separate future item.
 
 **Larger ensembles + better validation slicing.** §5.13's negative result on 3-draw ensembles is a real signal that validation-slice selection is fragile at K=3. Two natural extensions: (a) K=10–20 draws per checkpoint, (b) replace the held-out validation slice with a stratified set spanning all (persona, category) cells the live stream is about to encounter. Both add cost; neither is mechanically difficult.
 
