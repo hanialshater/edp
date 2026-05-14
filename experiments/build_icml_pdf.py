@@ -67,6 +67,20 @@ UNICODE_MAP = {
     'ₐ': r'$_a$',
     'ᵢ': r'$_i$',           # ᵢ
     'ₖ': r'$_k$',
+    'R̂': r'$\hat{R}$',     # combining-circumflex on R
+    '̂': '',                  # bare combining-circumflex (drop)
+    'η': r'$\eta$',
+    '⁰': r'$^0$',
+    '¹': r'$^1$',
+    '²': r'$^2$',
+    '³': r'$^3$',
+    '⁴': r'$^4$',
+    '⁵': r'$^5$',
+    '⁶': r'$^6$',
+    '⁷': r'$^7$',
+    '⁸': r'$^8$',
+    '⁹': r'$^9$',
+    '⁻': r'$^-$',
     ' ': ' ',                # non-breaking space
 }
 def normalize_unicode(s):
