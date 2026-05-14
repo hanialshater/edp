@@ -2,7 +2,7 @@
 
 ## Abstract
 
-Page composition — choosing which 6 modules to display, in which order, given a user — is academically a contextual combinatorial bandit problem. In production, however, reward signals are page-level (not per-slot), arrive with multi-day delay, and are noisy. Under these conditions we show that a 2-layer Generalized Additive Model (GAM) policy edited by an LLM agent reading a structured diagnostic report — an **Evolvable Decision Program (EDP)** — beats Linear Thompson Sampling by **3.2×** in cumulative regret across two simulator setups. We test on (i) a baseline parametric simulator with 8 personas (LinTS regret 18.9% of oracle, EDP-agent 10.5%) and (ii) a more realistic simulator where 14 personas are described in natural language and a Claude subagent generates 50 exemplar session vectors per persona, with 6 fashion categories modulating need importance (LinTS 21.6%, EDP-agent 11.9%). The EDP-agent gap to its parametric performance is +1.4 percentage points, vs +9.1 pp for EDP-static and +7.0 pp for offline-curated edits — establishing EDP-agent as the **most robust method to simulator realism**. An OPRO-style ablation isolates the structured diagnostic report — not the LLM's general intelligence — as the carrier of the gain.
+Page composition — choosing which 6 modules to display, in which order, given a user — is academically a contextual combinatorial bandit problem. In production, however, reward signals are page-level (not per-slot), arrive with multi-day delay, and are noisy. Under these conditions we show that a 2-layer Generalized Additive Model (GAM) policy edited by an LLM agent reading a structured diagnostic report — an **Evolvable Decision Program (EDP)** — beats Linear Thompson Sampling by **~2×** in cumulative regret across two simulator setups, and beats a one-shot LLM-as-policy baseline by **3×**. We compare across the full spectrum: static-widget placement (40.7% of oracle reward lost on the LLM-persona simulator), one-shot LLM-writes-policy (35.7%), per-slot LinTS bandits (21.6%), static EDP with hand-tuned priors (19.8%), offline-curated edits (15.0%), and the closed-loop report-based agent (11.9%). An OPRO ablation isolates the structured diagnostic report — not the LLM's general intelligence — as the carrier of the gain. A robustness wrapper that pressure-tests each agent edit batch against parameter perturbations on a held-out validation slice nudges EDP-agent's regret from 11.9% to 11.7% and removes per-batch fragility (5–7% spread across perturbations).
 
 ## 1. Introduction
 
@@ -340,6 +340,38 @@ The gap between EDP-agent and LinTS-warm holds in both setups: **8.4 percentage 
 ![Figure 8: Per-category regret % on the LLM-persona simulator. Bandits stay near 21–24% on every category; EDP-agent stays at 11–13%, winning every category by 8–11 pp.](figures/fig5_category_heatmap.png)
 
 ![Figure 9: Per-persona regret % on the LLM-persona simulator (14 personas). EDP-agent improves over EDP-static on every persona except size-specific-anxious and premium-silent-browser, where Layer-1 PWL shapes (held fixed in this loop) are misaligned with the LLM-defined need structure — a flagged future-work item.](figures/fig4_persona_heatmap_llm.png)
+
+### 5.8 Additional baselines and a robustness wrapper (Fig. 10)
+
+Two simple baselines bracket the comparison from below and give a sense of where the GAM + agent's gain comes from:
+
+**Static widgets.** Always place the same 6 widgets in the same order — top-6 by initial `base` weight (`similar_items`, `also_bought`, `personal_recs`, `trending_now`, `outfit_completion`, `fit_reassurance`). No personalization, no category awareness. The "what if you didn't bother" baseline.
+
+**LLM-as-policy (Software 3.0 one-shot).** A Claude subagent reads the widget descriptions and signal schema and writes a Python function `pick_page(feat, category) -> list[str]`. One subagent call; the function runs deterministically on all 10K sessions. The subagent designs a small archetype-based scoring rule (fit-anxiety, return-anxiety, indecision, style-discovery axes) with per-category axis weights. The LLM does NOT see persona names or true-needs/provisions — only the context features, like a deployed system would.
+
+**Robust EDP (parameter-perturbation wrapper).** After the report-based agent proposes an edit batch, the orchestrator:
+
+1. Applies the edits to produce config `C₀`.
+2. Generates K=8 perturbations of `C₀` (Gaussian noise σ=0.15 on every parameter the edits touched, except `slot_decay`).
+3. Evaluates all 9 candidates on a held-out 500-session validation slice (different seed from the live stream).
+4. Selects the candidate that maximises `mean − 0.5 · std` of validation reward.
+
+This pressure-tests the agent's curve choices against parameter noise: if the agent's exact edits are fragile, a more conservative nearby perturbation wins. Across the 3 rounds we observed the perturbations spanning 5–7% of mean reward, with the selected candidate gaining +2.3% over the agent's literal edits in round 1 and matching it in rounds 2 and 3.
+
+| Method (LLM-persona simulator) | Cum regret @ 10K | % oracle lost |
+|---|---|---|
+| Static widgets | 8,136 | 40.7% |
+| LLM-as-policy (Software 3.0 one-shot) | 7,124 | 35.7% |
+| LinTS-cold | ~4,568 | 22.9% |
+| LinTS-warm | ~4,322 | 21.6% |
+| EDP-static | ~3,964 | 19.8% |
+| EDP-canned | ~2,999 | 15.0% |
+| EDP-agent (report-based) | 2,380 | 11.9% |
+| **EDP-agent + Robust** | **2,341** | **11.7%** |
+
+The progression is informative: just-deploy-defaults loses 40.7%; just-ask-the-LLM-once loses 35.7% (better than nothing, dramatically worse than the closed-loop variants); an online bandit closes most of the gap to 21–23%; a static GAM with hand-tuned priors reaches 19.8%; offline-curated edits 15.0%; the report-based loop 11.9%; the robust wrapper 11.7%. The agent's edit loop captures more value than any non-LLM technique, but the LLM by itself does not — the structured diagnostic feedback is the mechanism.
+
+![Figure 10: Full baseline panel across the parametric and LLM-persona simulators. Static-widget and LLM-as-policy baselines bracket the comparison from below; LinTS baselines occupy the middle; the EDP family (with category-conditioned regret) is on top. Robust EDP edges out plain EDP-agent slightly by selecting against fragile parameter values.](figures/fig6_all_baselines.png)
 
 ## 6. Discussion
 

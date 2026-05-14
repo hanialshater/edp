@@ -1,0 +1,21 @@
+{
+  "note": "round 2500 — revive dead widgets, dampen low-r/fire defaults, add cross-problem synergies for worst personas",
+  "edits": [
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.25, "reason": "Highest activation but lowest r/fire (0.25); reduce default crowding out targeted widgets"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.2, "reason": "Over-firing default with r/fire 0.21; lower base so problem-aware widgets win"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.15, "reason": "r/fire 0.13 is worst; clearly over-fired default"},
+    {"widget": "trending_now", "path": "base", "from": 0.3, "to": 0.1, "reason": "r/fire 0.08 is the worst widget when active; demote heavily"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.35, "reason": "Dead (0%) despite F32 being central for size_specific_anxious and shoes/bottoms category"},
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.3, "reason": "Dead (0%) but post_return_returner and hesitant_first_buyer need N6_trust via F46"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.1, "to": 0.25, "reason": "Dead (0%); cheaper trust booster that should chain after fit_reassurance"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.05, "to": 0.3, "reason": "Dead (0%); premium_silent_browser N2_visual=0.92 underserved"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.3, "reason": "Dead (0%) yet paralyzed_wishlister N7_commit=0.95 needs commit-action widgets"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.25, "reason": "Near-dead; trend_chaser and paralyzed_wishlister benefit from guidance toward commit"},
+    {"widget": "occasion_lookbook", "path": "base", "from": 0.08, "to": 0.22, "reason": "Dead (0%); outfit_event_planner needs F43 diversity beyond outfit_completion"},
+    {"widget": "fit_reassurance", "path": "on_cov.F46", "from": 0.0, "to": 0.6, "reason": "NEW synergy: after return-hesitation covered, fit reassurance still relevant for trust chain"},
+    {"widget": "return_explainer", "path": "on_cov.F32", "from": 0.0, "to": 0.5, "reason": "NEW synergy: after size anxiety covered, returns story closes trust loop for hesitant buyers"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.2, "to": 2.0, "reason": "Boost so paralyzed_wishlister sees a real commit-action widget"},
+    {"widget": "material_deep_dive", "path": "on_rem.F33", "from": 1.7, "to": 2.3, "reason": "Premium personas need a second F33 widget after brand_story fires"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": -0.6, "reason": "Reduce self-suppression so size_guide can co-fire with fit_reassurance for severe F32 cells"}
+  ]
+}

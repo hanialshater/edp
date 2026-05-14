@@ -44,27 +44,36 @@ plt.rcParams.update({
 
 COLORS = {
     'edp_agent':    '#1b5e8c',
+    'edp_robust':   '#0d3a5c',
     'edp_canned':   '#2e8b57',
     'edp_opro':     '#e08214',
     'edp_static':   '#5a5a5a',
     'bandit_warm':  '#c0392b',
     'bandit_cold':  '#7d3c98',
+    'static_policy':'#000000',
+    'llm_policy':   '#8b4513',
 }
 LINESTYLE = {
     'edp_agent':   '-',
+    'edp_robust':  '-',
     'edp_canned':  '--',
     'edp_opro':    '-',
     'edp_static':  ':',
     'bandit_warm': '-',
     'bandit_cold': '--',
+    'static_policy': ':',
+    'llm_policy':  '-.',
 }
 LABELS = {
     'edp_agent':   'EDP-agent',
+    'edp_robust':  'EDP-agent + Robust',
     'edp_canned':  'EDP-canned',
     'edp_opro':    'EDP-OPRO (ablation)',
     'edp_static':  'EDP-static',
     'bandit_warm': 'LinTS-warm',
     'bandit_cold': 'LinTS-cold',
+    'static_policy':'Static widgets',
+    'llm_policy':  'LLM-as-policy',
 }
 
 
@@ -383,6 +392,84 @@ def fig5_category_heatmap(path='results_multiseed_llm_cat.npz'):
     print('  fig5_category_heatmap.png')
 
 
+# ============================================================================
+# fig6: full baseline bar chart with all methods including static & LLM-policy
+# ============================================================================
+def fig6_all_baselines(parametric_path='results_multiseed_parametric_cat.npz',
+                       llm_path='results_multiseed_llm_cat.npz',
+                       baselines_param='results_baselines_parametric.npz',
+                       baselines_llm='results_baselines_llm.npz'):
+    def collect(multiseed_path, baselines_path, agent_dir, robust_dir):
+        if not os.path.exists(multiseed_path):
+            return None
+        bd = load_multiseed(multiseed_path)
+        oracle = bd['oracle']
+        n = len(oracle)
+        total_o = float(oracle.sum())
+        out = {}
+        for k in ['edp_static', 'edp_canned']:
+            out[k] = (float((oracle - bd[k]).sum()) / total_o * 100, 0.0)
+        for k in ['bandit_warm', 'bandit_cold']:
+            cr = (oracle[None, :] - bd[k]).sum(axis=1) / total_o * 100
+            out[k] = (float(cr.mean()),
+                      float(cr.std(ddof=1) / np.sqrt(len(cr))))
+        # static + llm-policy baselines
+        if os.path.exists(baselines_path):
+            bl = np.load(baselines_path)
+            assert np.allclose(bl['oracle'], oracle), 'baseline oracle differs'
+            for k in ['static_policy', 'llm_policy']:
+                if k in bl.files:
+                    out[k] = (float((oracle - bl[k]).sum()) / total_o * 100, 0.0)
+        # report-based agent (3 reps for parametric, 1 for LLM here)
+        agent = load_orch_rewards(f'{agent_dir}/state.json', n)
+        if agent.shape[0] > 0:
+            cr = (oracle[None, :] - agent).sum(axis=1) / total_o * 100
+            out['edp_agent'] = (float(cr.mean()),
+                                float(cr.std(ddof=1) / np.sqrt(len(cr))) if len(cr) > 1 else 0.0)
+        # robust orchestrator
+        robust = load_orch_rewards(f'{robust_dir}/state.json', n)
+        if robust.shape[0] > 0:
+            cr = (oracle[None, :] - robust).sum(axis=1) / total_o * 100
+            out['edp_robust'] = (float(cr.mean()), 0.0)
+        return out
+
+    p = collect(parametric_path, baselines_param, 'evolve_state', None)
+    l = collect(llm_path, baselines_llm, 'evolve_state_llm', 'robust_state_llm')
+
+    methods = ['edp_robust', 'edp_agent', 'edp_canned', 'edp_static',
+                'bandit_warm', 'bandit_cold', 'llm_policy', 'static_policy']
+    fig, ax = plt.subplots(figsize=(10.0, 5.0))
+    x = np.arange(len(methods))
+    width = 0.4
+    for i, (label, source, color) in enumerate([
+        ('Parametric (8 personas)', p, '#aab8d0'),
+        ('LLM (14 personas + 6 categories)', l, '#d7a576'),
+    ]):
+        if source is None:
+            continue
+        means = [source.get(m, (np.nan, 0.0))[0] for m in methods]
+        sems = [source.get(m, (np.nan, 0.0))[1] for m in methods]
+        offset = (i - 0.5) * width
+        bars = ax.bar(x + offset, means, width, color=color, edgecolor='white',
+                       yerr=sems, capsize=3, error_kw={'linewidth': 0.7},
+                       label=label)
+        for b, mv in zip(bars, means):
+            if not np.isnan(mv):
+                ax.text(b.get_x() + b.get_width() / 2, mv + 0.4, f'{mv:.1f}%',
+                        ha='center', fontsize=8.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels([LABELS[m] for m in methods], rotation=18, ha='right')
+    ax.set_ylabel('% of oracle reward lost (cumulative regret / total oracle)')
+    ax.set_title('Full baseline panel across simulator setups  ·  '
+                  '10K sessions, prod stack')
+    ax.legend(loc='upper left')
+    ax.set_axisbelow(True)
+    fig.tight_layout()
+    fig.savefig(f'{FIG_DIR}/fig6_all_baselines.png')
+    plt.close(fig)
+    print('  fig6_all_baselines.png')
+
+
 def main():
     print(f'Generating figures into {FIG_DIR}/')
     fig1_cumregret_both()
@@ -390,6 +477,7 @@ def main():
     fig3_relative_regret()
     fig4_persona_heatmap_llm()
     fig5_category_heatmap()
+    fig6_all_baselines()
     print('done.')
 
 

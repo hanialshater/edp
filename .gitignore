@@ -4,3 +4,4 @@ __pycache__/
 # multi-seed run artifacts (regenerated per run, can be large)
 evolve_state_rep*/
 opro_state_rep*/
+# Old top-level scripts replaced by experiments/ package (kept as shims via package re-exports)

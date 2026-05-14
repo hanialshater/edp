@@ -1,0 +1,26 @@
+# Natural-language widget descriptions, shown to the LLM-as-policy.
+# DELIBERATELY DOES NOT REVEAL true_provisions or ground-truth needs.
+# The LLM has to reason from the description what each widget is for.
+
+fit_reassurance:        "Reassurance content about the fit of this product (typical fit, model heights, fit reviews)."
+size_guide:             "Detailed size chart for this product category with measurement guidance."
+low_return_alts:        "Alternative items in this product family that have low return rates."
+comparison_card:        "Side-by-side comparison vs similar products on price, material, ratings."
+customers_chose:        "Statistics like 'X% of customers picked this size' and similar social proof."
+value_breakdown:        "Breakdown of cost-per-wear, durability, and price-vs-quality positioning."
+outfit_completion:      "Suggested items that complete an outfit around this product."
+style_bridge:           "Adjacent style suggestions — 'pairs well with' for users open to discovery."
+occasion_lookbook:      "Lookbook of how this product is worn for specific occasions."
+return_explainer:       "Detailed return-policy walkthrough: deadlines, free returns, exchange options."
+easy_returns_promise:   "Banner emphasizing the no-hassle returns guarantee."
+brand_story:            "Brand story content — heritage, craftsmanship, designer notes."
+material_deep_dive:     "Material composition, sourcing, technical fabric details, care."
+price_history:          "Historical price chart for this item across recent months."
+price_drop_notify:      "Subscribe to be notified if the price drops on this item."
+recently_viewed:        "Items the user recently viewed; encourages cross-comparison."
+wishlist_save:          "Prompt to save this item for later; reduces purchase pressure."
+expert_pick:            "Stylist or buyer's pick highlighting the item with curator commentary."
+similar_items:          "Generic 'you might also like' grid of similar products."
+also_bought:            "Items frequently purchased together with this one."
+trending_now:           "Currently trending items in this category."
+personal_recs:          "Algorithmic personal recommendations based on user history."
