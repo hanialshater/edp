@@ -46,27 +46,39 @@ def per_slot_for(p, c, page):
 
 
 def run_bayesian(stream, *, page_attribution: bool, delay: int, sigma: float,
-                  edits_dir: str, lr: float = 1e-3, lam: float = 0.5,
-                  prior_sigma: float = 0.5, noise_seed: int = 0):
+                  edits_dir: str | None, lr: float = 1e-3, lam: float = 0.5,
+                  prior_sigma: float = 0.5, noise_seed: int = 0,
+                  prior_jitter: float = 0.0, jitter_seed: int = 0):
+    """
+    edits_dir=None disables LLM checkpoint resets entirely (this is the
+    GreedyLinTS / no-LLM ablation when paired with lam=0).
+    prior_jitter > 0 adds Gaussian noise (sigma=prior_jitter) to every
+    LLM-edit value before reset_prior is called — used for multi-seed runs.
+    """
     pol = BayesianEDPPolicy(lr=lr, lam=lam, prior_sigma=prior_sigma)
     fb = DelayedFeedback(delay=delay, noise_sigma=sigma, seed=noise_seed)
+    jrng = np.random.default_rng(jitter_seed)
 
-    schedule = {
-        2500: f'{edits_dir}/edits_round_2500.json',
-        5000: f'{edits_dir}/edits_round_5000.json',
-        7500: f'{edits_dir}/edits_round_7500.json',
-    }
+    schedule = {}
+    if edits_dir is not None:
+        schedule = {
+            2500: f'{edits_dir}/edits_round_2500.json',
+            5000: f'{edits_dir}/edits_round_5000.json',
+            7500: f'{edits_dir}/edits_round_7500.json',
+        }
 
     rewards = np.zeros(len(stream))
     for i, (p, c, f) in enumerate(stream):
         # LLM edit application: re-anchor the prior + reset live modules
         if i in schedule and os.path.exists(schedule[i]):
             edits, _ = load_edits_json(schedule[i])
-            new_modules = apply_edits(pol.modules, [
+            edit_tuples = [
                 (e['widget'], e['path'], e.get('from', 0.0),
-                 e['to'], e.get('reason', ''))
+                 e['to'] + (jrng.normal(0, prior_jitter) if prior_jitter > 0 else 0),
+                 e.get('reason', ''))
                 for e in edits
-            ])
+            ]
+            new_modules = apply_edits(pol.modules, edit_tuples)
             pol.reset_prior(new_modules)
         # Drain ready feedback
         for r_obs, payload in fb.drain_ready(i):

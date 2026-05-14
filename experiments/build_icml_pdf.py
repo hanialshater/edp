@@ -81,6 +81,7 @@ UNICODE_MAP = {
     '⁸': r'$^8$',
     '⁹': r'$^9$',
     '⁻': r'$^-$',
+    '∞': r'$\infty$',
     ' ': ' ',                # non-breaking space
 }
 def normalize_unicode(s):
