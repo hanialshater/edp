@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>paper</title>
+  <title>EDP paper</title>
   <style>
 html {
 color: #1a1a1a;
@@ -163,149 +163,196 @@ vertical-align: middle;
 </style>
 </head>
 <body>
+<header id="title-block-header">
+<h1 class="title">EDP paper</h1>
+</header>
 <h1 id="evolvable-decision-programs-explainable-page-composition-under-production-reward-conditions">Evolvable
 Decision Programs: Explainable Page Composition under Production Reward
 Conditions</h1>
 <h2 id="abstract">Abstract</h2>
-<p>Most recommendation systems encode intelligence as opaque model
-weights. We study an alternative in the spirit of Karpathy’s
-<em>Software 3.0</em>: the policy is a <strong>readable code
-artifact</strong> — a small generalised additive model (GAM) over
-piecewise-linear shape functions — that an LLM agent writes from domain
-knowledge, edits at checkpoints as PR diffs, and explains by plotting
-the curves. The LLM is strictly offline; at serving time the policy is
-~300 numbers evaluated in microseconds with no external dependencies. We
-call this an <strong>Evolvable Decision Program</strong> (EDP).</p>
-<p>Three properties motivate the design: (i) <strong>LLM knowledge
-authors the program</strong> — cold start is “write a sensible policy
-from shopping psychology” rather than “explore randomly until
-conversion”; (ii) <strong>the GAM doubles as a Bayesian prior</strong>
-for online learning — Bayesian-EDP runs regularised SGD on observed
-page-level reward anchored at the LLM’s shape functions, fusing
-knowledge with gradient updates without giving up the readable
-representation; (iii) <strong>explainability is architectural</strong> —
-every decision factors as
-<code>(detected problem intensity) × (widget shape function) − slot decay</code>
-and is plottable directly, not approximated with SHAP after the fact
-(see <code>demo/edp_orchestrator.html</code>).</p>
-<p>We exercise the paradigm on page composition under the reward signal
-production actually has: page-level attribution, multi-day delay,
-observation noise — not the per-slot signal academic bandit work
-assumes. Per-slot LinTS, the canonical baseline, loses 4.9 % of oracle
-reward under lab conditions and 18.9 % in production; the gap is the
-reward signal it expects being structurally absent. Against eight
-baselines (LinTS, Slate-LinTS, CombLinUCB, GreedyLinTS, static, one-shot
-LLM-as-policy, OPRO ablation, multi-agent ensembles) on two simulators
-(parametric 8-persona; LLM-driven 14-persona + 6-category) under
-production reward conditions: EDP-agent wins parametric at <strong>6.5 ±
-0.2 %</strong> and Bayesian-EDP wins LLM-persona at <strong>11.0 ± 0.2
-%</strong>, both roughly 2× better than the strongest combinatorial
-bandit (CombLinUCB @ 10.5 % / 17.3 %). The trade-off — agent on
-parametric, Bayesian fusion on LLM — is simulator-dependent. The
-paradigm-level claim — that a readable code artifact written by an
-offline LLM is a competitive alternative to opaque online learners for
-whole-page composition, with cold-start, auditability, and serving-cost
-properties out of reach for weight-based methods — holds across both
-simulators.</p>
+<p><strong>Where should the intelligence of a decision system
+live?</strong> The default answer is <em>in model weights</em>. We study
+an alternative: a small generalised additive model (GAM) with named
+piecewise-linear shape functions as the <strong>symbolic substrate for
+LLM-authored policies</strong>. The proposal is not “use GAMs” (decades
+old) nor “let LLMs write code” (also not new) — it is about
+<em>fit</em>. We argue that a 200–300-parameter named GAM is the
+smallest policy representation that is simultaneously:</p>
+<ul>
+<li><strong>LLM-writable</strong> — an LLM can author a competent
+initial policy directly from domain knowledge (245 named parameters, ~9
+KB of JSON, no training data);</li>
+<li><strong>LLM-editable</strong> — every parameter has an addressable
+dotted path (<code>size_guide.on_cov.F32</code>), so an agent emits
+well-typed scalar edits with attached reasons (15 ± 1 edits per round in
+our runs, ~3 KB per round);</li>
+<li><strong>Human-auditable</strong> — the whole policy fits on one page
+of plots (Fig. 8), every decision factors as a sum of named
+contributions (Fig. 9), and every edit carries an LLM-written
+justification in version control (Fig. 10);</li>
+<li><strong>Microsecond-servable</strong> — evaluating 245 numbers
+through PWL interpolation and a 6-step greedy loop is ~1 ms; the LLM
+never runs in the serving path.</li>
+</ul>
+<p>Together these four properties give <strong>closure under both human
+and LLM editing</strong> — the LLM reads, the human reviews, the LLM
+re-edits, no translation layer. Neural nets are not closed under LLM
+edits (there is no <code>weights[847][22]</code> an LLM can sensibly
+reason about). Large codebases are not closed under
+<em>single-checkpoint</em> LLM edits (too much surface). A 245-parameter
+GAM is in the sweet spot where the entire policy is in-context, edits
+are well-typed, and the post-edit artifact is still human-reviewable. We
+call a GAM equipped with this evolution loop an <strong>Evolvable
+Decision Program</strong> (EDP).</p>
+<p>We demonstrate the primitive on page composition: at each session,
+choose and order 6 widgets out of 22 candidates given 14 raw behavioural
+signals and 6 fashion categories, under the reward signal production
+actually has (page-level attribution + multi-day delay + observation
+noise). Against eight baselines — per-slot LinTS (the canonical
+contextual bandit, 18.9 % of oracle reward lost in production),
+Slate-LinTS, CombLinUCB (the strongest combinatorial bandit we measured,
+10.5 % / 17.3 %), GreedyLinTS, static placement, one-shot LLM-as-policy,
+and an OPRO ablation — on two simulators (parametric 8-persona;
+LLM-driven 14-persona × 6-category), the EDP variants are competitive:
+EDP-agent at <strong>6.5 ± 0.2 %</strong> on parametric, Bayesian-EDP at
+<strong>11.0 ± 0.2 %</strong> on LLM-persona, roughly 2× better than the
+strongest combinatorial bandit. The comparison is an <strong>existence
+proof that the primitive can compete</strong>, not a horse race. §5.4c
+shows that most of the gain comes from the GAM architecture itself; the
+LLM provides a natural authoring and editing interface on top. The
+contribution is the primitive, not the benchmark win.</p>
 <h2 id="introduction">1. Introduction</h2>
-<p>Where should the intelligence of a recommendation system live?</p>
-<p>The default answer in industry is <em>in model weights</em>: a
-transformer ranker or contextual bandit absorbs engagement signal into
-millions of opaque parameters, and the system gets smarter by
-retraining. This works, but at three costs that compound at scale:
-decisions are not explainable in detail; the system can only get smarter
-in directions gradient descent finds; and the most capable reasoning
-tool we have (an LLM) cannot read or contribute to the policy without
-running expensively in the serving path.</p>
-<p>We study an alternative in the spirit of Karpathy’s <em>Software
-3.0</em>. The policy is a <strong>readable code artifact</strong> — a
-2-layer generalised additive model with roughly 300 numbers organised as
-named piecewise-linear shape functions — that an LLM agent writes from
-domain knowledge at design time, edits as PR diffs at checkpoints, and
-explains by plotting the curves. The LLM is strictly offline. At serving
-time the policy is a deterministic Python function in microseconds, with
-no external dependencies. We call this an <strong>Evolvable Decision
-Program</strong> (EDP).</p>
-<p>The application in this paper is page composition: at each session,
-choose and order 6 widgets out of 22 candidates on a fashion product
-page given 14 raw behavioural signals and 6 categories. The reward
-signal is the one production actually has — observed at the page level,
-delayed by several days, noisy — not the per-slot signal academic bandit
-work assumes. Most of the academic-to-deployment gap shows up here, and
-§5.1 measures it directly: per-slot LinTS, the canonical contextual
-bandit, loses 4.9 % of oracle reward under lab conditions and 18.9 %
-under production conditions. The degradation is not from algorithmic
-weakness; it is from a structurally absent per-slot signal.</p>
-<p>Three properties of the paradigm motivate the experiments:</p>
-<p><strong>Reasoning and LLM knowledge as the policy author.</strong>
-The agent writes the initial program directly from shopping psychology —
-Layer 1 maps signals to 7 latent “problem” scores via PWL curves (Fig.
-8); Layer 2 scores widgets against those problems with a
-remaining/coverage mechanic that captures inter-slot dependencies. Cold
-start is not “explore randomly until conversion happens” but “write a
-sensible program from domain knowledge.” Every parameter is named, every
-curve is plottable, and every edit at a checkpoint carries an
-LLM-authored reason that survives in the audit log (Fig. 10).</p>
-<p><strong>The GAM doubles as a Bayesian prior for online
-learning.</strong> Bayesian-EDP (§3.4, §5.4b) treats the LLM-authored
-shape functions as a Gaussian prior anchor and runs regularised SGD on
-observed page-level reward between checkpoints. This is the principled
-fusion of LLM-authored structure with online gradient learning: the
-readable representation never disappears, but the numbers shift as data
-accumulates (Fig. 11). Bayesian-EDP is the best method on the harder
-LLM-driven simulator at 11.0 ± 0.2 %, roughly 2× better than the
-strongest combinatorial bandit we measured.</p>
-<p><strong>Explainability is architectural, not bolted on.</strong>
-Every page decision factors as
+<p>Where should the intelligence of a decision system live?</p>
+<p>The default answer is <em>in model weights</em>: a transformer ranker
+or contextual bandit absorbs engagement signal into millions of opaque
+parameters, and the system gets smarter by retraining. This works, but
+at three costs that compound at scale: decisions are not explainable in
+detail; the system can only get smarter in directions gradient descent
+finds; and the most capable reasoning tool we have — an LLM — cannot
+read or contribute to the policy without running expensively in the
+serving path.</p>
+<p>Karpathy’s <em>Software 3.0</em> framing names a different locus:
+<strong>natural language and LLM authorship as the program</strong>. In
+its current instantiations the LLM sits in the execution path (steering
+a runtime via prompts) or generates code that runs once (coding agents
+producing Python). Neither model is what we want for an online decision
+system: serving has hard latency budgets, and a 10K-line codebase is too
+much surface for an LLM to refactor coherently at every checkpoint.</p>
+<p>This paper argues that a <strong>small GAM with named
+piecewise-linear shape functions</strong> is the right symbolic
+substrate for the Software 3.0 paradigm applied to online decisions. The
+argument is about <em>fit</em>, not novelty of components — GAMs are
+decades old, LLMs editing code is a year old. The claim is that a
+200–300-parameter named GAM is the smallest policy representation with
+all four of the following properties:</p>
+<p><strong>(i) LLM-writable.</strong> An LLM can author a competent
+initial policy directly from domain knowledge. In our setup, 245 named
+parameters — 7 PWL problem shape functions × 2–3 input signals each plus
+22 widget GAM specs — are enough to encode “size anxiety responds to
+size_chart, size_conf, return_hist with these PWL shapes” and
+“fit_reassurance addresses F3.2 with addr=0.55 and on_rem.F32=2.2.” The
+whole policy serialises to ~9 KB of JSON and fits in any LLM context
+window. Cold start is not “explore randomly until conversion happens”
+but “write a sensible program from shopping psychology.”</p>
+<p><strong>(ii) LLM-editable.</strong> Every parameter has an
+addressable dotted path: <code>mods.size_guide.on_cov.F32</code>,
+<code>shapes.F32.size_chart.vals.2</code>. An agent emits well-typed
+scalar edits as JSON:
+<code>{widget: &quot;size_guide&quot;, path: &quot;on_cov.F32&quot;, from: -1.4, to: +0.6, reason: &quot;convert from substitute to chained complement&quot;}</code>.
+Edits are local and atomic: one edit changes one parameter, which
+changes one factor in one decomposable score. The post-edit artifact is
+<em>the same kind of object</em> as the pre-edit artifact — closed under
+the operation. This is the property a neural net does not have (there is
+no <code>layer3.weights[847][22]</code> an LLM can sensibly reason
+about) and that a large codebase has only partially (single-checkpoint
+edits cannot hold the whole codebase in working memory).</p>
+<p>The contrast with general-purpose coding agents (Cursor, Aider,
+Claude Code) is precise: those agents edit codebases too big to hold
+in-context, where edits are syntactically well-typed but
+<em>semantically</em> opaque to the agent (it has to read the
+surrounding code to know what an edit means). The GAM primitive is the
+smallest representation where the agent can hold the <em>entire</em>
+policy in working memory while editing it, where every edit is
+simultaneously a behaviour change and an explanation change, and where
+the two cannot be desynchronised because the policy class <em>is</em>
+the explanation.</p>
+<p><strong>(iii) Human-auditable.</strong> The full Layer-1 surface fits
+on one page of plots (Fig. 8); every decision factors as
 <code>(detected problem intensity) × (widget shape function) − slot decay</code>
-(Fig. 9). The decision trace is a curve plot rather than a SHAP
-approximation, and the same property powers the live composition demo
-(<code>demo/edp_orchestrator.html</code>) where stakeholders can step
-through every choice on every example.</p>
-<p>The bandit head-to-head is one of several yardsticks. We test against
-eight baselines — per-slot LinTS (warm and cold context), Slate-LinTS,
-CombLinUCB, GreedyLinTS, static placement, one-shot LLM-as-policy, and
-an OPRO-style ablation that strips structured diagnostics from the
-agent’s loop — under both a parametric 8-persona simulator and a richer
-LLM-driven 14-persona-by-6-category simulator. The paradigm-level claim
-is broader than any one comparison: that a readable code artifact
-written by an offline LLM is a competitive alternative to opaque online
-learners for whole-page composition, with cold-start, audit-trail, and
-serving-cost properties out of reach for weight-based methods.</p>
-<p>§2 specifies the simulators. §3 details the 2-layer GAM, the
-evolution loop, and Bayesian-EDP. §4 fixes the protocol. §5 reports
-results. §6 discusses where the paradigm wins and where it does not.
-Appendix A walks through a single session in full to make the open-box
-claim concrete.</p>
+and is plottable directly (Fig. 9); every edit batch is a PR diff with
+LLM-written reasons attached (Fig. 10). The audit trail is the same
+artifact as the policy itself — no separate interpretability library, no
+SHAP approximation. Appendix A walks one session through the full trace
+in prose.</p>
+<p><strong>(iv) Microsecond-servable.</strong> Evaluating 245 numbers —
+PWL interpolation over 14 signals plus a 6-pass greedy submodular
+composition — costs roughly 1 ms in pure Python. The LLM is strictly
+offline. The whole serving stack has no external dependencies, no GPU,
+no per-decision API call. This is the inverse of the cost profile
+“LLM-in-the-loop” methods usually carry, and it is what makes the
+primitive <em>operationally</em> viable as a production component.</p>
+<p>Together these four properties give <strong>closure under both human
+and LLM editing</strong>: the LLM reads, the human reviews, the LLM
+re-edits, no translation layer between. We call a GAM equipped with this
+evolution loop an <strong>Evolvable Decision Program</strong> (EDP).</p>
+<p>The application in this paper is page composition: choose and order 6
+widgets out of 22 candidates on a fashion product page given 14 raw
+behavioural signals and 6 categories. The reward signal is the one
+production actually has — observed at the page level, delayed by several
+days, noisy — not the per-slot signal academic bandit work assumes.
+Per-slot LinTS, the canonical contextual bandit, loses 4.9 % of oracle
+reward under lab conditions and 18.9 % under production conditions
+(§5.1); the degradation is not from algorithmic weakness but from a
+structurally absent per-slot signal.</p>
+<p>Against eight baselines (per-slot LinTS warm + cold context,
+Slate-LinTS, CombLinUCB, GreedyLinTS, static placement, one-shot
+LLM-as-policy, OPRO ablation) on two simulators, the EDP variants are
+competitive: EDP-agent at 6.5 ± 0.2 % on parametric, Bayesian-EDP at
+11.0 ± 0.2 % on LLM-persona, roughly 2× better than the strongest
+combinatorial bandit (CombLinUCB at 10.5 % / 17.3 %). We frame this as
+an <strong>existence proof that the primitive can compete</strong>, not
+a horse race: §5.4c shows that most of the gain comes from the GAM
+architecture itself, with the LLM providing a natural authoring and
+editing interface on top. The empirical contribution is that the
+primitive does not give up performance for closure — not that it beats
+every bandit by some margin.</p>
 <p>The “evolvable” qualifier deserves one disclaimer. The experiments
 support coefficient updates within a fixed policy class. Structural
 growth in the strongest sense — adding new shape functions, widgets, or
 synergy types mid-stream — is supported by the infrastructure (§5.4d,
-§5.9) but does not yet pay off empirically in single-trial runs;
-multi-seed evaluation of that capability is open work.</p>
+§5.9) but does not yet deliver a single-trial win; multi-seed evaluation
+of the structural capability is open work.</p>
+<p>§2 specifies the simulators. §3 details the 2-layer GAM, the
+evolution loop, the Bayesian-EDP fusion, and a quantitative measurement
+of the four closure properties (§3.5). §4 fixes the protocol. §5 reports
+results. §6 discusses where the primitive wins and where it does not.
+Appendix A walks one session through the full open-box trace.</p>
 <p><strong>Contributions:</strong></p>
 <ol type="1">
-<li><strong>GAM as Software 3.0 primitive (§3, §6.1).</strong> A
-readable, LLM-authorable, agent-editable policy class for whole-page
-composition. Roughly 300 numbers, microsecond serving, atomic PR-diff
-edits, demonstrable explainability via curve plots (Figs. 8–11) and a
-live demo.</li>
+<li><strong>The GAM-as-Software-3.0-primitive claim (§3, §3.5,
+§6.1).</strong> A 200–300-parameter named GAM is the smallest policy
+representation with closure under both human and LLM editing. We
+quantify the property: 245 learnable parameters, 9 KB policy JSON,
+~900-token diagnostic report, 15 well-typed edits per checkpoint
+round.</li>
 <li><strong>GAM-as-prior Bayesian fusion (§3.4, §5.4b).</strong>
-Regularised SGD anchored at the LLM-authored prior. Best method on the
-LLM-persona simulator at 11.0 ± 0.2 % — a principled answer to “how do
-we fuse LLM knowledge with online learning without giving up the
-readable representation?”</li>
-<li><strong>Direct measurement of the academic-vs-production gap
-(§5.1).</strong> Per-slot LinTS degrades by 14 pp under the production
-reward stack — not from algorithmic weakness but from a structurally
-absent per-slot signal. Combinatorial bandits (CombLinUCB, Slate-LinTS)
-inherit the same problem (§5.3); the gap is structural, not
-method-specific.</li>
-<li><strong>OPRO-style ablation (§5.4).</strong> The structured
-diagnostic report — not the LLM’s general intelligence — is what makes
-the agent-in-the-loop work. The implication is that the readable
-representation is what enables the LLM contribution, not a side benefit
-of it.</li>
+Regularised SGD anchored at the LLM-authored shape functions. Best
+method on the LLM-persona simulator at 11.0 ± 0.2 %. The fusion
+preserves the readable representation while consuming online reward
+signal between checkpoints.</li>
+<li><strong>Existence proof that the primitive can compete
+(§5).</strong> Against eight baselines on two simulators under
+production reward conditions, EDP variants are within 2× of optimal and
+2× better than the strongest combinatorial bandit. The contribution is
+not the margin — it is that the primitive does not sacrifice performance
+for the closure properties.</li>
+<li><strong>Direct measurement of the academic-vs-production gap (§5.1)
+and OPRO-style ablation (§5.4).</strong> Per-slot LinTS degrades by 14
+pp under page-level attribution; the gap is structural, not
+method-specific. The OPRO ablation isolates the <em>structured
+diagnostic report</em> — not the LLM’s general intelligence — as the
+carrier of the LLM-side gain, supporting the claim that the readable
+representation is what enables the LLM contribution.</li>
 </ol>
 <h2 id="simulation-setup">2. Simulation setup</h2>
 <p>We separate four concerns: the <strong>customer simulator</strong>
@@ -717,6 +764,122 @@ parameters before (LLM prior at session 0) and after (posterior at
 session 10K). Numbers above the bars annotate drift &gt; 0.05. Every
 change is a readable scalar — no opaque weights.</figcaption>
 </figure>
+<h3 id="quantitative-closure-properties">3.5 Quantitative closure
+properties</h3>
+<p>The four closure properties of §1 are not aesthetic — they are
+measurable. We report the actual numbers from our setup so the
+“primitive” claim is concrete:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Measure</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>LLM-writable</strong></td>
+<td>learnable parameters in initial policy</td>
+<td><strong>245</strong> (157 Layer-1 + 88 Layer-2)</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>policy as serialised JSON</td>
+<td><strong>9.2 KB</strong></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>required training data to author</td>
+<td><strong>0 sessions</strong> (LLM writes from domain knowledge)</td>
+</tr>
+<tr class="even">
+<td><strong>LLM-editable</strong></td>
+<td>edit grammar</td>
+<td>dotted path + scalar <code>to</code> + free-text
+<code>reason</code></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>mean edits proposed per checkpoint round</td>
+<td><strong>15.0</strong> (range 12–16 across N=4 runs × 3 rounds)</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>edit batch as serialised JSON</td>
+<td><strong>~3 KB</strong> per round</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>parameters touched per edit</td>
+<td><strong>1</strong> (by construction; no entanglement)</td>
+</tr>
+<tr class="even">
+<td><strong>Human-auditable</strong></td>
+<td>full Layer-1 surface fits in</td>
+<td><strong>1 figure</strong> (Fig. 8, 7 panels × 2–3 curves)</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>decision trace per session</td>
+<td><strong>1 plot</strong> (Fig. 9, signals → problems → score
+decomposition)</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>every edit has an LLM-written reason</td>
+<td><strong>100 %</strong> (enforced by edit schema)</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>post-hoc interpretability library required</td>
+<td><strong>none</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Microsecond-servable</strong></td>
+<td>serving cost per page</td>
+<td><strong>~1 ms</strong> (pure Python, 245-number eval + 6-step
+greedy)</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>external dependencies at serving time</td>
+<td><strong>0</strong></td>
+</tr>
+<tr class="even">
+<td></td>
+<td>LLM calls per decision</td>
+<td><strong>0</strong></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>LLM calls per 10K-session run</td>
+<td><strong>3</strong> (one per checkpoint round)</td>
+</tr>
+</tbody>
+</table>
+<p>The diagnostic report the agent reads at each checkpoint is
+<strong>~900 tokens (3.6 KB)</strong>; the full prompt — report plus the
+current policy plus the edit grammar — is <strong>~3,200 tokens (13
+KB)</strong>. The entire policy plus full diagnostic context fits inside
+any modern LLM’s context window with room to spare, and the agent’s
+response (15 edits + reasons + a free-text note) returns under <strong>1
+KB</strong>. This is what we mean by “the whole policy is in working
+memory while editing it.”</p>
+<p>A comparable neural-net policy for the same problem — a small MLP
+scoring 22 widgets from a 14-dim context with one 64-unit hidden layer —
+has roughly <strong>2,400 parameters per slot</strong>, none addressable
+by name, none plottable in any readable way. An OPRO-style coding agent
+editing a 10K-line policy codebase faces a different problem: each edit
+is well-typed, but the agent must re-read the surrounding code each
+round to remember what it means. The GAM primitive sits precisely
+between these two regimes: small enough that the whole policy is the
+prompt, large enough to express a competitive policy.</p>
 <h2 id="experimental-protocol">4. Experimental protocol</h2>
 <p>All methods see the <strong>same</strong> 10,000-session stream (seed
 42). The bandits’ internal Thompson sampling is varied across 10 seeds
@@ -731,6 +894,17 @@ and all reports are persisted under <code>evolve_state_rep*/</code>
 (report-based) and <code>opro_state_rep*/</code> (OPRO) and committed to
 the repository so the experiment is byte-for-byte reproducible.</p>
 <h2 id="results">5. Results</h2>
+<p>The experiments answer one paradigm-level question — <em>can the
+primitive compete?</em> — and several supporting questions about
+<em>where the gain lives</em>. The headline numbers (EDP-agent at 6.5 %
+on parametric, Bayesian-EDP at 11.0 % on LLM-persona, both ~2× better
+than the strongest combinatorial bandit) are an existence proof, not a
+margin claim: a 245-parameter LLM-authored, agent-editable GAM matches
+or beats the canonical and the strongest combinatorial bandit baselines
+on whole-page composition under the reward signal production actually
+has. §5.4c then decomposes the gain to show it is the GAM architecture
+doing most of the work, with the LLM as a natural authoring and editing
+interface on top.</p>
 <h3 id="the-labproduction-gap">5.1 The lab–production gap</h3>
 <p>The bandit literature evaluates page composition under “lab”
 conditions: per-slot reward attribution, low delay, low noise. Our
@@ -2061,20 +2235,57 @@ run that.</p>
 <h2 id="discussion">6. Discussion</h2>
 <h3 id="gams-as-software-3.0-primitive">6.1 GAMs as Software 3.0
 primitive</h3>
-<p>Classic ML: collect logs → train black-box model → deploy. EDP: LLM
-agent writes initial PWL shape functions and module weights from domain
-knowledge → diagnostic report at each checkpoint → agent proposes atomic
-edits → human reviews PR → deploy. The unit of work is a curve, not a
-model. Three properties follow:</p>
+<p>The framing of this paper is that the GAM is not a baseline policy
+class we happened to choose; it is the <strong>symbolic
+substrate</strong> that makes the Software 3.0 loop work for online
+decisions. Classic ML: collect logs → train black-box model → deploy.
+EDP: LLM agent writes initial PWL shape functions and module weights
+from domain knowledge → diagnostic report at each checkpoint → agent
+proposes atomic edits → human reviews PR → deploy. The unit of work is
+<em>a named scalar with a reason</em>, not a weight update.</p>
+<p>The four closure properties of §1 each have a sharp practical
+consequence here, beyond what we quantified in §3.5:</p>
 <ul>
-<li><strong>Cold start collapses.</strong> The agent’s initial config is
-informed by shopping psychology, not random.</li>
-<li><strong>Edits are atomic.</strong> A PR diff is one curve
-adjustment; auditable in 30 minutes.</li>
-<li><strong>Policy class grows.</strong> The agent can propose new shape
-functions, new synergies, new widgets — actions a fixed-policy bandit
-cannot take.</li>
+<li><strong>Cold start collapses.</strong> The LLM authors a competent
+initial policy from domain knowledge (zero training data). A bandit pays
+an exploration tax to discover the same structure from clicks. For arms
+with low N per cell — the production reality — that exploration tax
+never amortises.</li>
+<li><strong>Edits are atomic.</strong> A PR diff is one scalar change;
+auditable in seconds. The same diff is simultaneously a behaviour change
+and an explanation change — they cannot desynchronise because the policy
+class <em>is</em> the explanation. This is the property a coding agent
+editing a 10K-line policy codebase does not get for free: there, the
+agent has to read the surrounding code each round to remember what an
+edit means.</li>
+<li><strong>The whole policy is in working memory.</strong> ~3,200
+tokens of (policy + diagnostic report + edit grammar) is small enough
+for the agent to reason globally — it can change a Layer-1 weight and
+simultaneously add a Layer-2 synergy that depends on the new weight, in
+the same edit batch. A larger codebase forces local edits and loses this
+property.</li>
+<li><strong>Policy class grows.</strong> The edit grammar extends
+naturally to new shape functions, new widgets, and new synergies — a
+structural growth direction a fixed-policy bandit cannot take. §5.4d and
+§5.9 exercise this affordance; the single-trial wins are small
+(multi-seed evaluation is open work) but the <em>capability</em> is what
+the primitive enables.</li>
 </ul>
+<p>The deeper claim is <strong>closure under edits</strong>. A neural
+net is not closed under LLM edits (no addressable handle on
+<code>weights[847][22]</code>). A large codebase is not closed under
+<em>single-checkpoint</em> LLM edits (too much surface for the agent to
+hold globally). A 245-parameter named GAM is the smallest representation
+that is in the sweet spot: small enough that the whole policy is the
+prompt, large enough to express a competitive policy, and structured
+enough that every edit is well-typed and locally meaningful. We did not
+invent any of the components — GAMs, LLM authorship, agent-edited code,
+plot-based interpretability all predate this work — but to our knowledge
+the <em>fit</em> between them, and the resulting closure property, has
+not been crisply identified before. The empirical chapters of the paper
+exist to substantiate that the fit is real: a primitive with these
+closure properties is not a toy, it is competitive with the strongest
+non-primitive baselines.</p>
 <h3 id="explainability-is-architectural-not-bolted-on">6.2
 Explainability is architectural, not bolted on</h3>
 <p>Every composition decision traces to:
