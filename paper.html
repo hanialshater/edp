@@ -396,10 +396,9 @@ adds a new widget mid-run. Neither delivers a single-trial empirical
 win, and we have not multi-seed-evaluated either. A more accurate name
 for the artifact would be “Editable Decision Programs.” We keep
 “Evolvable” because the edit grammar already covers structural moves and
-because multi-seed evaluation of the term is a near-term follow-up
-rather than a research bet. The reader should treat structural
-evolvability as a capability claim until §5.4d and §5.9 are replicated
-at K ≥ 5.</p>
+because multi-seed evaluation of the term is a near-term follow-up, not
+a research bet. The reader should treat structural evolvability as a
+capability claim until §5.4d and §5.9 are replicated at K ≥ 5.</p>
 <p>§2 specifies the simulators. §3 details the 2-layer GAM, the
 evolution loop, the Bayesian-EDP fusion, and a quantitative measurement
 of the four closure properties (§3.5). §4 fixes the protocol. §5 reports
@@ -422,15 +421,15 @@ signal between checkpoints.</li>
 (§5).</strong> Against eight baselines on two simulators under
 production reward conditions, EDP variants are within 2× of optimal and
 2× better than the strongest combinatorial bandit. We treat the result
-as evidence that the closure properties do not cost performance, rather
-than as a margin claim.</li>
+as evidence that the closure properties do not cost performance, not as
+a margin claim.</li>
 <li><strong>Direct measurement of the academic-vs-production gap (§5.1)
 and OPRO-style ablation (§5.4).</strong> Per-slot LinTS degrades by 14
 pp under page-level attribution. The gap is structural, not
 method-specific. The OPRO ablation isolates the structured diagnostic
-report, rather than the LLM’s general intelligence, as the carrier of
-the LLM-side gain. This supports the claim that the readable
-representation is what enables the LLM contribution.</li>
+report, not the LLM’s general intelligence, as the carrier of the
+LLM-side gain. This supports the claim that the readable representation
+is what enables the LLM contribution.</li>
 </ol>
 <h2 id="simulation-setup">2. Simulation setup</h2>
 <p>We separate four concerns: the <strong>customer simulator</strong>
@@ -844,9 +843,9 @@ change is a readable scalar — no opaque weights.</figcaption>
 </figure>
 <h3 id="quantitative-closure-properties">3.5 Quantitative closure
 properties</h3>
-<p>The four closure properties of §1 are measurable rather than
-aesthetic. We report the actual numbers from our setup so the
-“primitive” claim is concrete:</p>
+<p>The four closure properties of §1 are measurable, not aesthetic. We
+report the actual numbers from our setup so the “primitive” claim is
+concrete:</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -975,12 +974,12 @@ the repository so the experiment is byte-for-byte reproducible.</p>
 primitive compete?</em>, and several supporting questions about where
 the gain lives. The headline numbers (EDP-agent at 6.5 % on parametric,
 Bayesian-EDP at 11.0 % on LLM-persona, both roughly 2× better than the
-strongest combinatorial bandit) are an existence proof rather than a
-margin claim. A 245-parameter LLM-authored, agent-editable GAM matches
-or beats the canonical and the strongest combinatorial bandit baselines
-on whole-page composition under the reward signal production actually
-has. §5.4c then decomposes the gain to show it is the GAM architecture
-doing most of the work, with the LLM as a natural authoring and editing
+strongest combinatorial bandit) are an existence proof, not a margin
+claim. A 245-parameter LLM-authored, agent-editable GAM matches or beats
+the canonical and the strongest combinatorial bandit baselines on
+whole-page composition under the reward signal production actually has.
+§5.4c then decomposes the gain to show it is the GAM architecture doing
+most of the work, with the LLM as a natural authoring and editing
 interface on top.</p>
 <p>The remainder of §5 maps to the contributions of §1 as follows. Each
 subsection defends a specific claim, not a method:</p>
@@ -1632,9 +1631,8 @@ category) intercept and a quadratic interaction term on score-sum.</p>
 on parametric and re-tested on LLM, not chosen with proper held-out
 validation. The cells in §5.1 are mean ± SE across 5 noise + jitter
 seeds (LLM-prior values jittered by σ=0.05 across reps). We position
-Bayesian-EDP as a compatible refinement of the EDP-agent loop, rather
-than a step-change; a fuller hyperparameter study is left as future
-work.</p>
+Bayesian-EDP as a compatible refinement of the EDP-agent loop, not a
+step-change; a fuller hyperparameter study is left as future work.</p>
 <h3 id="c-where-does-the-edp-gain-come-from-architecture-vs-llm-vs-sgd">5.4c
 Where does the EDP gain come from? Architecture vs LLM vs SGD</h3>
 <p>The previous sections framed the comparison as “EDP vs bandit”. A
@@ -1740,8 +1738,8 @@ most of the lab-vs-production gap that misapplied per-slot LinTS
 suffers. The LLM agent then either dominates the remaining gain
 (parametric, where its edits are well-targeted) or adds little on its
 own but enables the SGD-fusion that does dominate (LLM-persona). The
-choice between EDP-agent and Bayesian-EDP is simulator-dependent rather
-than strictly hierarchical.</p>
+choice between EDP-agent and Bayesian-EDP is simulator-dependent, not
+strictly hierarchical.</p>
 <p>This is a smaller and more nuanced contribution than “LLM in the loop
 beats bandits by 2×”. The sharper claim: <strong>the right policy class
 plus an LLM-anchored prior (with optional SGD refinement) consistently
@@ -2337,10 +2335,9 @@ directly account for the 5.9 pp regret improvement EDP-agent shows, but
 it does mean the post-drift segment has more captureable upside in raw
 terms. About half of the apparent improvement is the agent capturing a
 similar fraction of a bigger pie, and the other half is the round-7500
-checkpoint genuinely adapting. The accurate framing is that EDP-agent
-recovers from drift cleanly and benefits from the mixture shift, rather
-than that it gets monotonically smarter as it sees more drifted
-data.</p>
+checkpoint genuinely adapting. The accurate framing: EDP-agent recovers
+from drift cleanly and benefits from the mixture shift. It does not get
+monotonically smarter as it sees more drifted data.</p>
 <p><strong>Structural exploration.</strong> At session 5000 a new widget
 <code>virtual_try_on</code> is added to the catalog with provisions
 <code>{N1_fit: 0.65, N2_visual: 0.45, N6_trust: 0.20}</code>. A default
@@ -2508,8 +2505,7 @@ reasons attached; Fig. 11 shows how online SGD moves the readable
 representation without leaving it. Appendix A walks through the same
 trace as Fig. 9 in full prose. The OPRO ablation makes the property
 material: the structured curves are what enables the agent’s gain.</p>
-<p>To make the audit story concrete rather than aspirational, we work
-two scenarios.</p>
+<p>To make the audit story concrete, we work two scenarios.</p>
 <p><strong>Worked regulator scenario.</strong> <em>Question from the
 regulator: “User X received <code>fit_reassurance</code> in slot 1 and
 <code>low_return_alts</code> in slot 2. Why?”</em> The full answer,
@@ -2533,8 +2529,8 @@ supporting numbers are at <code>shapes.F32.*</code>,
 <code>mods.fit_reassurance.*</code>, <code>mods.low_return_alts.*</code>
 in the policy repository.</p>
 </blockquote>
-<p>This answer cites named contributions with specific values, rather
-than offering a narrative rationalisation after the fact. A SHAP or LIME
+<p>This answer cites named contributions with specific values. It is not
+a narrative rationalisation generated after the fact. A SHAP or LIME
 explanation of a neural ranker would be a local approximation of how the
 model behaves, computed by an external library. The EDP answer is the
 policy itself. The reviewer can audit it by reading the same JSON the
@@ -2677,77 +2673,62 @@ render; the dependency row decides whether it survives a model-server
 outage. EDP wins both rows by construction. The “sessions to cold-start
 viability” row is the deployment property §5.7 quantifies directly.</p>
 <h2 id="limitations">7. Limitations</h2>
+<p>Four limitations genuinely bind the conclusions of the paper. The
+remaining caveats (no formal regret bounds, no neural-bandit baselines,
+no real deployment, etc.) are noted in line where they apply but do not
+change any headline.</p>
 <ol type="1">
-<li><p><strong>Ground-truth circularity is a real risk; we ran the
-adversarial-perturbation check but not the cross-LLM one.</strong>
+<li><p><strong>Ground-truth circularity.</strong>
 <code>TRUE_NEEDS</code> and <code>TRUE_PROVISIONS</code> are
-LLM-authored, the editor at each checkpoint is a Claude subagent, and
-the diagnostic report it consumes is computed from rewards generated by
-those LLM-authored maps. The intentional misalignment between EDP’s
-internal <code>F</code>-code taxonomy and the 7-need ground truth (§2.2)
-doesn’t neutralise shared semantic substrate inside the LLM family.
-Appendix C reports the adversarial perturbation check (±15 % on every
-provision value, K = 5 seeds): the EDP-vs-bandit gap survives, and the
-relative ranking holds. This rules out the artefactual-numerics worst
-case, but does <strong>not</strong> rule out a systematic LLM bias
-affecting both the ground truth and the editor in correlated ways. The
-cross-LLM check (regenerate <code>TRUE_PROVISIONS</code> with GPT-4 /
-Gemini) remains the right experiment and is the largest validity item
+Claude-authored, the editor at each checkpoint is a Claude subagent, and
+the diagnostic report it reads is computed from rewards generated by
+those Claude-authored maps. The §2.2 misalignment between EDP’s internal
+<code>F</code>-code taxonomy and the 7-need ground truth, and the
+Appendix C adversarial-perturbation check (±15 % per provision, K=5
+seeds; the 2× EDP-vs-bandit gap survives), together rule out the worst
+case where the win is an artefact of the exact numbers Claude chose.
+They do not rule out a systematic LLM bias correlating ground truth and
+editor. The right experiment is cross-LLM regeneration of
+<code>TRUE_PROVISIONS</code> with GPT-4 or Gemini; we have no access to
+those APIs in this pipeline and list this as the largest validity item
 open.</p></li>
+<li><p><strong>Capability claims that depend on single trials.</strong>
+Layer-1 PWL evolution (§5.4d, single trial), Robust-EDP wrapper (§5.8,
+single rep), structural exploration with a new widget mid-run (§5.9,
+single trial), and 3-draw ensemble selection (§5.10, K=3) all use too
+few replicates to support a quantitative claim. Where these sit in the
+narrative we say “the mechanism works, the value is not yet shown.”
+Multi-seed evaluation (K ≥ 10) of each requires new subagent calls and
+is the largest empirical item open. Until then, the demonstrated
+affordance is <em>coefficient updates within a fixed policy class plus
+an extensible edit grammar</em>. “Evolvable” in the strongest sense
+(policy-class growth that pays off) remains a capability claim.</p></li>
 <li><p><strong>Submodular reward is partly what EDP assumes.</strong>
-Diminishing returns on <code>(need × provision)</code> is the structure
-adaptive-submodular composition is designed for. GreedyLinTS (§5.4c)
-inherits the same structural fit. §5.4e adds one non-submodular
-experiment (substitutes penalty <code>α=0.15</code> per same-type-pair)
-and shows the architecture advantage persists: Bayesian-EDP still beats
-every bandit by 5–15 pp under the non-submodular reward, and the gap
-<em>widens</em> vs the strongest bandit (3 pp → 5.5 pp) because
-page-level attribution makes the cross-slot interaction term even harder
-for bandits to learn. Other non-submodular regimes (threshold effects,
-full bilinear interactions, complementarity) are untested.</p></li>
-<li><p><strong>Combinatorial bandits tested up to CombLinUCB.</strong>
-Neural bandits (NeuralUCB, MLP+TS) and counterfactual estimators (IPS,
-DR) are not in the comparison. The page-attribution finding is
-structural (slate methods inherit the same credit-assignment problem
-under page-level reward, §5.3) so we expect a similar pattern, but we
-have not measured it.</p></li>
-<li><p><strong>“Evolvable” is partially aspirational.</strong> §5.4d
-demonstrated the <em>capability</em> to evolve Layer-1 PWL shapes; §5.9
-demonstrated the <em>capability</em> to add new widgets mid-run. Neither
-delivered a single-trial empirical win. The demonstrated affordance in
-this paper is <strong>coefficient updates within a fixed policy
-class</strong> plus an extensible edit grammar; “evolvable” in the
-strongest sense (policy-class growth that pays off) remains to be shown
-with multi-seed evaluation.</p></li>
-<li><p><strong>LLM-as-policy (§5.8) is an asymmetric baseline.</strong>
-The one-shot LLM never sees reward; the agent’s diagnostic report
-effectively does (via per-persona regret). Framing as “Software 3.0
-baseline” understates how much of the gap is the feedback loop vs LLM
-reasoning. A fairer asymmetry would give the one-shot LLM a summary of
-observed rewards too.</p></li>
-<li><p><strong>Stationary persona distribution between drift
-tests.</strong> No seasonality, no viral effects. §5.9’s drift test uses
-a single abrupt shift; richer non-stationarity is unstudied.</p></li>
-<li><p><strong>No formal regret bounds.</strong> Treatment is purely
-empirical.</p></li>
-<li><p><strong>Cost is not modeled.</strong> Each agent run consumes K
-Claude calls per checkpoint × 3 checkpoints × R replicates. For a
-10K-session simulator at K=1, R=3 that is ~9 subagent invocations per
-agent variant — a few dollars in API cost, an order of magnitude lower
-than re-training a neural bandit per checkpoint. A real production
-budget analysis (per-page or per-decision LLM cost vs the bandit’s pure
-compute cost) is in §8 future work.</p></li>
-<li><p><strong>EDP-agent depends on a capable LLM.</strong> Both the
-live agent and the OPRO ablation use Claude subagents. Smaller /
-open-weight LLMs would likely degrade the report-based agent more than
-OPRO (since the report requires structured reasoning while OPRO is
-closer to gradient-free pattern matching).</p></li>
-<li><p><strong>At K=3–4 reps, several comparisons are
-underpowered.</strong> The OPRO ablation on parametric (§5.4) is only
-~1σ separated. The Bayesian-EDP margin over EDP-agent on parametric
-(§5.4b) is small. Per-(persona, category) cell numbers in §5.5 have
-substantial SE that we don’t quote. Larger K is in §8.</p></li>
+Diminishing returns on (need × provision) is the structure
+adaptive-submodular composition is designed for, and GreedyLinTS (§5.4c)
+inherits the same structural fit. §5.4e perturbs this with a same-type
+substitutes penalty and shows the architecture advantage persists
+(Bayesian-EDP still beats every bandit by 5–15 pp; the gap vs the
+strongest bandit widens from 3 to 5.5 pp), so the assumption is not
+load-bearing. Other non-submodular regimes (threshold effects, full
+bilinear interactions, complementarity) are untested.</p></li>
+<li><p><strong>Reward-model misspecification in Bayesian-EDP.</strong>
+The linearised reward predictor <code>R̂ = a + b · Σ_k s_k(θ)</code>
+captures 30–40 % of the noise-free reward variance (Pearson 0.28
+parametric, 0.52 LLM). Bayesian-EDP works empirically because the heavy
+Gaussian regulariser (λ=2.0) keeps the SGD’s role local around the
+LLM-anchored config, but a richer reward model (per-(persona, category)
+intercept, quadratic interaction on score-sum) is the right replacement
+for any production deployment. The current Bayesian-EDP margin is small
+enough on parametric (1.1 pp over EDP-agent in the wrong direction) that
+the misspecification matters at the magnitude level.</p></li>
 </ol>
+<p>Other scope notes — no formal regret bounds; only
+LinTS/Slate-LinTS/CombLinUCB on the bandit side (no NeuralUCB, IPS, DR);
+LLM-as-policy in §5.8 is an asymmetric baseline (one-shot, no reward
+signal); only one drift mechanism studied; cost analysis is approximate;
+the audit-trace prose claims of §6.2 use one worked decision and one
+worked reviewer-edit exchange — are noted where they apply.</p>
 <h2 id="future-work">8. Future Work</h2>
 <p>We ran four of the items previously listed here (slate-LinTS in §5.3,
 drift in §5.9, structural exploration in §5.9, multi-agent ensembles in
@@ -2801,26 +2782,26 @@ would close the loop on production non-stationarity.</p>
 slate-with-submodular-reward problems under page-level reward; the
 framing was always misapplied. The EDP architecture (adaptive submodular
 over a shared GAM parameterisation) is the right baseline, and most of
-the production-stack advantage we measure comes from that architecture
-rather than from the LLM. GreedyLinTS, the EDP architecture with no LLM
-prior and pure SGD, already closes 6 pp of the lab-vs-prod gap that
-per-slot LinTS suffers (12.8 % parametric, 13.3 % LLM in production).
-The LLM agent and continuous SGD then trade off depending on the
-simulator: on parametric, EDP-agent (LLM checkpoint edits, no SGD) is
-the best method we measured (6.5 ± 0.2 %), because the agent’s edits are
-well-targeted; on LLM-persona, Bayesian-EDP (LLM-anchored prior +
-continuous regularised SGD) is the best (11.0 ± 0.2 %), because the
-wider persona / category space leaves enough numerical-calibration
-headroom for SGD to help. Neither method is uniformly best; they are
-simulator-conditional. The OPRO ablation isolates the structured
-diagnostic report (not the LLM’s general intelligence) as the carrier of
-the LLM-side gain: cleanly so on the LLM simulator (≈2.2 σ separation at
-K=3-4), and weakly so on parametric (≈1 σ separation, underpowered). The
-decomposable claim that survives is this. Under page-level reward, use
-the adaptive-submodular policy class. If you have an LLM with knowledge
-of the problem domain, use it as a prior and checkpoint editor. If your
-simulator is rich enough that the LLM’s discrete edits don’t saturate,
-add continuous regularised SGD on top.</p>
+the production-stack advantage we measure comes from that architecture,
+not from the LLM. GreedyLinTS, the EDP architecture with no LLM prior
+and pure SGD, already closes 6 pp of the lab-vs-prod gap that per-slot
+LinTS suffers (12.8 % parametric, 13.3 % LLM in production). The LLM
+agent and continuous SGD then trade off depending on the simulator: on
+parametric, EDP-agent (LLM checkpoint edits, no SGD) is the best method
+we measured (6.5 ± 0.2 %), because the agent’s edits are well-targeted;
+on LLM-persona, Bayesian-EDP (LLM-anchored prior + continuous
+regularised SGD) is the best (11.0 ± 0.2 %), because the wider persona /
+category space leaves enough numerical-calibration headroom for SGD to
+help. Neither method is uniformly best; they are simulator-conditional.
+The OPRO ablation isolates the structured diagnostic report (not the
+LLM’s general intelligence) as the carrier of the LLM-side gain: cleanly
+so on the LLM simulator (≈2.2 σ separation at K=3-4), and weakly so on
+parametric (≈1 σ separation, underpowered). The decomposable claim that
+survives is this. Under page-level reward, use the adaptive-submodular
+policy class. If you have an LLM with knowledge of the problem domain,
+use it as a prior and checkpoint editor. If your simulator is rich
+enough that the LLM’s discrete edits don’t saturate, add continuous
+regularised SGD on top.</p>
 <hr />
 <h2 id="appendix-a-open-box-decision-trace">Appendix A: Open-box
 decision trace</h2>
