@@ -160,6 +160,70 @@ width: 0.8em;
 margin: 0 0.8em 0.2em -1.6em;
 vertical-align: middle;
 }
+
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
 </style>
 </head>
 <body>
@@ -208,19 +272,25 @@ Decision Program</strong> (EDP).</p>
 choose and order 6 widgets out of 22 candidates given 14 raw behavioural
 signals and 6 fashion categories, under the reward signal production
 actually has (page-level attribution + multi-day delay + observation
-noise). Against eight baselines — per-slot LinTS (the canonical
-contextual bandit, 18.9 % of oracle reward lost in production),
-Slate-LinTS, CombLinUCB (the strongest combinatorial bandit we measured,
-10.5 % / 17.3 %), GreedyLinTS, static placement, one-shot LLM-as-policy,
-and an OPRO ablation — on two simulators (parametric 8-persona;
-LLM-driven 14-persona × 6-category), the EDP variants are competitive:
-EDP-agent at <strong>6.5 ± 0.2 %</strong> on parametric, Bayesian-EDP at
-<strong>11.0 ± 0.2 %</strong> on LLM-persona, roughly 2× better than the
-strongest combinatorial bandit. The comparison is an <strong>existence
-proof that the primitive can compete</strong>, not a horse race. §5.4c
-shows that most of the gain comes from the GAM architecture itself; the
-LLM provides a natural authoring and editing interface on top. The
-contribution is the primitive, not the benchmark win.</p>
+noise). The empirical contribution is <strong>not a horse-race win — it
+is that none of the closure properties cost performance</strong>.
+Against eight baselines — per-slot LinTS (the canonical contextual
+bandit, 18.9 % of oracle reward lost in production), Slate-LinTS,
+CombLinUCB (the strongest combinatorial bandit we measured, 10.5 % /
+17.3 %), GreedyLinTS, static placement, one-shot LLM-as-policy, and an
+OPRO ablation — on two simulators (parametric 8-persona; LLM-driven
+14-persona × 6-category), EDP variants are competitive: EDP-agent at
+<strong>6.5 ± 0.2 %</strong> on parametric, Bayesian-EDP at <strong>11.0
+± 0.2 %</strong> on LLM-persona, roughly 2× better than the strongest
+combinatorial bandit. §5.4c shows that most of the gain comes from the
+GAM architecture itself; the LLM provides a natural authoring and
+editing interface on top. The thesis is about what the primitive
+<em>enables in deployment</em> — cold-start with zero training data
+(§5.7), zero serving dependencies, inline audit, well-typed agent edits
+— while staying competitive with the strongest non-primitive baselines
+on the empirical task. No bandit in the comparison supports any of those
+deployment properties; the primitive supports them all without giving up
+regret.</p>
 <h2 id="introduction">1. Introduction</h2>
 <p>Where should the intelligence of a decision system live?</p>
 <p>The default answer is <em>in model weights</em>: a transformer ranker
@@ -316,12 +386,22 @@ architecture itself, with the LLM providing a natural authoring and
 editing interface on top. The empirical contribution is that the
 primitive does not give up performance for closure — not that it beats
 every bandit by some margin.</p>
-<p>The “evolvable” qualifier deserves one disclaimer. The experiments
-support coefficient updates within a fixed policy class. Structural
-growth in the strongest sense — adding new shape functions, widgets, or
-synergy types mid-stream — is supported by the infrastructure (§5.4d,
-§5.9) but does not yet deliver a single-trial win; multi-seed evaluation
-of the structural capability is open work.</p>
+<p>The “evolvable” qualifier deserves a stronger disclaimer than the
+term suggests. What the experiments cleanly support is
+<strong>coefficient updates within a fixed policy class</strong> — the
+agent edits values along named paths, and the regularised SGD inside
+Bayesian-EDP moves the same values continuously. Structural growth in
+the strongest sense — adding new shape functions, widgets, or synergy
+types mid-stream — is supported by the <em>infrastructure</em> (§5.4d
+adds the Layer-1 PWL edit grammar; §5.9 adds a new widget mid-run) but
+does not yet deliver a single-trial empirical win, and we have not
+multi-seed-evaluated either. A more honest name for the artifact would
+be “<strong>Editable</strong> Decision Programs”; we keep “Evolvable”
+because the edit grammar already covers structural moves and because the
+multi-seed earning of the term is a near-term follow-up rather than a
+research bet, but the reader should treat structural evolvability as a
+<em>capability claim</em>, not an <em>empirical claim</em>, until §5.4d
+and §5.9 are replicated at K ≥ 5.</p>
 <p>§2 specifies the simulators. §3 details the 2-layer GAM, the
 evolution loop, the Bayesian-EDP fusion, and a quantitative measurement
 of the four closure properties (§3.5). §4 fixes the protocol. §5 reports
@@ -905,6 +985,89 @@ on whole-page composition under the reward signal production actually
 has. §5.4c then decomposes the gain to show it is the GAM architecture
 doing most of the work, with the LLM as a natural authoring and editing
 interface on top.</p>
+<p>The remainder of §5 maps to the contributions of §1 as follows. Each
+subsection defends a specific claim, not a method:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Subsection</th>
+<th>What it proves</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>§5.1</td>
+<td>Closure doesn’t cost performance — the lab-to-production gap
+collapses bandit margins; EDP variants are competitive in
+production.</td>
+</tr>
+<tr class="even">
+<td>§5.2</td>
+<td>Page-level attribution is the <em>production-reality</em> stressor
+that motivates a non-per-arm primitive.</td>
+</tr>
+<tr class="odd">
+<td>§5.3</td>
+<td>Stronger combinatorial bandits don’t close the gap, because the gap
+is in the reward signal. The CombLinUCB-vs-Slate-LinTS inversion is a
+UCB-calibration failure under page-level reward.</td>
+</tr>
+<tr class="even">
+<td>§5.4</td>
+<td>The <em>structured diagnostic</em>, not the LLM’s general
+intelligence, carries the LLM-side gain (OPRO ablation).</td>
+</tr>
+<tr class="odd">
+<td>§5.4b</td>
+<td>Continuous fusion (GAM-as-prior + SGD) is principled and helps when
+the LLM-authored prior leaves headroom.</td>
+</tr>
+<tr class="even">
+<td>§5.4c</td>
+<td>The architecture is the foundation; the LLM is the interface. Most
+of the gain is the GAM.</td>
+</tr>
+<tr class="odd">
+<td>§5.4d–e</td>
+<td>The primitive’s edit grammar covers Layer-1 PWL shape evolution and
+non-submodular reward; single-trial wins are small but the capability is
+real.</td>
+</tr>
+<tr class="even">
+<td>§5.5</td>
+<td>Per-(persona, category) breakdowns: closure properties are
+simulator-invariant, performance is simulator-conditional.</td>
+</tr>
+<tr class="odd">
+<td>§5.6</td>
+<td>Robustness to simulator-realism shifts.</td>
+</tr>
+<tr class="even">
+<td>§5.7</td>
+<td><strong>Cold start is a deployment property, not just sample
+efficiency.</strong> The bandit’s warmup never amortises under
+page-level reward at N ≤ 10K.</td>
+</tr>
+<tr class="odd">
+<td>§5.8–5.9</td>
+<td>Robust-EDP wrapper, drift, and structural exploration: capability
+demonstrations more than empirical wins.</td>
+</tr>
+<tr class="even">
+<td>§5.10</td>
+<td>Negative result on multi-agent ensembling: the report-based gain is
+not generic.</td>
+</tr>
+</tbody>
+</table>
+<p>Where a subsection’s claim is supported by a single-trial result
+rather than a multi-seed mean, we say so in line. Multi-seed evaluation
+of the single-trial capability demonstrations (§5.4d, §5.8, §5.9, §5.10)
+is the largest open item in §8.</p>
 <h3 id="the-labproduction-gap">5.1 The lab–production gap</h3>
 <p>The bandit literature evaluates page composition under “lab”
 conditions: per-slot reward attribution, low delay, low noise. Our
@@ -1238,21 +1401,41 @@ degrades by +8–13 pp; even though it improves on slate-LinTS in
 production parametric (10.5 vs 14.1 %), it still trails EDP-agent there
 (10.5 vs 6.5 %) and slightly trails slate-LinTS on LLM production (17.3
 vs 16.5 %).</p>
-<p><strong>The CombLinUCB-vs-Slate-LinTS inversion is
-informative.</strong> CombLinUCB beats Slate-LinTS by 3.6 pp on
-parametric production but loses by 0.8 pp on LLM production. UCB’s
-exploration bonus <code>θ̂·x + α·√(xᵀA⁻¹x)</code> assumes the per-arm
-reward signal is informative for tightening the confidence ball. Under
-page-level attribution with the wider LLM-persona context (14 personas ×
-6 categories), the variance UCB sees is dominated by structural
-credit-assignment noise — every slot in a page sharing the same scalar
-reward — rather than estimation noise. The bound becomes miscalibrated,
-exploration goes to the wrong arms, and UCB underperforms Thompson
-sampling, whose probabilistic exploration doesn’t bet on calibration.
-This strengthens rather than weakens the §5.2 conclusion: the
-credit-assignment problem under page-level reward is severe enough that
-the <em>stronger</em> exploration strategy underperforms the weaker one
-once context complexity rises.</p>
+<p><strong>The CombLinUCB-vs-Slate-LinTS inversion is informative — and
+we think the most interesting bandit-side finding in the paper.</strong>
+CombLinUCB beats Slate-LinTS by 3.6 pp on parametric production (10.5 vs
+14.1) but loses by 0.8 pp on LLM production (17.3 vs 16.5). The stronger
+exploration strategy underperforms the weaker one as context complexity
+rises.</p>
+<p>Why? Informally, UCB’s exploration bonus
+<code>θ̂·x + α·√(xᵀA⁻¹x)</code> is principled when the variance term
+<code>xᵀA⁻¹x</code> reflects <em>estimation</em> uncertainty — how
+poorly we know <code>θ</code> given the data so far. The confidence
+bound it builds, and the arm it picks to “explore,” are calibrated
+against the assumption that uncertainty shrinks at the rate
+<code>Tr(A⁻¹)</code> as the agent observes more reward.</p>
+<p>Under page-level attribution, that assumption breaks. The same scalar
+reward <code>R</code> is regressed against six different per-slot
+contexts <code>x_1, …, x_6</code> in each round; the residual variance
+<code>Var(R | x_k)</code> has a structural component (the contribution
+of the other five slots) that does <em>not</em> shrink as
+<code>T → ∞</code>. The bandit’s posterior on <code>θ</code> therefore
+retains a floor of irreducible variance that no amount of data removes.
+UCB’s bonus, calibrated against the expected-rate, is too small for the
+actual residual; the bandit becomes overconfident and exploits
+suboptimal arms. Thompson sampling has no analogous calibration
+assumption — it draws from a posterior that is wrong in the same way
+UCB’s mean is wrong, but the draw still produces nonzero exploration
+probability on every arm, so the policy is more robust to a
+miscalibrated posterior.</p>
+<p>This is, to our knowledge, an unreported failure mode of UCB under
+slate-with-page-level-reward, and it strengthens rather than weakens the
+§5.2 conclusion: the credit-assignment problem under page-level reward
+is severe enough that <em>tighter confidence bounds hurt</em> — they bet
+on a calibration the reward signal cannot deliver. A formal version of
+this argument would derive the residual-variance floor and show UCB’s
+regret scaling under it; we have only the empirical inversion, which we
+report as motivation for that derivation.</p>
 <p>The structural conclusion holds across every combinatorial-bandit
 variant we tested: <strong>page-level attribution is fatal to per-arm
 credit assignment</strong>. Slate-action methods, pooled bandits, and
@@ -1937,10 +2120,17 @@ cross-simulator gap (3.4 pp); EDP-agent is lowest on parametric (6.5%)
 but ties GreedyLinTS on LLM (13.3%); bandits stay high in
 both.</figcaption>
 </figure>
-<h3 id="statistical-power-sweep">5.7 Statistical-power sweep</h3>
-<p>A second concern is sample efficiency: most A/B test arms close
-before reaching 10K sessions. Cumulative regret at milestone session
-counts on the parametric simulator (mean ± SE):</p>
+<h3 id="cold-start-launching-with-zero-sessions">5.7 Cold start:
+launching with zero sessions</h3>
+<p>This is the deployment property §1 led with, and it is the most
+underused asset in the paper. Most A/B test arms close before reaching
+10K sessions, and many deployments cannot ethically or legally run a
+random-exploration warmup at all (medical decisions, financial
+recommendations, anything affecting protected populations). For these
+scenarios “cold-start performance” is not a nice-to-have; it is the
+gating constraint.</p>
+<p>Cumulative regret at milestone session counts on the parametric
+simulator (mean ± SE):</p>
 <table style="width:100%;">
 <colgroup>
 <col style="width: 14%" />
@@ -2010,12 +2200,40 @@ counts on the parametric simulator (mean ± SE):</p>
 </tr>
 </tbody>
 </table>
-<p>EDP-static / EDP-canned / EDP-agent are identical until session 2500
-(same initial config, no edits applied yet). Even before any agent edit,
-EDP is <strong>2.4× better</strong> than LinTS-warm at 1K sessions and
+<p>Two readings of the same numbers:</p>
+<p><strong>Reading 1 (sample efficiency).</strong> EDP-static /
+EDP-canned / EDP-agent are identical until session 2500 (same initial
+config, no edits applied yet). Even before any agent edit fires, EDP is
+<strong>2.4× better</strong> than LinTS-warm at 1K sessions and
 <strong>2.2× better</strong> at 2.5K. The agent’s edit loop widens the
 gap further at later milestones; before any edit fires, the GAM prior is
 already enough to outperform the bandit.</p>
+<p><strong>Reading 2 (cold-start as a deployment property).</strong> The
+bandit needs a warmup period before its performance matches EDP’s
+session-0 performance. On parametric production conditions, LinTS-warm
+never catches EDP-static: its cumulative regret at session 10K (1,963)
+is roughly 2× EDP-static’s (1,052). The bandit’s exploration tax does
+not amortise under page-level reward at this sample size. For any
+deployment with N ≤ 10K sessions per cell — most production A/B test
+arms — the bandit pays this tax without recovering it.</p>
+<p>The LLM-persona simulator is the harder check. Even there, the
+LLM-authored prior is suboptimal — EDP-static loses 19.8 % of oracle
+reward (§5.1), worse than LinTS-warm’s lab number (6.6 %) but better
+than its production number (21.6 %). Under production conditions, the
+cold-started EDP-static already beats the bandit after warmup; an agent
+edit at session 2,500 then puts EDP-agent at 13.3 ± 0.8 %.</p>
+<p>The deployment claim that survives both simulators is: <strong>the
+GAM primitive launches at competitive performance with zero sessions of
+data</strong>, because the LLM authored a competent initial policy from
+domain knowledge. A bandit cannot do this — its initial parameters are
+uninformative and its exploration policy is, by design, oblivious to the
+world knowledge an LLM has and an engineer could write down. For
+deployments where the cold-start cost is binding (regulatory, ethical,
+or simply low-N), this is a categorical advantage of the primitive over
+any weight-based approach.</p>
+<p>We did not run a separate “warmup-required” experiment — the §5.1
+results are the warmup-required result, read in the cold-start
+frame.</p>
 <h3 id="bracketing-baselines-and-robust-edp-wrapper">5.8 Bracketing
 baselines and Robust-EDP wrapper</h3>
 <p>Two simple baselines bracket the production-stack comparison from
@@ -2296,11 +2514,75 @@ session; Fig. 10 is the auditable diff for one round of agent edits with
 reasons attached; Fig. 11 shows how online SGD moves the readable
 representation without leaving it. Appendix A walks through the same
 trace as Fig. 9 in full prose. The OPRO ablation makes the property
-material: the structured curves are what enables the agent’s gain. The
-same readability makes EDP debuggable under EU AI Act-style governance
-review — a regulator can audit the entire decision logic by reading ~300
-numbers organised as named curves, without an interpretability library
-between them and the policy.</p>
+material: the structured curves are what enables the agent’s gain.</p>
+<p>To make the audit story concrete rather than aspirational, we work
+two scenarios.</p>
+<p><strong>Worked regulator scenario.</strong> <em>Question from the
+regulator: “User X received <code>fit_reassurance</code> in slot 1 and
+<code>low_return_alts</code> in slot 2. Why?”</em> The full answer,
+derivable from the policy artifact and the per-session signal vector
+alone, is:</p>
+<blockquote>
+<p>User X has <code>size_chart = 0.62</code>,
+<code>size_conf = 0.18</code> (so <code>size_conf_inv = 0.82</code>),
+and <code>return_hist = 0.41</code>. Layer-1’s F3.2 (size anxiety) shape
+functions evaluate these to a fingerprint score of <strong>F3.2 =
+0.74</strong>. All other problem scores are below 0.32. At slot 1,
+<code>fit_reassurance</code> scores
+<code>base=0.10 + on_rem.F32=2.2 × 0.74 + on_rem.F46=0.6 × 0.31 = 1.91</code>,
+the highest of any candidate widget (next best: <code>size_guide</code>
+at 1.53). After <code>fit_reassurance</code> is placed, its
+<code>addr.F32=0.55</code> reduces F3.2 remaining to 0.19 and raises
+F3.2 coverage to 0.55. At slot 2, <code>low_return_alts</code> scores
+1.35 — it addresses F4.6 (return hesitation, still at 0.31) and benefits
+from the lower competition now that F3.2 is partly addressed. The
+supporting numbers are at <code>shapes.F32.*</code>,
+<code>mods.fit_reassurance.*</code>, <code>mods.low_return_alts.*</code>
+in the policy repository.</p>
+</blockquote>
+<p>This answer is <strong>concrete (named contributions with specific
+values), not narrative (post-hoc rationalisation).</strong> A SHAP/LIME
+explanation of a neural ranker is the latter — it is an approximation of
+how the model behaves locally, computed by an external library. The EDP
+answer is the policy itself. The reviewer can audit it by reading the
+same JSON the agent edited last round.</p>
+<p><strong>Reviewer-rejection vignette.</strong> Edits are not
+auto-merged. A representative review interaction on the round-2500 edit
+batch (Fig. 10):</p>
+<blockquote>
+<p><em>Agent proposes:</em>
+<code>easy_returns_promise.on_cov.F46: -0.5 → +0.9</code>, reason: “NEW
+synergy: fire AFTER <code>return_explainer</code> has built F46
+coverage, doubling trust reinforcement for returner_anxious.”</p>
+<p><em>Reviewer:</em> “+0.9 is large enough that it could fire even when
+F4.6 coverage is moderate-low. Could over-trigger for personas that
+don’t actually need second-layer reassurance. Tighten to +0.5 and add a
+check that we’re not also penalising it on the F32 axis.”</p>
+<p><em>Agent revises:</em>
+<code>easy_returns_promise.on_cov.F46: -0.5 → +0.5</code>, reason:
+“Reviewer feedback: smaller positive coverage slope; sufficient for the
+synergy with <code>return_explainer</code> without over-triggering on
+moderate-F46 sessions.”</p>
+</blockquote>
+<p>This loop — agent proposes, reviewer reads ten lines and writes a
+one-sentence critique, agent emits a smaller edit — is the
+closure-under-edits property in action. The representation is closed
+under both the LLM’s proposal and the human’s revision; neither party
+needs to translate the other’s language. Neural-weight reviews and
+SHAP-explanation reviews do not have this property because the language
+the human reviews (the SHAP plot) is not the language the system updates
+(the weights).</p>
+<p><strong>What the audit cannot do.</strong> The trace tells you
+<em>what the policy did</em> and <em>what the agent changed</em>. It
+does not tell you whether the LLM-authored shape functions encode the
+right <em>latent constructs</em> — the same question one asks of any
+policy. The taxonomy of 7 problem codes is the LLM’s hypothesis about
+how customers struggle; if “decision paralysis” is structurally
+different from “comparison friction” in a way the agent missed, the
+policy is wrong in a way the audit will not reveal. The closure property
+is closure on the <em>operationalisation</em>, not on the
+<em>taxonomy</em>. We address the taxonomy-discovery question in §3.3
+and as an open direction in §8.</p>
 <h3 id="when-each-approach-wins">6.3 When each approach wins</h3>
 <ul>
 <li><strong>LinTS wins</strong> under clean per-slot reward, dense
@@ -2322,18 +2604,104 @@ the bandit’s per-decision compute cost. The LLM costs are
 <em>training-time</em> costs, not <em>serving-time</em>: at serving time
 EDP is a pure-Python module-scoring function. This is the inverse of the
 cost profile reviewers might expect from “LLM-in-the-loop” methods.</p>
+<p>A fuller picture (numbers from our setup where measured, otherwise
+approximate for the comparable production stack):</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>EDP / Bayesian-EDP</th>
+<th>LinTS-warm</th>
+<th>CombLinUCB</th>
+<th>Neural ranker (est.)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Training-time compute</td>
+<td>~9 subagent calls / run</td>
+<td>per-session SGD</td>
+<td>per-session SGD</td>
+<td>hours–days of GPU</td>
+</tr>
+<tr class="even">
+<td>Per-decision serving cost</td>
+<td>~1 ms CPU (245 numbers)</td>
+<td>~1 ms CPU</td>
+<td>~5 ms CPU (slate UCB)</td>
+<td>~20 ms GPU</td>
+</tr>
+<tr class="odd">
+<td>External deps at serving</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>≥1 model server</td>
+</tr>
+<tr class="even">
+<td>Sessions to cold-start viability</td>
+<td>0</td>
+<td>several K</td>
+<td>several K</td>
+<td>≥ 10K</td>
+</tr>
+<tr class="odd">
+<td>Audit infrastructure</td>
+<td>inline (curves + reasons in repo)</td>
+<td>external</td>
+<td>external</td>
+<td>external (SHAP/LIME approx.)</td>
+</tr>
+<tr class="even">
+<td>Editable by a non-ML reviewer</td>
+<td>yes (PR diff)</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td>Closed under LLM edit</td>
+<td>yes (well-typed scalar)</td>
+<td>partial (only hyperparams)</td>
+<td>partial</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The training-time row is where production budgets are most often
+surprised. A “neural ranker” deployment that retrains weekly on logged
+engagement consumes orders of magnitude more compute than the entire
+LLM-edit loop here, and the resulting weights are not editable by
+anyone, not even the team that trained them. The serving-time row
+decides whether the policy can sit inline in a latency-budgeted page
+render; the dependency row decides whether it survives a model-server
+outage. EDP wins both rows by construction. The “sessions to cold-start
+viability” row is the deployment property §5.7 quantifies directly.</p>
 <h2 id="limitations">7. Limitations</h2>
 <ol type="1">
-<li><p><strong>Ground-truth circularity is a real risk.</strong>
+<li><p><strong>Ground-truth circularity is a real risk; we ran the
+adversarial-perturbation check but not the cross-LLM one.</strong>
 <code>TRUE_NEEDS</code> and <code>TRUE_PROVISIONS</code> are
 LLM-authored, the editor at each checkpoint is a Claude subagent, and
 the diagnostic report it consumes is computed from rewards generated by
 those LLM-authored maps. The intentional misalignment between EDP’s
 internal <code>F</code>-code taxonomy and the 7-need ground truth (§2.2)
-doesn’t neutralise shared semantic substrate inside the LLM family. A
-clean check would generate <code>TRUE_PROVISIONS</code> with a different
-LLM family (GPT, Gemini) or perturb provisions adversarially; we have
-not done either.</p></li>
+doesn’t neutralise shared semantic substrate inside the LLM family.
+Appendix C reports the adversarial perturbation check (±15 % on every
+provision value, K = 5 seeds): the EDP-vs-bandit gap survives, and the
+relative ranking holds. This rules out the artefactual-numerics worst
+case, but does <strong>not</strong> rule out a systematic LLM bias
+affecting both the ground truth and the editor in correlated ways. The
+cross-LLM check (regenerate <code>TRUE_PROVISIONS</code> with GPT-4 /
+Gemini) remains the right experiment and is the largest validity item
+open.</p></li>
 <li><p><strong>Submodular reward is partly what EDP assumes.</strong>
 Diminishing returns on <code>(need × provision)</code> is the structure
 adaptive-submodular composition is designed for. GreedyLinTS (§5.4c)
@@ -2611,6 +2979,174 @@ work is a number-with-a-reason, not a weight update.</p>
 <p>This is the open-box property the paradigm hinges on. Every other
 claim — cold-start advantage, audit-trail compatibility, LLM-as-prior
 fusion — derives from being able to do this on every session.</p>
+<hr />
+<h2 id="appendix-b-deployment-walkthrough">Appendix B: Deployment
+walkthrough</h2>
+<p>This appendix sketches how the primitive would embed in a production
+page-render path, so the deployment claims of §1 and §6.3 have a
+concrete artifact to discuss.</p>
+<p><strong>Step 1 — the policy ships as a JSON file.</strong> The
+245-parameter learnable policy plus the metadata needed for serving
+(problem labels, widget descriptors, edit-grammar version) is
+approximately 9 KB of JSON. It is checked into the same repository as
+the application code. There is no separate model registry, no model
+server, no feature store.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">policy_v_017.json</span>  <span class="er">(9.2</span> <span class="er">KB)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;version&quot;</span><span class="fu">:</span> <span class="st">&quot;017&quot;</span><span class="fu">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;approved_by&quot;</span><span class="fu">:</span> <span class="st">&quot;alice@team.example&quot;</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;from_round&quot;</span><span class="fu">:</span> <span class="dv">7500</span><span class="fu">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;shapes&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;F32&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;size_chart&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;bps&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">0</span><span class="ot">,</span> <span class="fl">0.2</span><span class="ot">,</span> <span class="fl">0.5</span><span class="ot">,</span> <span class="fl">0.8</span><span class="ot">,</span> <span class="dv">1</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                                       <span class="dt">&quot;vals&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="dv">0</span><span class="ot">,</span> <span class="fl">0.1</span><span class="ot">,</span> <span class="fl">0.45</span><span class="ot">,</span> <span class="fl">0.75</span><span class="ot">,</span> <span class="fl">0.95</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                                       <span class="dt">&quot;weight&quot;</span><span class="fu">:</span> <span class="fl">0.45</span> <span class="fu">},</span> <span class="er">...</span> <span class="fu">},</span> <span class="er">...</span> <span class="fu">},</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;modules&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;fit_reassurance&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;base&quot;</span><span class="fu">:</span> <span class="fl">0.10</span><span class="fu">,</span> <span class="dt">&quot;addr&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;F32&quot;</span><span class="fu">:</span> <span class="fl">0.55</span><span class="fu">,</span> <span class="er">...</span><span class="fu">},</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                                    <span class="dt">&quot;on_rem&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;F32&quot;</span><span class="fu">:</span> <span class="fl">2.2</span><span class="fu">,</span> <span class="er">...</span><span class="fu">},</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                                    <span class="dt">&quot;on_cov&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;F32&quot;</span><span class="fu">:</span> <span class="fl">-1.2</span><span class="fu">},</span> <span class="er">...</span> <span class="fu">},</span> <span class="er">...</span> <span class="fu">}</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Step 2 — the serving function is ~80 lines of
+Python.</strong> <code>score_problems</code>, <code>score_module</code>,
+and <code>compose</code> from <code>edp/policies/edp.py</code> are the
+entire decision logic. Given a session feature vector and a category,
+they return a 6-widget page. No external calls. The same code path runs
+in CI tests.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Production serving path (sketch)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> edp.policies.edp <span class="im">import</span> compose</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>POLICY <span class="op">=</span> json.load(<span class="bu">open</span>(<span class="st">&quot;policy_v_017.json&quot;</span>))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> render_page(session_features, category):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    page <span class="op">=</span> compose(session_features, POLICY[<span class="st">&quot;shapes&quot;</span>], POLICY[<span class="st">&quot;modules&quot;</span>])</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># page is [&#39;fit_reassurance&#39;, &#39;low_return_alts&#39;, ...]</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [fill_widget(w, category) <span class="cf">for</span> w <span class="kw">in</span> page]</span></code></pre></div>
+<p><code>fill_widget(name, category)</code> pulls cached content from
+the widget retriever output — already a production capability today. The
+EDP layer adds about 1 ms to the page render. The 9 KB policy fits in
+any inline cache and is loaded at process start.</p>
+<p><strong>Step 3 — the audit log is the policy repository’s git
+log.</strong> Each agent edit batch is committed as a PR. The PR body is
+the diagnostic report the agent read plus the edit batch with its
+reasons. A reviewer reads ten lines and either merges or requests
+changes (the reviewer-rejection vignette in §6.2 is the realistic shape
+of one round). The serving policy file is updated by merging the PR;
+there is no separate deployment.</p>
+<pre><code>$ git log --oneline policy_v_*.json
+b3f2a1c policy v017: round-7500 edits — strengthen F46 synergy chain (alice)
+8d7e120 policy v016: round-5000 edits — cut over-firing on outfit_completion (alice)
+3a9c2f5 policy v015: round-2500 edits — revive dead returns/size widgets (bob)
+0001abc policy v014: initial LLM-authored config from shopping psychology (LLM)</code></pre>
+<p>A new team member reads the git log to understand what the system has
+learned. A regulator subpoenas the same log and reads the diagnostic
+reports and reasons. A non-ML PM proposes a manual edit by opening a PR.
+None of these workflows require ML infrastructure.</p>
+<p><strong>Step 4 — Bayesian-EDP adds a small async loop.</strong> If
+the deployment uses Bayesian-EDP, a separate process drains the
+delayed-reward queue and SGD-updates the policy file every hour or so.
+The SGD code is ~50 lines (<code>edp/policies/bayesian_edp.py</code>).
+The resulting numeric drift relative to the LLM prior is logged and
+bounded; if the SGD wants to move a parameter by more than (say) 50 % of
+its prior value, the move is held for a human checkpoint review (current
+implementation is unbounded; bounded drift is a one-line addition).</p>
+<p><strong>Step 5 — checkpoint cadence is operational.</strong> Every K
+sessions (we use K = 2,500 in experiments; production probably 50K–500K
+depending on traffic), the orchestrator builds the diagnostic report and
+invokes the agent. This is an offline cron job, not a serving-path
+dependency. If the agent is unavailable, the previous policy keeps
+serving indefinitely; the system degrades gracefully.</p>
+<p><strong>What this isn’t.</strong> This is a <em>walkthrough</em>, not
+a production case study. We have not deployed this stack at
+Zalando-scale traffic; the production-scale follow-up is left as the
+next concrete experiment. The artifact-level claims (policy ships as
+JSON, audit log is git log, no model server) are mechanical consequences
+of the primitive’s properties; the latency claim (~1 ms) is measured
+in-process but not in a production rendering pipeline. The cold-start,
+audit, and serving-cost claims are first-principles. The benchmark claim
+is empirical, not a deployment result.</p>
+<h2 id="appendix-c-adversarial-perturbation-validity-check">Appendix C:
+Adversarial-perturbation validity check</h2>
+<p>We cannot run a true cross-LLM check (no GPT-4 / Gemini access in our
+pipeline). The next-best validity check is <strong>adversarial
+perturbation of the LLM-authored <code>TRUE_PROVISIONS</code></strong>:
+each provision value is multiplied by <code>uniform(1−ε, 1+ε)</code> for
+ε = 0.15 and clipped to [0, 1], with the perturbation seeded
+independently each replicate. The greedy oracle is re-computed under the
+perturbed provisions; methods are scored as % of perturbed-oracle reward
+lost.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Canonical (no perturbation)</th>
+<th>Adversarial (ε=0.15, K=5)</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EDP-static</td>
+<td>10.7 %</td>
+<td><strong>8.9 ± 0.3 %</strong></td>
+<td>8.1 – 9.7 %</td>
+</tr>
+<tr class="even">
+<td>EDP-agent</td>
+<td>6.5 ± 0.2 %</td>
+<td><strong>7.0 ± 0.2 %</strong></td>
+<td>6.4 – 7.5 %</td>
+</tr>
+<tr class="odd">
+<td>Bayesian-EDP</td>
+<td>7.6 ± 0.3 %</td>
+<td><strong>6.5 ± 0.3 %</strong></td>
+<td>5.9 – 7.2 %</td>
+</tr>
+<tr class="even">
+<td>CombLinUCB-warm</td>
+<td>10.5 ± 0.1 %</td>
+<td><strong>12.2 ± 0.3 %</strong></td>
+<td>11.4 – 13.1 %</td>
+</tr>
+<tr class="odd">
+<td>LinTS-warm</td>
+<td>18.9 ± 0.1 %</td>
+<td><strong>21.7 ± 0.2 %</strong></td>
+<td>21.4 – 22.4 %</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Findings.</strong> 1. <strong>The EDP-vs-bandit gap survives
+the perturbation.</strong> EDP variants stay in the 6.5–9 % band; the
+strongest bandit (CombLinUCB) is in the 11.4–13.1 % band. The ~2× margin
+holds at every seed. 2. <strong>The bandits degrade slightly more under
+perturbation than EDP does</strong> (CombLinUCB +1.7 pp, LinTS +2.8 pp;
+EDP-agent +0.5 pp). The bandit’s per-session SGD is fitting the noisy
+<em>perturbed</em> reward signal; EDP’s policy class is closer to
+canonical and absorbs the perturbation more cleanly. 3.
+<strong>Bayesian-EDP becomes the best method under perturbation</strong>
+(6.5 %, vs EDP-agent at 7.0 %). The SGD’s bias-variance trade-off plays
+differently when the canonical reward is itself jittered: the
+regularised drift away from the LLM prior is small enough to absorb
+perturbation noise but flexible enough to track the new optimum.</p>
+<p><strong>What this rules out.</strong> It rules out the worst case
+where EDP’s win was an artefact of the exact numerical values the LLM
+chose for <code>TRUE_PROVISIONS</code>. A ±15 % perturbation is a
+meaningful chunk of the [0, 1] provision range; if the win were
+knife-edge, it would not survive.</p>
+<p><strong>What this does not rule out.</strong> It does not rule out a
+<em>systematic</em> LLM bias — both <code>TRUE_PROVISIONS</code> and the
+editor are Claude-family. A perturbation that randomly noises individual
+provision values is structurally different from a different LLM family
+generating systematically different <em>patterns</em> of provision
+(e.g., a different LLM might think <code>outfit_completion</code>
+strongly addresses N6_trust, not just N5_styling). The true cross-LLM
+check remains the right experiment for future work, and we list it
+explicitly in §7 and §8.</p>
 <hr />
 <p>For reproduction commands, code structure, and the interactive demos,
 see the supplementary material (<code>supplementary.md</code>).</p>
