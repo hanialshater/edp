@@ -448,76 +448,132 @@ and all reports are persisted under <code>evolve_state_rep*/</code>
 (report-based) and <code>opro_state_rep*/</code> (OPRO) and committed to
 the repository so the experiment is byte-for-byte reproducible.</p>
 <h2 id="results">5. Results</h2>
-<h3 id="headline-edp-wins-3.23-under-production-stack-fig.-1-tab.-1">5.1
-Headline: EDP wins 3.23× under production stack (Fig. 1, Tab. 1)</h3>
-<p>10K sessions, page-level + delay=500 + σ=0.2. Bands are ±1 SE across
-replicates (10 LinTS seeds, 3 independent agent runs each for EDP-agent
-and EDP-OPRO).</p>
-<table>
+<h3 id="the-labproduction-gap">5.1 The lab–production gap</h3>
+<p>The bandit literature evaluates page composition under “lab”
+conditions: per-slot reward attribution, low delay, low noise. Our
+paper’s baselines use “production” conditions: page-level attribution,
+delay 500 sessions, σ = 0.20. Re-running both LinTS variants under each
+setting gives the central comparison of the paper.</p>
+<p>EDP family + the deterministic baselines (static-widget,
+LLM-as-policy) are reported once each — they don’t update from the
+bandit reward signal, so lab and production are identical for them.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
 <thead>
 <tr class="header">
 <th>Method</th>
-<th>Cum regret @ 10K (mean ± SE)</th>
-<th>Last-1K mean reward</th>
+<th>Parametric · Lab</th>
+<th>Parametric · Prod</th>
+<th>Δ</th>
+<th>LLM · Lab</th>
+<th>LLM · Prod</th>
+<th>Δ</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Oracle</td>
+<td><strong>LinTS-warm</strong></td>
+<td><strong>4.9 ± 0.0</strong></td>
+<td>18.9 ± 0.1</td>
+<td><strong>+14.1 pp</strong></td>
+<td><strong>6.6 ± 0.1</strong></td>
+<td>21.6 ± 0.1</td>
+<td><strong>+15.0 pp</strong></td>
+</tr>
+<tr class="even">
+<td>LinTS-cold</td>
+<td>6.1 ± 0.0</td>
+<td>20.2 ± 0.1</td>
+<td>+14.1 pp</td>
+<td>7.2 ± 0.1</td>
+<td>22.8 ± 0.1</td>
+<td>+15.6 pp</td>
+</tr>
+<tr class="odd">
+<td>EDP-agent</td>
+<td>10.5</td>
+<td>10.5</td>
 <td>0</td>
-<td>1.107</td>
+<td>11.9</td>
+<td>11.9</td>
+<td>0</td>
 </tr>
 <tr class="even">
-<td><strong>EDP-agent (report-based, ours)</strong></td>
-<td><strong>607.2 ± 12.5</strong></td>
-<td><strong>1.078</strong></td>
+<td>EDP-canned</td>
+<td>8.0</td>
+<td>8.0</td>
+<td>0</td>
+<td>15.0</td>
+<td>15.0</td>
+<td>0</td>
 </tr>
 <tr class="odd">
-<td>EDP-canned (deterministic)</td>
-<td>783.6</td>
-<td>1.049</td>
+<td>EDP-static</td>
+<td>10.7</td>
+<td>10.7</td>
+<td>0</td>
+<td>19.8</td>
+<td>19.8</td>
+<td>0</td>
 </tr>
 <tr class="even">
-<td>EDP-OPRO (ablation, 3 reps)</td>
-<td>863.2 ± 106.6</td>
-<td>1.027</td>
+<td>LLM-as-policy</td>
+<td>26.8</td>
+<td>26.8</td>
+<td>0</td>
+<td>35.7</td>
+<td>35.7</td>
+<td>0</td>
 </tr>
 <tr class="odd">
-<td>EDP-static (deterministic)</td>
-<td>1,052.4</td>
-<td>0.999</td>
-</tr>
-<tr class="even">
-<td>LinTS-warm (10 seeds)</td>
-<td>1,963.8 ± 6.3</td>
-<td>0.940</td>
-</tr>
-<tr class="odd">
-<td>LinTS-cold (10 seeds)</td>
-<td>2,101.3 ± 5.2</td>
-<td>0.924</td>
+<td>Static widgets</td>
+<td>29.7</td>
+<td>29.7</td>
+<td>0</td>
+<td>40.7</td>
+<td>40.7</td>
+<td>0</td>
 </tr>
 </tbody>
 </table>
-<p>EDP-agent beats LinTS-warm by <strong>3.23×</strong> in cumulative
-regret and keeps 14.7 percentage points more of the last-1k reward. The
-standard error of EDP-agent (12.5) is more than 8× smaller than
-EDP-OPRO’s (106.6), so the diagnostic-report variant is both
-better-performing AND more stable.</p>
+<p>(Numbers are % of oracle reward lost @ 10K sessions. Bandit cells are
+mean ± SE across 5 LinTS seeds.)</p>
+<p><strong>The comparison inverts between the two conditions.</strong>
+Under lab conditions LinTS-warm is the single best method, beating
+EDP-agent by 5.6 pp on the parametric simulator and 5.3 pp on the
+LLM-persona simulator. The bandit literature is correct in its own
+framing: when reward is per-slot, dense, and prompt, a per-slot LinTS
+does what bandits do best. Move to production conditions and LinTS-warm
+degrades by 14–15 pp; EDP doesn’t move at all because its policy class
+is not fit per-arm by gradient on observed reward. EDP-agent then wins
+production by 7–10 pp over LinTS-warm.</p>
+<p>The remainder of §5 unpacks this gap: §5.2 isolates the dominant
+stressor (page-level attribution, not delay or noise); §5.3 shows that a
+stronger bandit (slate-LinTS) does not close it; §5.4 isolates what
+makes the agent-driven EDP work; §5.5–5.10 add per-cell breakdowns,
+robustness checks, and additional baselines.</p>
 <figure>
-<img src="figures/fig1_cumregret.png"
-alt="Figure 1: Cumulative regret over 10K sessions. EDP-agent (blue) ends at 607 ± 12; LinTS-warm (red) at 1964 ± 6; OPRO-ablation (orange) at 863 ± 107. Shaded bands are ±1 standard error across 10 LinTS seeds and 3 independent agent runs respectively. Vertical lines mark the three agent edit checkpoints at sessions 2,500 / 5,000 / 7,500." />
-<figcaption aria-hidden="true">Figure 1: Cumulative regret over 10K
-sessions. EDP-agent (blue) ends at 607 ± 12; LinTS-warm (red) at 1964 ±
-6; OPRO-ablation (orange) at 863 ± 107. Shaded bands are ±1 standard
-error across 10 LinTS seeds and 3 independent agent runs respectively.
-Vertical lines mark the three agent edit checkpoints at sessions 2,500 /
-5,000 / 7,500.</figcaption>
+<img src="figures/fig7_lab_vs_real.png"
+alt="Figure 1: The lab-production gap. LinTS-warm is the strongest method under lab conditions (4.9% / 6.6% on the two simulators), and degrades by ~14-15 pp when we switch to production conditions (page-level attribution, delay=500, σ=0.20). EDP and the deterministic baselines are bandit-signal-invariant, so EDP-agent (10.5% / 11.9%) overtakes in production." />
+<figcaption aria-hidden="true">Figure 1: The lab-production gap.
+LinTS-warm is the strongest method under lab conditions (4.9% / 6.6% on
+the two simulators), and degrades by ~14-15 pp when we switch to
+production conditions (page-level attribution, delay=500, σ=0.20). EDP
+and the deterministic baselines are bandit-signal-invariant, so
+EDP-agent (10.5% / 11.9%) overtakes in production.</figcaption>
 </figure>
-<h3 id="stressor-decomposition-tab.-2-fig.-2">5.2 Stressor decomposition
-(Tab. 2, Fig. 2)</h3>
+<h3 id="stressor-decomposition-what-causes-the-gap">5.2 Stressor
+decomposition: what causes the gap</h3>
 <p>Holding the policy fixed at LinTS-warm, we add stressors one at a
-time:</p>
+time on the parametric simulator:</p>
 <table>
 <thead>
 <tr class="header">
@@ -535,7 +591,7 @@ time:</p>
 <tr class="even">
 <td>+ noise σ=0.2 only</td>
 <td>492</td>
-<td><strong>−5</strong> (TS is built for noise)</td>
+<td><strong>−5</strong> (TS handles noise)</td>
 </tr>
 <tr class="odd">
 <td>+ delay=500 only</td>
@@ -563,130 +619,186 @@ time:</p>
 <td>+1,464</td>
 </tr>
 <tr class="even">
-<td>Full production stack (page + delay=500 + σ=0.2)</td>
+<td>Full production stack</td>
 <td>1,982</td>
 <td>+1,485</td>
 </tr>
 </tbody>
 </table>
-<p>Page-level attribution is the dominant axis by an order of magnitude.
-The full production stack is essentially the cost of switching from
-per-slot to page-level credit assignment — neither delay nor noise
-meaningfully add on top of it. This isolates the structural problem the
-bandit cannot solve no matter the algorithm: with
-<code>N_SLOTS=6</code>, page-level credit dilutes per-slot signal by 6×
-and breaks the per-arm linear regression that makes LinTS work.</p>
+<p><strong>Page-level attribution is the dominant axis by an order of
+magnitude.</strong> Delay adds at most +268; noise is essentially free.
+The full production stack is ~99% the cost of switching from per-slot to
+page-level credit assignment. The +14 pp degradation in §5.1 is almost
+entirely attributable to one stressor.</p>
+<p>The mechanism is credit assignment, not signal magnitude. Under
+page-level attribution, every slot in a page receives the same observed
+reward (<code>page_total / N_SLOTS</code>), so the per-arm regression
+targets within a page are perfectly correlated — the bandit cannot, even
+in principle, disentangle which slot caused which fraction of the
+reward.</p>
 <figure>
 <img src="figures/fig2_stressor.png"
-alt="Figure 2: Stressor decomposition. LinTS-warm cumulative regret at 10K sessions under each combination of (per-slot vs page-level attribution) × (delay ∈ {0, 500, 1000}) × (noise σ ∈ {0, 0.2}). Page-level attribution alone causes +1,462 regret; delay adds at most +268; noise is roughly free." />
+alt="Figure 2: Stressor decomposition. LinTS-warm cumulative regret at 10K sessions under each combination of (per-slot vs page-level attribution) × (delay ∈ {0, 500, 1000}) × (noise σ ∈ {0, 0.2})." />
 <figcaption aria-hidden="true">Figure 2: Stressor decomposition.
 LinTS-warm cumulative regret at 10K sessions under each combination of
 (per-slot vs page-level attribution) × (delay ∈ {0, 500, 1000}) × (noise
-σ ∈ {0, 0.2}). Page-level attribution alone causes +1,462 regret; delay
-adds at most +268; noise is roughly free.</figcaption>
+σ ∈ {0, 0.2}).</figcaption>
 </figure>
-<h3 id="statistical-power-low-n-regime-fig.-3">5.3 Statistical power:
-low-N regime (Fig. 3)</h3>
-<p>Mean cumulative regret at milestone session counts. Bandit values are
-mean ± SE across 10 seeds; agent values are mean ± SE across 3 reps.
-EDP-static, EDP-canned, and pre-checkpoint values are deterministic.</p>
-<table style="width:100%;">
+<h3 id="a-stronger-bandit-does-not-close-the-gap-slate-lints">5.3 A
+stronger bandit does not close the gap (Slate-LinTS)</h3>
+<p>A natural objection to §5.1–5.2: “you used per-slot LinTS, not the
+strongest bandit”. The natural slate-bandit variant <strong>pools all 22
+widget arms in a single LinTS</strong> and selects the slate by ranking
+sampled posterior scores top-<code>N_SLOTS</code>. Pooling raises the
+per-arm sample count by <code>N_SLOTS=6×</code> and tightens posteriors
+substantially.</p>
+<table>
 <colgroup>
-<col style="width: 14%" />
-<col style="width: 14%" />
-<col style="width: 14%" />
-<col style="width: 14%" />
-<col style="width: 14%" />
-<col style="width: 14%" />
-<col style="width: 14%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
 </colgroup>
 <thead>
 <tr class="header">
+<th>Source</th>
 <th>Method</th>
-<th>@ 500</th>
-<th>@ 1K</th>
-<th>@ 2.5K</th>
-<th>@ 5K</th>
-<th>@ 7.5K</th>
-<th>@ 10K</th>
+<th>Lab</th>
+<th>Production</th>
+<th>Δ</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>EDP-agent</strong></td>
-<td>64.5</td>
-<td>118.5</td>
-<td>281.2</td>
-<td>414.4 ± 11.3</td>
-<td>533.8 ± 23.7</td>
-<td><strong>607.2 ± 12.5</strong></td>
+<td>Parametric</td>
+<td>LinTS-warm (per-slot)</td>
+<td>4.9 %</td>
+<td>18.9 %</td>
+<td>+14.1 pp</td>
 </tr>
 <tr class="even">
-<td>EDP-canned</td>
-<td>64.5</td>
-<td>118.5</td>
-<td>281.2</td>
-<td>454.7</td>
-<td>641.3</td>
-<td>783.6</td>
+<td>Parametric</td>
+<td><strong>Slate-LinTS-warm</strong></td>
+<td><strong>3.5 %</strong></td>
+<td><strong>14.1 %</strong></td>
+<td><strong>+10.5 pp</strong></td>
 </tr>
 <tr class="odd">
-<td>EDP-OPRO</td>
-<td>64.5</td>
-<td>118.5</td>
-<td>281.2</td>
-<td>471.1 ± 25.5</td>
-<td>662.5 ± 61.2</td>
-<td>863.2 ± 106.6</td>
+<td>Parametric</td>
+<td>Slate-LinTS-cold</td>
+<td>4.0 %</td>
+<td>15.8 %</td>
+<td>+11.8 pp</td>
 </tr>
 <tr class="even">
-<td>EDP-static</td>
-<td>64.5</td>
-<td>118.5</td>
-<td>281.2</td>
-<td>538.5</td>
-<td>795.2</td>
-<td>1,052.4</td>
+<td>LLM (14p+cats)</td>
+<td>LinTS-warm (per-slot)</td>
+<td>6.6 %</td>
+<td>21.6 %</td>
+<td>+15.0 pp</td>
 </tr>
 <tr class="odd">
-<td>LinTS-warm</td>
-<td>148.5 ± 1.8</td>
-<td>280.8 ± 2.1</td>
-<td>608.0 ± 3.8</td>
-<td>1,095.5 ± 5.3</td>
-<td>1,544.1 ± 4.8</td>
-<td>1,963.8 ± 6.3</td>
+<td>LLM (14p+cats)</td>
+<td><strong>Slate-LinTS-warm</strong></td>
+<td><strong>5.1 %</strong></td>
+<td><strong>16.5 %</strong></td>
+<td><strong>+11.4 pp</strong></td>
 </tr>
 <tr class="even">
-<td>LinTS-cold</td>
-<td>149.0 ± 1.1</td>
-<td>284.5 ± 1.2</td>
-<td>627.3 ± 4.2</td>
-<td>1,153.7 ± 6.5</td>
-<td>1,641.4 ± 5.7</td>
-<td>2,101.3 ± 5.2</td>
+<td>LLM (14p+cats)</td>
+<td>Slate-LinTS-cold</td>
+<td>4.8 %</td>
+<td>17.8 %</td>
+<td>+13.0 pp</td>
 </tr>
 </tbody>
 </table>
-<p>EDP-static / EDP-agent / EDP-OPRO are identical through session 2500
-(all running the same initial config). They diverge after the first edit
-round. At every measured N from 500 onward, the report-based agent
-leads. At 1K sessions — well before most A/B tests reach decision —
-EDP-agent is <strong>2.37× better</strong> than LinTS-warm (118 vs
-281).</p>
+<p>Slate-LinTS is uniformly better than per-slot LinTS — 1.4 to 1.8 pp
+better in the lab, 4.8 to 5.1 pp better in production — confirming that
+pooling helps. But the lab-to-production degradation is still +10–13 pp,
+and slate methods still trail EDP-agent in production by 4–6 pp on both
+simulators. Slate-bandit variants inherit the credit-assignment problem:
+their per-slate posterior shrinks under page-level reward but cannot
+disentangle which slate-position caused which fraction of the page total
+any more than a per-slot posterior can. Pooling changes <em>which</em>
+posteriors get updated, not the per-arm signal-to-noise.</p>
+<h3 id="opro-ablation-the-diagnostic-report-carries-the-gain">5.4 OPRO
+ablation: the diagnostic report carries the gain</h3>
+<p>Same model, same edit-action space, same number of rounds, same
+simulator — the only change is the prompt content:</p>
+<ul>
+<li><strong>Report-based prompt:</strong> report Markdown +
+persona/widget priors + current modules JSON + edit history.</li>
+<li><strong>OPRO prompt:</strong>
+<code>(edits_proposed, batch_regret)</code> pairs sorted by score;
+nothing else.</li>
+</ul>
+<p>Across 3 independent runs of each variant on the parametric
+simulator:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Cum regret @ 10K (mean ± SE)</th>
+<th>Range across reps</th>
+<th>Improvement over static</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EDP-agent (report)</td>
+<td><strong>607 ± 13</strong></td>
+<td>[588, 630]</td>
+<td><strong>445</strong></td>
+</tr>
+<tr class="even">
+<td>EDP-OPRO (score-only)</td>
+<td><strong>863 ± 107</strong></td>
+<td>[656, 1009]</td>
+<td>189</td>
+</tr>
+<tr class="odd">
+<td>EDP-static</td>
+<td>1,052 (det.)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>OPRO captures ~42% of the gain on average, but its standard error
+(107) is more than 8× the report-based agent’s (13). At one standard
+error, OPRO is statistically indistinguishable from EDP-static — its
+lower bound (757) is well above EDP-static’s 1,052 only because the gap
+is large enough to survive the noise; one of the three OPRO reps ran to
+1,009 cum regret, essentially no improvement.</p>
+<p>The LLM-in-the-loop is not the source of the gain. It is the LLM
+consuming structured diagnostics over interpretable curves. Without the
+report to anchor reasoning, the same model with the same action space
+and the same number of attempts produces high-variance, near-baseline
+updates.</p>
 <figure>
-<img src="figures/fig3_robustness.png"
-alt="Figure 3: Statistical-power sweep. Cumulative regret at each milestone session count. Error bars are ±1 standard error across replicates (10 seeds for bandits, 3 reps for agent variants). EDP-agent leads at every measured N from 500 onward." />
-<figcaption aria-hidden="true">Figure 3: Statistical-power sweep.
-Cumulative regret at each milestone session count. Error bars are ±1
-standard error across replicates (10 seeds for bandits, 3 reps for agent
-variants). EDP-agent leads at every measured N from 500
-onward.</figcaption>
+<img src="figures/fig8_opro_ablation.png"
+alt="Figure 3: OPRO ablation. Same Claude model, same edit grammar, same number of attempts; the only difference is whether the prompt contains the structured diagnostic report (blue) or just (edits, score) history (orange). Bands are ±1 SE across 3 independent runs of each variant." />
+<figcaption aria-hidden="true">Figure 3: OPRO ablation. Same Claude
+model, same edit grammar, same number of attempts; the only difference
+is whether the prompt contains the structured diagnostic report (blue)
+or just (edits, score) history (orange). Bands are ±1 SE across 3
+independent runs of each variant.</figcaption>
 </figure>
-<h3 id="per-persona-breakdown-fig.-4">5.4 Per-persona breakdown (Fig.
-4)</h3>
-<p>Per-persona regret as % of that persona’s oracle reward, averaged
-across reps for stochastic methods:</p>
+<h3 id="per-persona-and-per-category-breakdowns">5.5 Per-persona and
+per-category breakdowns</h3>
+<p>The aggregate numbers in §5.1 hide where each method wins or loses.
+On the LLM-persona simulator (averaging across reps for stochastic
+methods):</p>
+<p><strong>Per persona</strong> (% of that persona’s oracle reward
+lost):</p>
 <table style="width:100%;">
 <colgroup>
 <col style="width: 14%" />
@@ -783,165 +895,43 @@ across reps for stochastic methods:</p>
 </tr>
 </tbody>
 </table>
-<p>The report-based agent wins (or ties) every persona vs the bandits.
-Its biggest wins over static EDP are on <code>confident_buyer</code>
-(8.3 → 3.3%) and <code>browser_lurker</code> (9.0 → 4.4%) — exactly the
-personas the report flagged as moderate-regret with under-served widget
-families. OPRO’s results are erratic: it helps <code>paralyzed</code>
-(3.4 → 2.4%) but actively hurts <code>confident_buyer</code> (8.3 →
-12.9%) and <code>outfit_seeker</code> (6.3 → 10.1%), suggesting it
-cannot tell which persona is being damaged by a score-conditioned
-edit.</p>
+<p>The report-based agent wins (or ties) every persona vs the bandits
+and reaches single-digit regret on every persona. Its biggest
+improvements over EDP-static are on <code>confident_buyer</code> (8.3 →
+3.3%) and <code>browser_lurker</code> (9.0 → 4.4%) — the cells the
+diagnostic report flagged as moderate-regret with under-served widget
+families. OPRO’s row is erratic: it slightly helps
+<code>paralyzed</code> and <code>comparison_shopper</code> but actively
+hurts <code>confident_buyer</code> (8.3 → 12.9%) and
+<code>outfit_seeker</code> (6.3 → 10.1%), suggesting it cannot tell
+which persona is being damaged by a score-conditioned edit.</p>
+<p><strong>Per category</strong> (% of that category’s oracle reward
+lost): bandits stay near 21–24 % on every category; EDP-agent stays at
+11–13 %, winning every category by 8–11 pp. Categories with high N1_fit
+/ N6_trust multipliers (<code>shoes</code>, <code>outerwear</code>) hurt
+EDP-static and EDP-canned more than the agent, because the agent’s
+report shows category-conditional regret that fixed configs can’t
+address.</p>
 <figure>
 <img src="figures/fig4_persona_heatmap_llm.png"
-alt="Figure 4: Per-persona regret heatmap. Each cell is the mean regret on sessions of that persona as a percentage of the persona’s oracle reward. Averaged across reps. The report-based EDP-agent (rightmost column) is the only method that achieves single-digit regret on every persona." />
-<figcaption aria-hidden="true">Figure 4: Per-persona regret heatmap.
-Each cell is the mean regret on sessions of that persona as a percentage
-of the persona’s oracle reward. Averaged across reps. The report-based
-EDP-agent (rightmost column) is the only method that achieves
-single-digit regret on every persona.</figcaption>
+alt="Figure 4: Per-persona regret on the LLM-persona simulator. EDP-agent (rightmost) is the only method achieving single-digit regret on every persona." />
+<figcaption aria-hidden="true">Figure 4: Per-persona regret on the
+LLM-persona simulator. EDP-agent (rightmost) is the only method
+achieving single-digit regret on every persona.</figcaption>
 </figure>
-<h3 id="opro-ablation-fig.-5">5.5 OPRO ablation (Fig. 5)</h3>
-<p>The cleanest result in the paper. Same model, same action space, same
-number of rounds, same simulator — the only change is the prompt
-content:</p>
-<ul>
-<li><strong>Report-based prompt:</strong> report Markdown +
-persona/widget priors + current modules JSON + edit history.</li>
-<li><strong>OPRO prompt:</strong>
-<code>(edits_proposed, batch_regret)</code> pairs sorted by score;
-nothing else.</li>
-</ul>
-<p>Across 3 independent runs of each variant:</p>
-<table>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th></th>
-<th>Cum regret @ 10K (mean ± SE)</th>
-<th>Range across reps</th>
-<th>Improvement over static</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>EDP-agent (report)</td>
-<td><strong>607.2 ± 12.5</strong></td>
-<td>[588, 630]</td>
-<td><strong>445</strong></td>
-</tr>
-<tr class="even">
-<td>EDP-OPRO (score-only)</td>
-<td><strong>863.2 ± 106.6</strong></td>
-<td>[656, 1009]</td>
-<td>189</td>
-</tr>
-<tr class="odd">
-<td>EDP-static</td>
-<td>1,052.4 (det.)</td>
-<td>—</td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
-<p>OPRO captures ~42% of the gain on average (189 / 445), but the
-standard error of OPRO’s improvement (107) is more than 8× larger than
-the report-based agent’s (13). At 1 standard error, OPRO is
-statistically indistinguishable from EDP-static (lower bound 757, vs
-static 1,052), while the report-based agent’s upper bound (620) is
-comfortably below static. The full OPRO distribution overlaps with the
-static line; one rep ran to 1,009 cum regret (worse than
-static-equivalent within noise).</p>
-<p><strong>Interpretation.</strong> The LLM-in-the-loop is not the
-source of the gain. The gain comes from the LLM consuming structured
-diagnostics over interpretable curves. Without the report to anchor
-reasoning, the same model with the same action space and the same number
-of attempts produces high-variance, near-baseline updates — sometimes
-lucky, sometimes regressive, on average no better than no learning at
-all.</p>
 <figure>
-<img src="figures/fig1_cumregret.png"
-alt="Figure 5: OPRO ablation. Same Claude model, same edit-action space, same number of attempts. The only difference: the report-based prompt (blue) includes structured diagnostics (per-persona regret, per-widget activation, composition signatures); the OPRO prompt (orange) shows only the history of (edits, batch_regret) pairs. Bands are ±1 standard error across 3 independent runs of each variant. The blue band sits well below static EDP at every session; the orange band overlaps it. The structured report is the carrier of the gain." />
-<figcaption aria-hidden="true">Figure 5: OPRO ablation. Same Claude
-model, same edit-action space, same number of attempts. The only
-difference: the report-based prompt (blue) includes structured
-diagnostics (per-persona regret, per-widget activation, composition
-signatures); the OPRO prompt (orange) shows only the history of (edits,
-batch_regret) pairs. Bands are ±1 standard error across 3 independent
-runs of each variant. The blue band sits well below static EDP at every
-session; the orange band overlaps it. The structured report is the
-carrier of the gain.</figcaption>
+<img src="figures/fig5_category_heatmap.png"
+alt="Figure 5: Per-category regret on the LLM-persona simulator. EDP-agent wins every fashion category by 8–11 pp over bandits." />
+<figcaption aria-hidden="true">Figure 5: Per-category regret on the
+LLM-persona simulator. EDP-agent wins every fashion category by 8–11 pp
+over bandits.</figcaption>
 </figure>
-<h3 id="evolution-trajectory-fig.-6-fig.-7">5.6 Evolution trajectory
-(Fig. 6, Fig. 7)</h3>
-<p>Per-round metrics for the report-based agent:</p>
-<table style="width:100%;">
-<colgroup>
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>Round</th>
-<th>Sessions</th>
-<th>Edits</th>
-<th>Batch regret</th>
-<th>Cum regret</th>
-<th>Note</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td>0–2500</td>
-<td>0</td>
-<td>281</td>
-<td>281</td>
-<td>EDP-static baseline</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td>2500–5000</td>
-<td>16</td>
-<td>170</td>
-<td>451</td>
-<td>revived returns/size widgets</td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td>5000–7500</td>
-<td>16</td>
-<td>97</td>
-<td>548</td>
-<td>revived style/visual widgets</td>
-</tr>
-<tr class="even">
-<td>3</td>
-<td>7500–10000</td>
-<td>12</td>
-<td>219</td>
-<td>767</td>
-<td>stabilization, pulled back over-promotions</td>
-</tr>
-</tbody>
-</table>
-<p>Widget activation heatmap across rounds
-(<code>fig_widget_heatmap.png</code>) shows the agent activating
-successive families: returns/size first, then style/visual, then
-rebalancing.</p>
-<h3 id="robustness-to-simulator-realism-fig.-6-tab.-3">5.7 Robustness to
-simulator realism (Fig. 6, Tab. 3)</h3>
-<p>Cum regret as % of oracle reward, after 10K sessions on the
-production stack, across two simulator setups:</p>
+<h3 id="robustness-to-simulator-realism">5.6 Robustness to simulator
+realism</h3>
+<p>To check that §5.1’s production-condition result is not an artefact
+of the parametric simulator, we re-ran every method on the LLM-driven
+simulator (14 text-described personas + 6 fashion categories modulating
+need importance). Δ is the change between the two simulator setups.</p>
 <table>
 <thead>
 <tr class="header">
@@ -984,184 +974,25 @@ production stack, across two simulator setups:</p>
 </tr>
 </tbody>
 </table>
-<p>Two findings:</p>
-<ol type="1">
-<li><strong>EDP-agent is the most robust method to simulator
-realism.</strong> Its absolute regret rises from 10.5% to 11.9% (+1.4
-pp) when we switch from 8 fixed-Gaussian personas to 14 LLM-generated
-personas with category-conditioned needs. Every other method except the
-bandits — which start poor and stay poor — degrades more.</li>
-<li><strong>The agent’s learning loop matters MORE under harder
-simulators.</strong> EDP-static and EDP-canned both collapse under LLM
-personas (static: 10.7% → 19.8%; canned: 8.0% → 15.0%) because their
-priors / fixed edits were tuned for the parametric setup. Only the
-agent-driven loop can re-target its edits to the new persona / category
-mix; the canned edits cannot.</li>
-</ol>
-<p>The gap between EDP-agent and LinTS-warm holds in both setups:
-<strong>8.4 percentage points (Parametric)</strong> and <strong>9.7
-percentage points (LLM)</strong>, equivalent to roughly 2× headline
-ratios. Per-category and per-persona breakdowns in
-<code>figures/fig5_category_heatmap.png</code> and
-<code>figures/fig4_persona_heatmap_llm.png</code> show EDP-agent winning
-every category and almost every persona.</p>
+<p>EDP-agent is the most simulator-robust of the EDP variants: +1.4 pp
+delta vs +9.1 pp for EDP-static. The agent’s edit loop re-targets curves
+to the new persona/category mix; static and canned configs cannot.
+Bandits are flat (+2.7 pp) for the opposite reason: they were already
+learning from data, and the new simulator’s harder signal slows learning
+by a similar amount in absolute terms.</p>
 <figure>
 <img src="figures/fig1_cumregret.png"
-alt="Figure 6: Cumulative regret on production stack across both simulators. Left: parametric (8 personas). Right: LLM (14 personas + 6 fashion categories). EDP-agent (blue) stays low across both; EDP-static (grey dotted) and EDP-canned (green dashed) degrade sharply when the simulator changes; LinTS (red/purple) is high in both." />
-<figcaption aria-hidden="true">Figure 6: Cumulative regret on production
-stack across both simulators. Left: parametric (8 personas). Right: LLM
-(14 personas + 6 fashion categories). EDP-agent (blue) stays low across
-both; EDP-static (grey dotted) and EDP-canned (green dashed) degrade
-sharply when the simulator changes; LinTS (red/purple) is high in
+alt="Figure 6: Cumulative regret over 10K sessions on each simulator. Left: parametric (8 personas). Right: LLM (14 personas + categories). EDP-agent stays low across both; EDP-static / EDP-canned degrade visibly from left to right; LinTS is high in both." />
+<figcaption aria-hidden="true">Figure 6: Cumulative regret over 10K
+sessions on each simulator. Left: parametric (8 personas). Right: LLM
+(14 personas + categories). EDP-agent stays low across both; EDP-static
+/ EDP-canned degrade visibly from left to right; LinTS is high in
 both.</figcaption>
 </figure>
-<figure>
-<img src="figures/fig3_robustness.png"
-alt="Figure 7: Method robustness across simulator setups. Each bar is cumulative regret at 10K sessions as % of total oracle reward. EDP-agent shows the smallest gap between parametric and LLM setups (+1.4 pp), while EDP-static degrades by +9.1 pp." />
-<figcaption aria-hidden="true">Figure 7: Method robustness across
-simulator setups. Each bar is cumulative regret at 10K sessions as % of
-total oracle reward. EDP-agent shows the smallest gap between parametric
-and LLM setups (+1.4 pp), while EDP-static degrades by +9.1
-pp.</figcaption>
-</figure>
-<figure>
-<img src="figures/fig5_category_heatmap.png"
-alt="Figure 8: Per-category regret % on the LLM-persona simulator. Bandits stay near 21–24% on every category; EDP-agent stays at 11–13%, winning every category by 8–11 pp." />
-<figcaption aria-hidden="true">Figure 8: Per-category regret % on the
-LLM-persona simulator. Bandits stay near 21–24% on every category;
-EDP-agent stays at 11–13%, winning every category by 8–11
-pp.</figcaption>
-</figure>
-<figure>
-<img src="figures/fig4_persona_heatmap_llm.png"
-alt="Figure 9: Per-persona regret % on the LLM-persona simulator (14 personas). EDP-agent improves over EDP-static on every persona except size-specific-anxious and premium-silent-browser, where Layer-1 PWL shapes (held fixed in this loop) are misaligned with the LLM-defined need structure — a flagged future-work item." />
-<figcaption aria-hidden="true">Figure 9: Per-persona regret % on the
-LLM-persona simulator (14 personas). EDP-agent improves over EDP-static
-on every persona except size-specific-anxious and
-premium-silent-browser, where Layer-1 PWL shapes (held fixed in this
-loop) are misaligned with the LLM-defined need structure — a flagged
-future-work item.</figcaption>
-</figure>
-<h3 id="additional-baselines-and-a-robustness-wrapper-fig.-10">5.8
-Additional baselines and a robustness wrapper (Fig. 10)</h3>
-<p>Two simple baselines bracket the comparison from below and give a
-sense of where the GAM + agent’s gain comes from:</p>
-<p><strong>Static widgets.</strong> Always place the same 6 widgets in
-the same order — top-6 by initial <code>base</code> weight
-(<code>similar_items</code>, <code>also_bought</code>,
-<code>personal_recs</code>, <code>trending_now</code>,
-<code>outfit_completion</code>, <code>fit_reassurance</code>). No
-personalization, no category awareness. The “what if you didn’t bother”
-baseline.</p>
-<p><strong>LLM-as-policy (Software 3.0 one-shot).</strong> A Claude
-subagent reads the widget descriptions and signal schema and writes a
-Python function <code>pick_page(feat, category) -&gt; list[str]</code>.
-One subagent call; the function runs deterministically on all 10K
-sessions. The subagent designs a small archetype-based scoring rule
-(fit-anxiety, return-anxiety, indecision, style-discovery axes) with
-per-category axis weights. The LLM does NOT see persona names or
-true-needs/provisions — only the context features, like a deployed
-system would.</p>
-<p><strong>Robust EDP (parameter-perturbation wrapper).</strong> After
-the report-based agent proposes an edit batch, the orchestrator:</p>
-<ol type="1">
-<li>Applies the edits to produce config <code>C₀</code>.</li>
-<li>Generates K=8 perturbations of <code>C₀</code> (Gaussian noise
-σ=0.15 on every parameter the edits touched, except
-<code>slot_decay</code>).</li>
-<li>Evaluates all 9 candidates on a held-out 500-session validation
-slice (different seed from the live stream).</li>
-<li>Selects the candidate that maximises <code>mean − 0.5 · std</code>
-of validation reward.</li>
-</ol>
-<p>This pressure-tests the agent’s curve choices against parameter
-noise: if the agent’s exact edits are fragile, a more conservative
-nearby perturbation wins. Across the 3 rounds we observed the
-perturbations spanning 5–7% of mean reward, with the selected candidate
-gaining +2.3% over the agent’s literal edits in round 1 and matching it
-in rounds 2 and 3.</p>
-<table>
-<thead>
-<tr class="header">
-<th>Method (LLM-persona simulator)</th>
-<th>Cum regret @ 10K</th>
-<th>% oracle lost</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Static widgets</td>
-<td>8,136</td>
-<td>40.7%</td>
-</tr>
-<tr class="even">
-<td>LLM-as-policy (Software 3.0 one-shot)</td>
-<td>7,124</td>
-<td>35.7%</td>
-</tr>
-<tr class="odd">
-<td>LinTS-cold</td>
-<td>~4,568</td>
-<td>22.9%</td>
-</tr>
-<tr class="even">
-<td>LinTS-warm</td>
-<td>~4,322</td>
-<td>21.6%</td>
-</tr>
-<tr class="odd">
-<td>EDP-static</td>
-<td>~3,964</td>
-<td>19.8%</td>
-</tr>
-<tr class="even">
-<td>EDP-canned</td>
-<td>~2,999</td>
-<td>15.0%</td>
-</tr>
-<tr class="odd">
-<td>EDP-agent (report-based)</td>
-<td>2,380</td>
-<td>11.9%</td>
-</tr>
-<tr class="even">
-<td><strong>EDP-agent + Robust</strong></td>
-<td><strong>2,341</strong></td>
-<td><strong>11.7%</strong></td>
-</tr>
-</tbody>
-</table>
-<p>The progression is informative: just-deploy-defaults loses 40.7%;
-just-ask-the-LLM-once loses 35.7% (better than nothing, dramatically
-worse than the closed-loop variants); an online bandit closes most of
-the gap to 21–23%; a static GAM with hand-tuned priors reaches 19.8%;
-offline-curated edits 15.0%; the report-based loop 11.9%; the robust
-wrapper 11.7%. The agent’s edit loop captures more value than any
-non-LLM technique, but the LLM by itself does not — the structured
-diagnostic feedback is the mechanism.</p>
-<figure>
-<img src="figures/fig6_all_baselines.png"
-alt="Figure 10: Full baseline panel across the parametric and LLM-persona simulators. Static-widget and LLM-as-policy baselines bracket the comparison from below; LinTS baselines occupy the middle; the EDP family (with category-conditioned regret) is on top. Robust EDP edges out plain EDP-agent slightly by selecting against fragile parameter values." />
-<figcaption aria-hidden="true">Figure 10: Full baseline panel across the
-parametric and LLM-persona simulators. Static-widget and LLM-as-policy
-baselines bracket the comparison from below; LinTS baselines occupy the
-middle; the EDP family (with category-conditioned regret) is on top.
-Robust EDP edges out plain EDP-agent slightly by selecting against
-fragile parameter values.</figcaption>
-</figure>
-<h3 id="lab-vs-production-where-each-approach-wins-fig.-11">5.9 Lab vs
-production: where each approach wins (Fig. 11)</h3>
-<p>The bandit literature evaluates page composition under “lab”
-conditions: per-slot reward attribution, low delay, low noise. Our
-paper’s baselines so far have used “production” conditions: page-level
-attribution, delay=500 sessions, σ=0.20. To make the comparison sharp,
-we re-run both LinTS variants under lab conditions (per-slot reward,
-delay=50 sessions, σ=0.05) and contrast with the production numbers we
-already have.</p>
-<p>EDP family + the static / LLM-as-policy baselines are reported once
-each — they are independent of the bandit reward signal (EDP doesn’t
-update from reward, the static page is fixed, and the LLM-as-policy is a
-deterministic Python function).</p>
+<h3 id="statistical-power-sweep">5.7 Statistical-power sweep</h3>
+<p>A second concern is sample efficiency: most A/B test arms close
+before reaching 10K sessions. Cumulative regret at milestone session
+counts on the parametric simulator (mean ± SE):</p>
 <table style="width:100%;">
 <colgroup>
 <col style="width: 14%" />
@@ -1175,224 +1006,116 @@ deterministic Python function).</p>
 <thead>
 <tr class="header">
 <th>Method</th>
-<th>Parametric · Lab</th>
-<th>Parametric · Prod</th>
-<th>Δ</th>
-<th>LLM · Lab</th>
-<th>LLM · Prod</th>
-<th>Δ</th>
+<th>@ 500</th>
+<th>@ 1K</th>
+<th>@ 2.5K</th>
+<th>@ 5K</th>
+<th>@ 7.5K</th>
+<th>@ 10K</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>LinTS-warm</strong></td>
-<td><strong>4.9 ± 0.0</strong></td>
-<td>18.9 ± 0.1</td>
-<td><strong>+14.1 pp</strong></td>
-<td><strong>6.6 ± 0.1</strong></td>
-<td>21.6 ± 0.1</td>
-<td><strong>+15.0 pp</strong></td>
-</tr>
-<tr class="even">
-<td>LinTS-cold</td>
-<td>6.1 ± 0.0</td>
-<td>20.2 ± 0.1</td>
-<td>+14.1 pp</td>
-<td>7.2 ± 0.1</td>
-<td>22.8 ± 0.1</td>
-<td>+15.6 pp</td>
-</tr>
-<tr class="odd">
-<td>EDP-agent</td>
-<td>10.5</td>
-<td>10.5</td>
-<td>0</td>
-<td>11.9</td>
-<td>11.9</td>
-<td>0</td>
+<td><strong>EDP-agent</strong></td>
+<td>64.5</td>
+<td>118.5</td>
+<td>281.2</td>
+<td>414.4 ± 11.3</td>
+<td>533.8 ± 23.7</td>
+<td><strong>607.2 ± 12.5</strong></td>
 </tr>
 <tr class="even">
 <td>EDP-canned</td>
-<td>8.0</td>
-<td>8.0</td>
-<td>0</td>
-<td>15.0</td>
-<td>15.0</td>
-<td>0</td>
+<td>64.5</td>
+<td>118.5</td>
+<td>281.2</td>
+<td>454.7</td>
+<td>641.3</td>
+<td>783.6</td>
 </tr>
 <tr class="odd">
 <td>EDP-static</td>
-<td>10.7</td>
-<td>10.7</td>
-<td>0</td>
-<td>19.8</td>
-<td>19.8</td>
-<td>0</td>
+<td>64.5</td>
+<td>118.5</td>
+<td>281.2</td>
+<td>538.5</td>
+<td>795.2</td>
+<td>1,052.4</td>
 </tr>
 <tr class="even">
-<td>LLM-as-policy</td>
-<td>26.8</td>
-<td>26.8</td>
-<td>0</td>
-<td>35.7</td>
-<td>35.7</td>
-<td>0</td>
+<td>LinTS-warm</td>
+<td>148.5 ± 1.8</td>
+<td>280.8 ± 2.1</td>
+<td>608.0 ± 3.8</td>
+<td>1,095.5 ± 5.3</td>
+<td>1,544.1 ± 4.8</td>
+<td>1,963.8 ± 6.3</td>
 </tr>
 <tr class="odd">
-<td>Static widgets</td>
-<td>29.7</td>
-<td>29.7</td>
-<td>0</td>
-<td>40.7</td>
-<td>40.7</td>
-<td>0</td>
+<td>LinTS-cold</td>
+<td>149.0 ± 1.1</td>
+<td>284.5 ± 1.2</td>
+<td>627.3 ± 4.2</td>
+<td>1,153.7 ± 6.5</td>
+<td>1,641.4 ± 5.7</td>
+<td>2,101.3 ± 5.2</td>
 </tr>
 </tbody>
 </table>
-<p>(Numbers are % of oracle reward lost @ 10K. Δ is production minus
-lab. Bandit cells are mean ± SE across 5 LinTS seeds.)</p>
-<p><strong>Two findings.</strong></p>
-<ol type="1">
-<li><p><strong>In the lab, LinTS-warm is the single best
-method.</strong> At 4.9% (parametric) and 6.6% (LLM personas) it beats
-EDP-agent (10.5% / 11.9%) by 5.6 / 5.3 percentage points. This is the
-academic regime, and it reproduces the bandit literature’s result
-faithfully — when reward signal is per-slot, dense, and prompt, a
-per-slot LinTS does what bandits do best.</p></li>
-<li><p><strong>In production, the comparison inverts.</strong>
-LinTS-warm degrades by 14 percentage points (parametric) and 15
-percentage points (LLM); LinTS-cold degrades the same. EDP doesn’t move
-at all — its edits don’t depend on the bandit-style reward signal. The
-result: EDP-agent wins production by 7-10 pp over LinTS-warm.</p></li>
-</ol>
-<p><strong>Why EDP doesn’t degrade.</strong> The structural problem is
-credit assignment, not signal magnitude. Under page-level attribution,
-every slot in a given page receives the same observed reward
-(<code>page_total / N_SLOTS</code>), so the per-arm regression targets
-within a page are perfectly correlated. The bandit cannot, even in
-principle, disentangle which slot caused which fraction of the reward —
-and slate-bandit variants that treat the slate as the action inherit the
-same credit-assignment problem when reward is observed only at the page
-level (their per-slate posterior shrinks, not their per-arm one). EDP
-does not have this problem because it does not try to solve it: its
-policy class is not fit per-arm by gradient on observed reward. The
-EDP-agent reads the diagnostic report’s per-persona and per-category
-regret, in which averaging over thousands of sessions makes the
-page-level signal usable as a coarse score per slice — sufficient for
-the agent’s edits, which target slices rather than slots.</p>
-<p><strong>The takeaway.</strong> The bandit-vs-EDP comparison is
-conditional on what reward signal the system instruments. Lab benchmarks
-(per-slot reward) measure the upper bound of bandit performance;
-production (page-level reward) measures something different. Closing the
-14-pp gap requires either (a) instrumenting per-slot reward — typically
-infeasible in commerce because slots inside a single page outcome are
-not independently attributable — or (b) using a method that does not
-rely on per-slot credit assignment. Better bandit algorithms alone do
-not close it; partial-recovery techniques like IPS / DR estimators can
-help but are bounded by what the propensity model identifies, which is
-itself a per-slot quantity that would need its own training data.</p>
+<p>EDP-static / EDP-canned / EDP-agent are identical until session 2500
+(same initial config, no edits applied yet). Even before any agent edit,
+EDP is <strong>2.4× better</strong> than LinTS-warm at 1K sessions and
+<strong>2.2× better</strong> at 2.5K. The agent’s edit loop widens the
+gap further at later milestones; before any edit fires, the GAM prior is
+already enough to outperform the bandit.</p>
+<h3 id="bracketing-baselines-and-robust-edp-wrapper">5.8 Bracketing
+baselines and Robust-EDP wrapper</h3>
+<p>Two simple baselines bracket the production-stack comparison from
+below:</p>
+<p><strong>Static widgets.</strong> Always place the same 6 widgets in
+the same order (top-6 by initial <code>base</code> weight). No
+personalization, no category awareness. <strong>40.7 %</strong> oracle
+reward lost on the LLM simulator.</p>
+<p><strong>LLM-as-policy (Software 3.0 one-shot).</strong> A Claude
+subagent reads the widget descriptions and signal schema and writes a
+Python function <code>pick_page(feat, category) -&gt; list[str]</code>.
+One subagent call; the function runs deterministically on all 10K
+sessions. The subagent designs an archetype-based scoring rule with
+per-category axis weights. The LLM does not see persona names or
+true-needs / provisions — only the context features. <strong>35.7
+%</strong> loss.</p>
+<p>The progression: static defaults 40.7 %, LLM-writes-policy 35.7 %,
+online bandits 21–23 %, static GAM 19.8 %, offline-curated edits 15.0 %,
+report-based agent 11.9 %. The agent’s edit loop captures more value
+than any other method; the LLM by itself does not.</p>
+<p><strong>Robust-EDP wrapper.</strong> After the report-based agent
+proposes an edit batch, generate K=8 perturbations of the resulting
+config (Gaussian noise σ=0.15 on parameters the edits touched, except
+<code>slot_decay</code>), evaluate all 9 candidates on a held-out
+500-session validation slice, and adopt the candidate that maximises
+<code>mean − 0.5 · std</code>. Result: cum regret 2,341 (11.7 %) vs
+2,380 (11.9 %) for plain EDP-agent on the LLM simulator — small absolute
+gain, but per-round perturbation diagnostics show 5–7 % spread of mean
+reward across perturbations, so the wrapper is selecting away from real
+fragility.</p>
 <figure>
-<img src="figures/fig7_lab_vs_real.png"
-alt="Figure 11: Lab vs production conditions across two persona sources. LinTS-warm wins the lab benchmark (4.9% / 6.6%) but degrades by ~14-15 pp under production conditions (page-level attribution + delay + noise), where EDP-agent (10.5% / 11.9%) becomes the best method. EDP and the deterministic baselines are bandit-signal-invariant." />
-<figcaption aria-hidden="true">Figure 11: Lab vs production conditions
-across two persona sources. LinTS-warm wins the lab benchmark (4.9% /
-6.6%) but degrades by ~14-15 pp under production conditions (page-level
-attribution + delay + noise), where EDP-agent (10.5% / 11.9%) becomes
-the best method. EDP and the deterministic baselines are
-bandit-signal-invariant.</figcaption>
+<img src="figures/fig6_all_baselines.png"
+alt="Figure 7: Full baseline panel across simulators. Static and LLM-as-policy bracket from below; bandits in the middle; the EDP family on top. Robust EDP edges plain EDP-agent slightly." />
+<figcaption aria-hidden="true">Figure 7: Full baseline panel across
+simulators. Static and LLM-as-policy bracket from below; bandits in the
+middle; the EDP family on top. Robust EDP edges plain EDP-agent
+slightly.</figcaption>
 </figure>
-<h3 id="slate-lints-baseline">5.10 Slate-LinTS baseline</h3>
-<p>Per-slot LinTS is the obvious bandit baseline but it is not the
-strongest one. The natural slate-bandit variant <strong>pools all 22
-widget arms in a single LinTS</strong> and selects the slate by ranking
-sampled posterior scores top-<code>N_SLOTS</code>. Pooling raises the
-per-arm sample count by <code>N_SLOTS=6×</code> and tightens posteriors
-substantially. We re-ran the lab-vs-production experiment with this
-slate variant.</p>
-<table>
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>Source</th>
-<th>Method</th>
-<th>Lab</th>
-<th>Production</th>
-<th>Δ</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Parametric</td>
-<td>LinTS-warm (per-slot)</td>
-<td>4.9 %</td>
-<td>18.9 %</td>
-<td>+14.1 pp</td>
-</tr>
-<tr class="even">
-<td>Parametric</td>
-<td><strong>Slate-LinTS-warm</strong></td>
-<td><strong>3.5 %</strong></td>
-<td><strong>14.1 %</strong></td>
-<td><strong>+10.5 pp</strong></td>
-</tr>
-<tr class="odd">
-<td>Parametric</td>
-<td>Slate-LinTS-cold</td>
-<td>4.0 %</td>
-<td>15.8 %</td>
-<td>+11.8 pp</td>
-</tr>
-<tr class="even">
-<td>LLM (14p+cats)</td>
-<td>LinTS-warm (per-slot)</td>
-<td>6.6 %</td>
-<td>21.6 %</td>
-<td>+15.0 pp</td>
-</tr>
-<tr class="odd">
-<td>LLM (14p+cats)</td>
-<td><strong>Slate-LinTS-warm</strong></td>
-<td><strong>5.1 %</strong></td>
-<td><strong>16.5 %</strong></td>
-<td><strong>+11.4 pp</strong></td>
-</tr>
-<tr class="even">
-<td>LLM (14p+cats)</td>
-<td>Slate-LinTS-cold</td>
-<td>4.8 %</td>
-<td>17.8 %</td>
-<td>+13.0 pp</td>
-</tr>
-</tbody>
-</table>
-<p>The slate variant is uniformly better than per-slot LinTS — 1.4 to
-1.8 pp better in the lab, 4.8 to 5.1 pp better in production —
-confirming that pooling helps. But the lab-to-production degradation
-(+10–13 pp) is still large, and slate methods still trail EDP-agent in
-production by 4–6 pp on both simulators. The credit-assignment problem
-at page-level attribution survives the move to slate methods because the
-page-total signal is still the only label, and a slate posterior cannot
-disentangle which slate-position is responsible for the observed reward
-any more than a per-slot posterior can. The slate framing changes
-<em>which</em> posteriors get updated, not the per-arm
-signal-to-noise.</p>
-<h3 id="drift-persona-mixture-shift-mid-stream">5.11 Drift: persona
-mixture shift mid-stream</h3>
-<p>A stationary persona distribution is unrealistic; production sees
-seasonality, channel-mix changes, and post-promotion population shifts.
-We run a drift test on the LLM-persona simulator: at session 5000 we
-shift the mixture — <code>returner_anxious</code> and
-<code>browser_lurker</code> and <code>post_return_returner</code> are
-spiked (to 25/18/15 %, up from 8/9/8 %), and
+<h3 id="non-stationarity-drift-and-structural-exploration">5.9
+Non-stationarity: drift and structural exploration</h3>
+<p>Two production realities the previous sections did not address: the
+persona distribution changes over time, and the widget catalog grows.
+Both happen mid-stream.</p>
+<p><strong>Drift test.</strong> At session 5000 we shift the LLM persona
+mixture — <code>returner_anxious</code>, <code>browser_lurker</code>,
+and <code>post_return_returner</code> are spiked (to 25/18/15 %), and
 <code>confident_repeat_buyer</code>, <code>outfit_event_planner</code>,
-and <code>tabbed_comparison_shopper</code> are halved. The remaining
-mass is renormalised. The shift is abrupt — a stress test.</p>
+and <code>tabbed_comparison_shopper</code> are halved.</p>
 <table>
 <thead>
 <tr class="header">
@@ -1416,7 +1139,7 @@ mass is renormalised. The shift is abrupt — a stress test.</p>
 <td>14.9 %</td>
 </tr>
 <tr class="odd">
-<td><strong>EDP-agent</strong> (live)</td>
+<td><strong>EDP-agent</strong></td>
 <td><strong>15.4 %</strong></td>
 <td><strong>9.5 %</strong></td>
 <td><strong>12.4 %</strong></td>
@@ -1429,33 +1152,21 @@ mass is renormalised. The shift is abrupt — a stress test.</p>
 </tr>
 </tbody>
 </table>
-<p>(Full = whole 10K-session stream including drift; lower is
-better.)</p>
 <p>EDP-agent is the only method whose post-drift regret is
-<em>lower</em> than its pre-drift regret. The reason: the agent’s
-checkpoint at session 5000 reads a report that already reflects the new
-distribution (sessions 2500-5000 partially overlapped the shift if it’s
-gradual; under our abrupt shift the report at 7500 sees the new mixture
-clearly), and its proposed edits target the new high-traffic personas.
-EDP-canned can’t re-target — its edits were authored for the original
-mixture — but the canned edits happen to over-cover trust/return-related
-widgets, which is what
-<code>returner_anxious</code>/<code>post_return_returner</code> need;
-this is luck. EDP-static degrades because its priors were tuned for the
-original mixture. LinTS-warm catches up on the new mixture (+0 pp in
-absolute terms post-drift versus pre-drift, since it’s mid-learning
-anyway) but starts and stays well above the EDP family.</p>
-<h3 id="structural-exploration-new-widget-mid-stream">5.12 Structural
-exploration: new widget mid-stream</h3>
-<p>A real production widget catalog grows; we simulate the simplest
-version of this. At session 5000, a new widget
+<em>lower</em> than its pre-drift regret. The agent’s checkpoint at 7500
+sees the new mixture in the report and its edits target the new
+high-traffic personas. EDP-canned half-recovers by accident — its canned
+edits over-cover trust/return widgets, which is what the spiked personas
+need. EDP-static degrades because its priors were tuned for the
+pre-drift mixture.</p>
+<p><strong>Structural exploration.</strong> At session 5000 a new widget
 <code>virtual_try_on</code> is added to the catalog with provisions
-<code>{N1_fit: 0.65, N2_visual: 0.45, N6_trust: 0.20}</code> — a strong
-fit-and-trust contributor expected to help size-anxious and
-returner-anxious personas, especially on shoes and outerwear. A default
+<code>{N1_fit: 0.65, N2_visual: 0.45, N6_trust: 0.20}</code>. A default
 Layer-2 module entry is added so EDP can in principle pick it; the
 agent’s checkpoint report at 5000 prefixes a
-<code>STRUCTURAL CHANGE</code> notice describing the new widget.</p>
+<code>STRUCTURAL CHANGE</code> notice describing the widget. The agent
+activated <code>virtual_try_on</code> on round 2 and dialled it back on
+round 3 when the report showed it crowding others.</p>
 <table>
 <colgroup>
 <col style="width: 25%" />
@@ -1473,18 +1184,6 @@ agent’s checkpoint report at 5000 prefixes a
 </thead>
 <tbody>
 <tr class="odd">
-<td>EDP-static</td>
-<td>18.4 %</td>
-<td>19.1 %</td>
-<td>18.8 %</td>
-</tr>
-<tr class="even">
-<td>EDP-canned</td>
-<td>17.8 %</td>
-<td>13.5 %</td>
-<td>15.4 %</td>
-</tr>
-<tr class="odd">
 <td>EDP-agent (no exploration)</td>
 <td>15.4 %</td>
 <td>9.6 %</td>
@@ -1496,42 +1195,23 @@ agent’s checkpoint report at 5000 prefixes a
 <td><strong>9.7 %</strong></td>
 <td><strong>12.5 %</strong></td>
 </tr>
-<tr class="odd">
-<td>LinTS-warm</td>
-<td>23.5 %</td>
-<td>21.4 %</td>
-<td>22.4 %</td>
-</tr>
 </tbody>
 </table>
-<p>The “+structural exploration” arm is the same EDP-agent loop but with
-the widget added at 5000 and the agent’s round-2 and round-3 edits free
-to reference <code>virtual_try_on</code>. The agent activated it on
-round 2 (16 edits, including a <code>virtual_try_on.base</code> boost
-and <code>on_cov.F32</code> synergy), then dialled it back on round 3
-when the report showed it crowding others. <strong>The post-add result
-is statistically tied with no-exploration</strong> — the new widget did
-not help in this run. This is not a bug; it is the expected behaviour
-when a single new widget’s provisions are dominated by existing
-combinations. The mechanism — the agent successfully integrated a
-previously non-existent widget into its policy class within one
-checkpoint, with no system change beyond the catalog patch — is the
-contribution. Whether <em>this particular</em> widget pays off is a
-content-engineering question, not a method question.</p>
-<p>A bandit cannot do this: its arms are fixed at instantiation, and
-adding an arm mid-run leaves it with zero posterior data on the new arm
-and a Thompson-sampling exploration tax it has to pay before the new arm
-is competitive.</p>
-<h3 id="multi-agent-edit-ensembles-negative-result">5.13 Multi-agent
-edit ensembles (negative result)</h3>
+<p>The post-add result is statistically tied with no-exploration — the
+new widget did not pay off in this run. The contribution is the
+<strong>mechanism</strong>: the agent integrated a previously
+non-existent widget into its policy class within one checkpoint, with no
+system change beyond the catalog patch. Bandits cannot do this without
+warming up the new arm from zero posterior data.</p>
+<h3 id="what-doesnt-work-ensemble-selection-negative-result">5.10 What
+doesn’t work: ensemble selection (negative result)</h3>
 <p>A natural extension of the report-based agent is to draw multiple
 edit batches per checkpoint and pick the best on a held-out validation
-slice — analogous to the Robust EDP wrapper of §5.8 but with diverse
+slice — analogous to the Robust-EDP wrapper of §5.8, but with diverse
 subagent draws instead of parameter perturbations. We spawned 3
 independent subagent draws at each of 3 checkpoints (9 draws total) on
-the LLM-persona simulator, evaluated each on a 500-session validation
-slice (seed 99991), and adopted the best-mean candidate at each
-round.</p>
+the LLM simulator, evaluated each on a 500-session validation slice
+(seed 99991), and adopted the best-mean candidate at each round.</p>
 <table>
 <thead>
 <tr class="header">
@@ -1542,7 +1222,7 @@ round.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>EDP-agent (single draw, prior baseline)</td>
+<td>EDP-agent (single draw)</td>
 <td>2,380</td>
 <td>11.9 %</td>
 </tr>
@@ -1559,32 +1239,20 @@ round.</p>
 </tbody>
 </table>
 <p>The ensemble was worse than either the single-draw agent or the
-Robust wrapper. Inspecting per-round selection:</p>
-<ul>
-<li>Round 1: ensemble pick (mean reward 1.7445 on validation) beat draws
-2 and 3, advancing cum regret similarly to single-draw.</li>
-<li>Round 2: validation-best draw (1.6899) was selected, but on the live
-stream it produced a worse trajectory than the single-draw arm — the
-validation slice’s persona mixture differs slightly from the
-post-checkpoint live stream, and the selection committed to a config
-that was good on the validation slice but mediocre on the live stream’s
-later sessions.</li>
-<li>Round 3: same dynamic; the cumulative effect is +362 cum regret over
-the single-draw baseline.</li>
-</ul>
-<p>This is a real risk of validation-slice selection: the slice’s
-persona distribution may not match the next live segment, and a
-500-session validation slice has its own variance. The 3-draw ensemble
-does not provide enough samples to overcome that. Larger ensembles (10+)
-and a longer validation slice would likely close the gap, but at
-proportional subagent cost; we did not run that experiment here.</p>
-<p>The negative finding is informative on its own. It demonstrates that
-<strong>the report-based agent’s gain is not a generic ensemble
-effect</strong> — three independent agents drawing from the same prompt
-and selected by held-out reward do not, on this setup, beat a single
-draw. Whatever the agent is doing right (§5.5 OPRO ablation tells us it
-is consuming the structured diagnostic), it is not just “trying multiple
-things and picking the best”.</p>
+Robust wrapper. Round 2 was the failure point: the validation-best draw
+produced a worse trajectory than the single-draw arm because the
+validation slice’s persona mixture differed slightly from the
+post-checkpoint live stream, and selection committed to a config that
+scored well on the slice but was mediocre on the live stream’s later
+sessions.</p>
+<p>The negative finding is informative: the report-based agent’s gain is
+<strong>not a generic ensemble effect</strong>. Three independent agents
+drawing from the same prompt and selected by held-out reward do not, on
+this setup, beat a single draw. Whatever the agent is doing right (§5.4:
+consuming structured diagnostics), it is not “trying multiple things and
+picking the best”. Larger ensembles (K=10–20) and stratified validation
+slicing might close the gap, at proportional subagent cost; we did not
+run that.</p>
 <h2 id="discussion">6. Discussion</h2>
 <h3 id="gams-as-software-3.0-primitive">6.1 GAMs as Software 3.0
 primitive</h3>

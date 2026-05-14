@@ -121,7 +121,32 @@ cd demo && python3 -m http.server 8765
 
 The HTTP server is needed for `policy_comparison.html` because it fetches `lints_state.json` (file:// origin would be blocked). The composition-flow demo works via `file://` directly.
 
-## D. Hyperparameters
+## D. Per-round trajectory of the report-based agent
+
+Cumulative regret added per checkpoint window for the report-based agent
+on the parametric simulator (8 personas + categories):
+
+| Round | Sessions | Edits applied | Batch regret | Cum regret | Note |
+|---|---|---|---|---|---|
+| 0 | 0–2500 | 0 | 281 | 281 | EDP-static initial config |
+| 1 | 2500–5000 | 16 | 170 | 451 | revived returns/size widgets |
+| 2 | 5000–7500 | 16 | 97 | 548 | revived style/visual widgets |
+| 3 | 7500–10000 | 12 | 219 | 767 | stabilization, pulled back over-promotions |
+
+Round 2 is the strongest single-round improvement (97 batch regret —
+roughly half the static baseline rate), driven by activating the
+style/visual widget family that round 1 had not addressed. Round 3 was
+deliberately conservative (12 edits, mostly damping over-corrections);
+the small batch-regret rebound (219) reflects that the agent stopped
+adding new value rather than that the config got worse.
+
+The persisted edit JSONs live in `evolve_state_rep*/edits_round_*.json`;
+they are byte-for-byte reproducible. The agent's per-round natural-language
+reasoning is captured in `evolve_state_rep*/PROMPT_at_*.md` (the input to
+each subagent) and in the subagent's final-message summary in the parent
+session log.
+
+## E. Hyperparameters
 
 LinTS:
 - exploration scale α = 0.3

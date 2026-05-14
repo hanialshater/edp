@@ -182,22 +182,50 @@ def longtable_to_tabular(tex: str) -> str:
                     cnt += 1
             ncols = cnt + 1
         spec = 'l' + 'r' * (ncols - 1)  # first column left, rest right (paper convention)
-        out.append(r'\begin{center}\small' + '\n')
-        out.append(r'\begin{tabular}{' + spec + '}\n')
-        out.append(r'\toprule' + '\n')
-        out.append(body + '\n')
-        out.append(r'\bottomrule' + '\n')
-        out.append(r'\end{tabular}' + '\n')
-        out.append(r'\end{center}' + '\n')
+        # Wide tables (>4 cols) span both columns via table*; small tables
+        # stay inline. Also wrap in resizebox to fit the available width.
+        if ncols > 4:
+            out.append(r'\begin{table*}[t]' + '\n')
+            out.append(r'\centering\small' + '\n')
+            out.append(r'\resizebox{\textwidth}{!}{' + '\n')
+            out.append(r'\begin{tabular}{' + spec + '}\n')
+            out.append(r'\toprule' + '\n')
+            out.append(body + '\n')
+            out.append(r'\bottomrule' + '\n')
+            out.append(r'\end{tabular}}' + '\n')
+            out.append(r'\end{table*}' + '\n')
+        else:
+            out.append(r'\begin{center}\small' + '\n')
+            out.append(r'\begin{tabular}{' + spec + '}\n')
+            out.append(r'\toprule' + '\n')
+            out.append(body + '\n')
+            out.append(r'\bottomrule' + '\n')
+            out.append(r'\end{tabular}' + '\n')
+            out.append(r'\end{center}' + '\n')
         cursor = e
     out.append(tex[cursor:])
     return ''.join(out)
 
 
+def widen_figures(tex: str) -> str:
+    """
+    Convert pandoc's \\begin{figure}...\\end{figure} into figure* (both-column
+    floats) and force \\includegraphics[width=\\textwidth]{...} so figures
+    don't overflow the column.
+    """
+    tex = tex.replace(r'\begin{figure}', r'\begin{figure*}[t]')
+    tex = tex.replace(r'\end{figure}', r'\end{figure*}')
+    # Force-set width on bare \includegraphics{...}
+    tex = re.sub(r'\\includegraphics\{', r'\\includegraphics[width=\\textwidth]{', tex)
+    return tex
+
+
 pandoc(ABSTRACT_MD, ABSTRACT_TEX)
 pandoc(BODY_MD, BODY_TEX)
 ABSTRACT_TEX.write_text(normalize_unicode(ABSTRACT_TEX.read_text()))
-BODY_TEX.write_text(normalize_unicode(longtable_to_tabular(BODY_TEX.read_text())))
+BODY_TEX.write_text(
+    normalize_unicode(widen_figures(longtable_to_tabular(BODY_TEX.read_text())))
+)
 
 # pdflatex twice for refs / TOC
 for run in range(2):

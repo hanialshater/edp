@@ -102,6 +102,18 @@
 % Page-style: page numbers in review version
 \pagestyle{plain}
 
+% Float placement — allow figures to share pages with text more freely
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.7}
+\renewcommand{\textfraction}{0.10}
+\renewcommand{\floatpagefraction}{0.7}
+\renewcommand{\dbltopfraction}{0.85}
+\renewcommand{\dblfloatpagefraction}{0.7}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+\setcounter{dbltopnumber}{3}
+
 % pandoc emits \tightlist when list items have no blank lines between them
 \providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 % pandoc may also emit \pandocbounded for image sizing

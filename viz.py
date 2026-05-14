@@ -564,6 +564,37 @@ def fig7_lab_vs_real(json_path='results_lab_vs_real.json',
     print('  fig7_lab_vs_real.png')
 
 
+def fig_opro_only():
+    """Dedicated OPRO ablation chart: report-agent vs OPRO vs static (parametric)."""
+    bd = load_multiseed('results_multiseed_parametric_cat.npz')
+    oracle = bd['oracle']
+    n = len(oracle)
+    x = np.arange(1, n + 1)
+    agent = load_orch_rewards('evolve_state/state.json', n)
+    opro = load_orch_rewards('opro_state/state.json', n)
+    fig, ax = plt.subplots(figsize=(8.0, 4.6))
+    plot_method(ax, x, cum_regret(bd['edp_static'], oracle), None, 'edp_static')
+    if opro.shape[0] > 0:
+        m, s = band(opro, oracle)
+        plot_method(ax, x, m, s, 'edp_opro')
+    if agent.shape[0] > 0:
+        m, s = band(agent, oracle)
+        plot_method(ax, x, m, s, 'edp_agent', linewidth=2.4)
+    for chk in (2500, 5000, 7500):
+        ax.axvline(chk, color='black', alpha=0.18, linestyle='-', linewidth=0.6)
+    ax.set_xlabel('Session #')
+    ax.set_ylabel('Cumulative regret')
+    ax.set_title('OPRO ablation  ·  same agent, action space, model — '
+                 'only the prompt content differs  ·  bands = ±1 SE')
+    ax.legend(loc='upper left')
+    ax.set_xlim(0, n)
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(f'{FIG_DIR}/fig8_opro_ablation.png')
+    plt.close(fig)
+    print('  fig8_opro_ablation.png')
+
+
 def main():
     print(f'Generating figures into {FIG_DIR}/')
     fig1_cumregret_both()
@@ -573,6 +604,7 @@ def main():
     fig5_category_heatmap()
     fig6_all_baselines()
     fig7_lab_vs_real()
+    fig_opro_only()
     print('done.')
 
 

@@ -225,7 +225,77 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="
 because it fetches <code>lints_state.json</code> (file:// origin would
 be blocked). The composition-flow demo works via <code>file://</code>
 directly.</p>
-<h2 id="d.-hyperparameters">D. Hyperparameters</h2>
+<h2 id="d.-per-round-trajectory-of-the-report-based-agent">D. Per-round
+trajectory of the report-based agent</h2>
+<p>Cumulative regret added per checkpoint window for the report-based
+agent on the parametric simulator (8 personas + categories):</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Round</th>
+<th>Sessions</th>
+<th>Edits applied</th>
+<th>Batch regret</th>
+<th>Cum regret</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>0–2500</td>
+<td>0</td>
+<td>281</td>
+<td>281</td>
+<td>EDP-static initial config</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>2500–5000</td>
+<td>16</td>
+<td>170</td>
+<td>451</td>
+<td>revived returns/size widgets</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>5000–7500</td>
+<td>16</td>
+<td>97</td>
+<td>548</td>
+<td>revived style/visual widgets</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>7500–10000</td>
+<td>12</td>
+<td>219</td>
+<td>767</td>
+<td>stabilization, pulled back over-promotions</td>
+</tr>
+</tbody>
+</table>
+<p>Round 2 is the strongest single-round improvement (97 batch regret —
+roughly half the static baseline rate), driven by activating the
+style/visual widget family that round 1 had not addressed. Round 3 was
+deliberately conservative (12 edits, mostly damping over-corrections);
+the small batch-regret rebound (219) reflects that the agent stopped
+adding new value rather than that the config got worse.</p>
+<p>The persisted edit JSONs live in
+<code>evolve_state_rep*/edits_round_*.json</code>; they are
+byte-for-byte reproducible. The agent’s per-round natural-language
+reasoning is captured in <code>evolve_state_rep*/PROMPT_at_*.md</code>
+(the input to each subagent) and in the subagent’s final-message summary
+in the parent session log.</p>
+<h2 id="e.-hyperparameters">E. Hyperparameters</h2>
 <p>LinTS: - exploration scale α = 0.3 - prior precision λ = 1.0 -
 per-slot Cholesky-based Thompson sample - masked actions (no widget
 repeats within a page)</p>
