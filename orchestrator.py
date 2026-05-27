@@ -28,8 +28,8 @@ import sys
 import numpy as np
 from collections import Counter, defaultdict
 
-from sim import (N_SLOTS, ORACLE_REWARDS, make_session_stream,
-                 true_page_reward, WIDGETS, TRUE_NEEDS)
+from sim import (N_SLOTS, make_session_stream, true_page_reward,
+                 oracle_reward, WIDGETS, TRUE_NEEDS)
 from policy_edp import (EDPPolicy, make_problem_shapes, make_modules,
                         apply_edits, score_problems, PROBLEMS, PROBLEM_NAMES)
 
@@ -70,18 +70,20 @@ def run_batch(state, until_idx, seed=42):
     new_logs = []
     start = state['session_idx']
     for i in range(start, until_idx):
-        persona, feat = stream[i]
+        persona, category, feat = stream[i]
         page = policy.select_page(feat)
-        r = true_page_reward(persona, page)
+        r = true_page_reward(persona, category, page)
+        o = oracle_reward(persona, category)
         rewards.append(r)
-        oracle.append(ORACLE_REWARDS[persona])
+        oracle.append(o)
         new_logs.append({
             'i': i,
             'persona': persona,
+            'category': category,
             'page': page,
             'reward': round(r, 4),
-            'oracle': round(ORACLE_REWARDS[persona], 4),
-            'regret': round(ORACLE_REWARDS[persona] - r, 4),
+            'oracle': round(o, 4),
+            'regret': round(o - r, 4),
         })
     state['session_idx'] = until_idx
     state['rewards'] = rewards

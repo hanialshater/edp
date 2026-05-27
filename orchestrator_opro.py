@@ -22,8 +22,8 @@ import os
 import sys
 import numpy as np
 
-from sim import (N_SLOTS, ORACLE_REWARDS, make_session_stream,
-                 true_page_reward)
+from sim import (N_SLOTS, make_session_stream, true_page_reward,
+                 oracle_reward)
 from policy_edp import EDPPolicy, make_modules, apply_edits
 
 STATE_DIR = os.environ.get('EDP_STATE_DIR', 'opro_state')
@@ -62,13 +62,14 @@ def run_batch(state, until_idx, seed=42):
     batch_reward = 0.0
     batch_oracle = 0.0
     for i in range(start, until_idx):
-        persona, feat = stream[i]
+        persona, category, feat = stream[i]
         page = policy.select_page(feat)
-        r = true_page_reward(persona, page)
+        r = true_page_reward(persona, category, page)
+        o = oracle_reward(persona, category)
         rewards.append(r)
-        oracle.append(ORACLE_REWARDS[persona])
+        oracle.append(o)
         batch_reward += r
-        batch_oracle += ORACLE_REWARDS[persona]
+        batch_oracle += o
     state['session_idx'] = until_idx
     state['rewards'] = rewards
     state['oracle'] = oracle

@@ -77,7 +77,22 @@ def effective_needs(persona_name: str, category: str) -> dict:
     return dict(_EFFECTIVE_CACHE[(persona_name, category)])
 
 
-def true_page_reward(persona_name: str, category: str, page: list[str]) -> float:
+def _category_mix_items():
+    total = sum(CATEGORY_MIX.values())
+    for category, weight in CATEGORY_MIX.items():
+        yield category, weight / total
+
+
+def true_page_reward(persona_name: str, category: str | list[str],
+                     page: list[str] | None = None) -> float:
+    if page is None:
+        # Back-compat for old callers: true_page_reward(persona, page).
+        # Return the category-mixture expectation instead of choosing a
+        # synthetic category.
+        old_page = category
+        return sum(w * true_page_reward(persona_name, c, old_page)
+                   for c, w in _category_mix_items())
+
     _ensure_loaded()
     needs = dict(_EFFECTIVE_CACHE[(persona_name, category)])
     remaining = dict(needs)
@@ -90,8 +105,12 @@ def true_page_reward(persona_name: str, category: str, page: list[str]) -> float
     return total
 
 
-def oracle_reward(persona_name: str, category: str) -> float:
+def oracle_reward(persona_name: str, category: str | None = None) -> float:
     _ensure_loaded()
+    if category is None:
+        # Back-compat for old callers: oracle_reward(persona).
+        return sum(w * _ORACLE_CACHE[(persona_name, c)]
+                   for c, w in _category_mix_items())
     return _ORACLE_CACHE[(persona_name, category)]
 
 
@@ -122,6 +141,20 @@ class _LazyDict:
         return len(self._getter())
 
 
+class _OracleRewardsDict(_LazyDict):
+    def __getitem__(self, k):
+        data = self._getter()
+        if isinstance(k, tuple):
+            return data[k]
+        return oracle_reward(k)
+
+    def __contains__(self, k):
+        data = self._getter()
+        if isinstance(k, tuple):
+            return k in data
+        return any(p == k for p, _ in data)
+
+
 def _persona_needs():
     _ensure_loaded()
     return _TRUE_NEEDS_CACHE
@@ -133,4 +166,4 @@ def _oracle_table():
 
 
 TRUE_NEEDS = _LazyDict(_persona_needs)         # persona -> base needs
-ORACLE_REWARDS = _LazyDict(_oracle_table)       # (persona, category) -> oracle
+ORACLE_REWARDS = _OracleRewardsDict(_oracle_table)  # (persona, category) -> oracle

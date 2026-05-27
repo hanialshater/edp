@@ -24,8 +24,8 @@ import os
 import time
 import numpy as np
 
-from sim import (N_SLOTS, ORACLE_REWARDS, make_session_stream,
-                 true_page_reward, DelayedFeedback)
+from sim import (N_SLOTS, make_session_stream, true_page_reward,
+                 oracle_reward, DelayedFeedback)
 from policy_edp import EDPPolicy, make_problem_shapes, load_edits_json
 from policy_bandit import BanditPolicy, context_cold, context_warm
 
@@ -38,15 +38,15 @@ def run_edp(stream, policy: EDPPolicy, evolution_schedule=None, label='edp'):
     rewards = np.zeros(len(stream))
     optimal = np.zeros(len(stream))
     pages = []
-    for i, (persona, feat) in enumerate(stream):
+    for i, (persona, category, feat) in enumerate(stream):
         while next_chk < len(schedule) and schedule[next_chk][0] == i:
             edits = schedule[next_chk][1]
             policy.apply_edit_batch(edits)
             print(f'    [{label}] applied {len(edits)} edits at session {i}')
             next_chk += 1
         page = policy.select_page(feat)
-        rewards[i] = true_page_reward(persona, page)
-        optimal[i] = ORACLE_REWARDS[persona]
+        rewards[i] = true_page_reward(persona, category, page)
+        optimal[i] = oracle_reward(persona, category)
         pages.append(page)
     return rewards, optimal, pages
 
@@ -56,15 +56,15 @@ def run_bandit(stream, policy: BanditPolicy, ctx_fn, delay: int,
     rewards = np.zeros(len(stream))
     optimal = np.zeros(len(stream))
     fb = DelayedFeedback(delay=delay, noise_sigma=noise_sigma, seed=noise_seed)
-    for i, (persona, feat) in enumerate(stream):
+    for i, (persona, category, feat) in enumerate(stream):
         # Drain feedback whose delay window has elapsed
         for r_obs, payload in fb.drain_ready(i):
             policy.record_feedback(payload, r_obs)
         x = ctx_fn(feat)
         page, payload = policy.select_page_with_payload(x)
-        r_true = true_page_reward(persona, page)
+        r_true = true_page_reward(persona, category, page)
         rewards[i] = r_true
-        optimal[i] = ORACLE_REWARDS[persona]
+        optimal[i] = oracle_reward(persona, category)
         fb.submit(i, r_true, payload)
         if (i + 1) % 2500 == 0:
             recent = rewards[max(0, i - 500):i + 1].mean()
@@ -126,7 +126,7 @@ def main():
     t0_total = time.time()
 
     # Oracle (no policy)
-    oracle = np.array([ORACLE_REWARDS[p] for p, _ in stream])
+    oracle = np.array([oracle_reward(p, c) for p, c, _ in stream])
 
     # EDP static
     if 'edp_static' in requested:
@@ -182,7 +182,8 @@ def main():
 
     # Save
     np.savez(args.out, oracle=oracle,
-             stream_personas=np.array([p for p, _ in stream]),
+             stream_personas=np.array([p for p, _, _ in stream]),
+             stream_categories=np.array([c for _, c, _ in stream]),
              **{k: v for k, v in results.items()})
     print(f'\nResults saved -> {args.out}')
 
