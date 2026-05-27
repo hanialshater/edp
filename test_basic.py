@@ -10,17 +10,18 @@ from policy_bandit import BanditPolicy, context_warm, context_cold
 
 def test_oracle_dominates_random():
     rng = np.random.default_rng(0)
-    for persona in ORACLE_REWARDS:
-        oracle = ORACLE_REWARDS[persona]
+    for persona, category in ORACLE_REWARDS:
+        oracle = oracle_reward(persona, category)
         rand_page = list(rng.choice(WIDGETS, size=N_SLOTS, replace=False))
-        r_rand = true_page_reward(persona, rand_page)
-        assert oracle >= r_rand - 1e-9, f'{persona}: oracle {oracle} < random {r_rand}'
+        r_rand = true_page_reward(persona, category, rand_page)
+        key = f'{persona}/{category}'
+        assert oracle >= r_rand - 1e-9, f'{key}: oracle {oracle} < random {r_rand}'
 
 
 def test_pwl_problem_in_unit_interval():
     shapes = make_problem_shapes()
     stream = make_session_stream(500, seed=1)
-    for _, feat in stream:
+    for _, _, feat in stream:
         p = score_problems(feat, shapes)
         for k, v in p.items():
             assert 0.0 <= v <= 1.0, f'{k}={v} out of [0,1]'
@@ -29,7 +30,7 @@ def test_pwl_problem_in_unit_interval():
 def test_edp_returns_unique_widgets():
     pol = EDPPolicy()
     stream = make_session_stream(200, seed=2)
-    for _, feat in stream:
+    for _, _, feat in stream:
         page = pol.select_page(feat)
         assert len(page) == N_SLOTS
         assert len(set(page)) == N_SLOTS
@@ -67,7 +68,7 @@ def test_bandit_select_returns_distinct_widgets():
     pol = BanditPolicy(ctx_dim=7, seed=0)
     shapes = make_problem_shapes()
     stream = make_session_stream(20, seed=3)
-    for _, feat in stream:
+    for _, _, feat in stream:
         x = context_warm(feat, shapes)
         page, payload = pol.select_page_with_payload(x)
         assert len(page) == N_SLOTS
@@ -78,7 +79,7 @@ def test_bandit_select_returns_distinct_widgets():
 
 def test_context_cold_dim():
     stream = make_session_stream(5, seed=4)
-    for _, feat in stream:
+    for _, _, feat in stream:
         x = context_cold(feat)
         assert x.shape == (14,)
 

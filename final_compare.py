@@ -3,7 +3,7 @@ Final head-to-head: load all method trajectories on the same 10k-session
 stream and report cumulative regret at milestone sessions.
 
 Methods:
-  - oracle              (per-session upper bound from sim.ORACLE_REWARDS)
+  - oracle              (per-session upper bound from sim.oracle_reward)
   - edp_static          (no evolution, from results_prod_stack.npz)
   - edp_evolved_canned  (canned edits at 2500/5000/7500, from results_prod_stack.npz)
   - bandit_warm         (LinTS warm context under production stack, from results_prod_stack.npz)
@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import numpy as np
 
-from sim import make_session_stream, ORACLE_REWARDS
+from sim import make_session_stream, oracle_reward
 
 
 def load_npz_results(path='results_prod_stack.npz'):
@@ -37,7 +37,7 @@ def main():
     # All methods use the same session stream (seed=42, n=10000).
     n = 10000
     stream = make_session_stream(n, seed=42)
-    oracle = np.array([ORACLE_REWARDS[p] for p, _ in stream])
+    oracle = np.array([oracle_reward(p, c) for p, c, _ in stream])
 
     npz = load_npz_results('results_prod_stack.npz')
     r_report, o_report = load_orchestrator_rewards('evolve_state/state.json')

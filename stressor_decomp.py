@@ -13,16 +13,16 @@ import json
 import time
 import numpy as np
 
-from sim import (N_SLOTS, ORACLE_REWARDS, TRUE_NEEDS, TRUE_PROVISIONS,
-                 WIDGETS, make_session_stream, true_page_reward,
+from sim import (N_SLOTS, TRUE_PROVISIONS, WIDGETS, make_session_stream,
+                 oracle_reward, effective_needs,
                  DelayedFeedback)
 from policy_bandit import BanditPolicy, context_warm
 from policy_edp import make_problem_shapes
 
 
-def true_slot_rewards(persona_name: str, page: list[str]) -> list[float]:
+def true_slot_rewards(persona_name: str, category: str, page: list[str]) -> list[float]:
     """Per-slot reward (diminishing returns model). Used for per-slot attribution."""
-    needs = dict(TRUE_NEEDS[persona_name])
+    needs = effective_needs(persona_name, category)
     remaining = dict(needs)
     slot_r = []
     for widget in page:
@@ -44,7 +44,7 @@ def run_bandit_condition(stream, ctx_fn, ctx_dim, delay: int, noise: float,
                for s in range(N_SLOTS)]
     fb = DelayedFeedback(delay=delay, noise_sigma=noise, seed=noise_seed)
     rewards = np.zeros(len(stream))
-    for i, (persona, feat) in enumerate(stream):
+    for i, (persona, category, feat) in enumerate(stream):
         for r_obs, payload in fb.drain_ready(i):
             for slot, a, x in payload:
                 if page_attribution:
@@ -63,7 +63,7 @@ def run_bandit_condition(stream, ctx_fn, ctx_dim, delay: int, noise: float,
             page.append(WIDGETS[a])
             slot_choices.append((slot, int(a), x))
             used[a] = True
-        slot_r = true_slot_rewards(persona, page)
+        slot_r = true_slot_rewards(persona, category, page)
         page_total = sum(slot_r)
         rewards[i] = page_total
         if page_attribution:
@@ -85,7 +85,7 @@ def run_bandit_condition(stream, ctx_fn, ctx_dim, delay: int, noise: float,
 def main():
     n = 10_000
     stream = make_session_stream(n, seed=42)
-    oracle = np.array([ORACLE_REWARDS[p] for p, _ in stream])
+    oracle = np.array([oracle_reward(p, c) for p, c, _ in stream])
     shapes = make_problem_shapes()
     ctx_fn = lambda f: context_warm(f, shapes)
 

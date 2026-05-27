@@ -18,8 +18,8 @@ import time
 import numpy as np
 import os
 
-from sim import (N_SLOTS, ORACLE_REWARDS, make_session_stream,
-                 true_page_reward, DelayedFeedback)
+from sim import (N_SLOTS, make_session_stream, true_page_reward,
+                 oracle_reward, DelayedFeedback)
 from policy_edp import EDPPolicy, make_problem_shapes, load_edits_json
 from policy_bandit import BanditPolicy, context_warm, context_cold
 
@@ -29,12 +29,12 @@ def run_bandit_rep(stream, oracle, ctx_fn, ctx_dim, delay, noise_sigma,
     pol = BanditPolicy(ctx_dim=ctx_dim, alpha=alpha, seed=policy_seed)
     fb = DelayedFeedback(delay=delay, noise_sigma=noise_sigma, seed=noise_seed)
     rewards = np.zeros(len(stream))
-    for i, (persona, feat) in enumerate(stream):
+    for i, (persona, category, feat) in enumerate(stream):
         for r_obs, payload in fb.drain_ready(i):
             pol.record_feedback(payload, r_obs)
         x = ctx_fn(feat)
         page, payload = pol.select_page_with_payload(x)
-        r = true_page_reward(persona, page)
+        r = true_page_reward(persona, category, page)
         rewards[i] = r
         fb.submit(i, r, payload)
     for r_obs, payload in fb.drain_all():
@@ -45,8 +45,8 @@ def run_bandit_rep(stream, oracle, ctx_fn, ctx_dim, delay, noise_sigma,
 def run_edp_static(stream, oracle):
     pol = EDPPolicy()
     rewards = np.zeros(len(stream))
-    for i, (persona, feat) in enumerate(stream):
-        rewards[i] = true_page_reward(persona, pol.select_page(feat))
+    for i, (persona, category, feat) in enumerate(stream):
+        rewards[i] = true_page_reward(persona, category, pol.select_page(feat))
     return rewards
 
 
@@ -59,11 +59,11 @@ def run_edp_canned(stream, oracle, edits_dir='edits'):
     ]
     schedule_idx = 0
     rewards = np.zeros(len(stream))
-    for i, (persona, feat) in enumerate(stream):
+    for i, (persona, category, feat) in enumerate(stream):
         while schedule_idx < len(schedule) and i == schedule[schedule_idx][0]:
             pol.apply_edit_batch(schedule[schedule_idx][1])
             schedule_idx += 1
-        rewards[i] = true_page_reward(persona, pol.select_page(feat))
+        rewards[i] = true_page_reward(persona, category, pol.select_page(feat))
     return rewards
 
 
@@ -80,7 +80,7 @@ def main():
     print(f'  n={args.n}, reps={args.reps}, delay={args.delay}, sigma={args.noise}')
 
     stream = make_session_stream(args.n, seed=42)
-    oracle = np.array([ORACLE_REWARDS[p] for p, _ in stream])
+    oracle = np.array([oracle_reward(p, c) for p, c, _ in stream])
     shapes = make_problem_shapes()
 
     # Deterministic methods: one trace each
