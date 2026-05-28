@@ -677,25 +677,15 @@ The deployment claim that survives both simulators is that the GAM primitive lau
 
 We did not run a separate "warmup-required" experiment; the §5.1 results are the warmup-required result, read in the cold-start frame.
 
-### 5.8 Bracketing baselines and Robust-EDP wrapper
+### 5.8 Bracketing baselines
 
-Two simple baselines bracket the production-stack comparison from below:
-
-**Static widgets.** Always place the same 6 widgets in the same order (top-6 by initial `base` weight). No personalization, no category awareness. **40.7 %** oracle reward lost on the LLM simulator.
-
-**LLM-as-policy (Software 3.0 one-shot).** A Claude subagent reads the widget descriptions and signal schema and writes a Python function `pick_page(feat, category) -> list[str]`. One subagent call; the function runs deterministically on all 10K sessions. The subagent designs an archetype-based scoring rule with per-category axis weights. The LLM sees only the context features, not persona names or true-needs / provisions. **35.7 %** loss.
-
-The progression on the LLM simulator: static defaults 40.7 %, LLM-writes-policy 35.7 %, online bandits 17–23 %, static GAM 19.8 %, offline-curated edits 15.0 %, report-based agent 13.3 ± 0.8 %, Bayesian-EDP 11.0 ± 0.2 %. Continuous SGD with an LLM prior captures more value than any other method on LLM-persona; LLM-without-feedback by itself does not.
-
-**Robust-EDP wrapper.** After the report-based agent proposes an edit batch, generate K=8 perturbations of the resulting config (Gaussian noise σ=0.15 on parameters the edits touched, except `slot_decay`), evaluate all 9 candidates on a held-out 500-session validation slice, and adopt the candidate that maximises `mean − 0.5 · std`. Result on a single rep: cum regret 2,341 (11.7 %) vs 2,380 (11.9 %) for that same rep of plain EDP-agent on the LLM simulator. The single-rep figure is well within the multi-seed SE of EDP-agent (13.3 ± 0.8 %), so the wrapper's apparent win does not survive replication. Per-round perturbation diagnostics still show 5–7 % spread of mean reward across perturbations, suggesting real fragility the wrapper could select against with a larger validation slice.
+Two baselines bracket the production-stack comparison from below. **Static widgets** (the same top-6 by `base`, no personalization) loses **40.7 %** on the LLM simulator. **LLM-as-policy** — a Claude subagent writes a deterministic `pick_page(feat, category)` from the widget/signal schema only (no persona names, no ground truth), run on all 10K sessions — loses **35.7 %**. The full progression on LLM-persona: static 40.7 % → LLM-writes-policy 35.7 % → online bandits 17–23 % (10.5 % tuned, §5.3) → static GAM 19.8 % → offline-curated edits 15.0 % → report-based agent 13.3 ± 0.8 % → Bayesian-EDP 11.0 ± 0.2 %. A one-shot LLM policy is weak; the LLM's value is as a prior plus an edit/SGD channel, not as a direct policy writer.
 
 ![Figure 7: Full baseline panel across simulators. Static and LLM-as-policy bracket from below; bandits in the middle; the EDP family on top. Bayesian-EDP is best on LLM-persona (11.0%); EDP-agent is best on parametric (6.5%). Error bars are ±1 SE across replicates.](figures/fig6_all_baselines.png)
 
-### 5.9 Non-stationarity: drift and structural exploration
+### 5.9 Non-stationarity: drift
 
-Two production realities the previous sections did not address: the persona distribution changes over time, and the widget catalog grows. Both happen mid-stream.
-
-**Drift test.** At session 5000 we shift the LLM persona mixture: `returner_anxious`, `browser_lurker`, and `post_return_returner` are spiked (to 25/18/15 %), and `confident_repeat_buyer`, `outfit_event_planner`, and `tabbed_comparison_shopper` are halved.
+At session 5000 we shift the LLM persona mixture (spike `returner_anxious`/`browser_lurker`/`post_return_returner` to 25/18/15 %, halve three others):
 
 | Method | Pre-drift (0–5K) | Post-drift (5K–10K) | Full |
 |---|---|---|---|
@@ -704,40 +694,23 @@ Two production realities the previous sections did not address: the persona dist
 | **EDP-agent** | **15.8 %** | **8.2 %** | **11.9 %** |
 | LinTS-warm | 23.5 ± 0.1 % | 19.7 ± 0.1 % | 21.5 ± 0.1 % |
 
-Every method's regret-percent drops post-drift, for the mixture reason below; what differs is by how much. EDP-agent drops the most (−7.6 pp, 15.8 → 8.2): its checkpoint at 7500 sees the new mixture in the report and its edits target the new high-traffic personas. EDP-canned half-recovers by accident (−5.3 pp): its canned edits over-cover trust/return widgets, which is what the spiked personas need. EDP-static drops the least (−0.9 pp): it cannot adapt, so it only inherits the mixture effect. (As in §5.6 the bandit shown is LinTS-warm, the only method here reported multi-seed; CombLinUCB-warm would be a few pp lower in absolute terms but the cross-method pattern is unchanged. The EDP rows are single-trajectory, so treat the gaps as indicative, not significance-tested.)
+Every method's regret-% drops post-drift, partly because the drifted mixture has higher mean oracle reward (2.13 vs 2.00) — richer-need personas, more captureable upside. The differential is what matters: EDP-agent drops most (−7.6 pp), because its round-7500 checkpoint reads the new mixture and re-targets; EDP-static drops least (−0.9 pp), inheriting only the mixture effect. About half of EDP-agent's gain is the bigger pie, half is genuine adaptation. EDP rows are single-trajectory (indicative, not significance-tested); the bandit row is multi-seed.
 
-One source of the across-the-board post-drift drop is mixture-driven, not learning-driven. The drifted mixture's mean oracle reward is 2.13 (post-drift) vs 2.00 (pre-drift), since the spiked personas (`returner_anxious`, `post_return_returner`, `browser_lurker`) have richer effective-need vectors than the suppressed personas (`confident_repeat_buyer`, `outfit_event_planner`). All regret percentages are already normalised by oracle, so this 6.7 % shift in absolute oracle doesn't directly account for the 7.6 pp regret improvement EDP-agent shows, but it does mean the post-drift segment has more captureable upside in raw terms. About half of EDP-agent's improvement is capturing a similar fraction of a bigger pie, and the other half is the round-7500 checkpoint genuinely adapting. The accurate framing: EDP-agent recovers from drift cleanly and benefits from the mixture shift. It does not get monotonically smarter as it sees more drifted data.
+### 5.10 Single-trial capability demonstrations
 
-**Structural exploration.** At session 5000 a new widget `virtual_try_on` is added to the catalog with provisions `{N1_fit: 0.65, N2_visual: 0.45, N6_trust: 0.20}`. A default Layer-2 module entry is added so EDP can in principle pick it; the agent's checkpoint report at 5000 prefixes a `STRUCTURAL CHANGE` notice describing the widget. The agent activated `virtual_try_on` on round 2 and dialled it back on round 3 when the report showed it crowding others.
+Three mechanisms that the edit grammar enables but that we have only run once each. We report them as *capability* demonstrations and, per §7, none supports a quantitative claim until replicated at K ≥ 5; all three come out statistically tied with their baseline.
 
-| Method | Pre-add (0–5K) | Post-add (5K–10K) | Full |
-|---|---|---|---|
-| EDP-agent (no exploration) | 15.4 % | 9.6 % | 12.4 % |
-| **EDP-agent + structural exploration** | **15.4 %** | **9.7 %** | **12.5 %** |
-
-The post-add result is statistically tied with no-exploration. The new widget did not pay off in this run. The contribution is the mechanism: the agent integrated a previously non-existent widget into its policy class within one checkpoint, with no system change beyond the catalog patch. Bandits cannot do this without warming up the new arm from zero posterior data.
-
-### 5.10 What doesn't work: ensemble selection
-
-A natural extension of the report-based agent is to draw multiple edit batches per checkpoint and pick the best on a held-out validation slice, analogous to the Robust-EDP wrapper of §5.8 but with diverse subagent draws instead of parameter perturbations. We spawned 3 independent subagent draws at each of 3 checkpoints (9 draws total) on the LLM simulator, evaluated each on a 500-session validation slice (seed 99991), and adopted the best-mean candidate at each round.
-
-| Variant | Cum regret @ 10K | % oracle lost |
-|---|---|---|
-| EDP-agent (multi-seed mean, N=3) | — | 13.3 ± 0.8 % |
-| Robust EDP (single-rep, §5.8) | 2,341 | 11.7 % |
-| EDP-agent + 3-draw ensemble (single-rep) | 2,741 | 13.7 % |
-
-The ensemble's 13.7 % sits within the multi-seed SE of EDP-agent (13.3 ± 0.8 %). The original draft framed this as a clear negative result, but with the canonical multi-seed numbers the ensemble is statistically indistinguishable from a single draw. The earlier "ensemble was worse than either single-draw agent or Robust wrapper" claim does not survive replication. We retain this section because per-round diagnostics still showed the validation-best draw at round 2 producing a worse live-stream trajectory; that mechanism is real (validation-slice persona mixture differs from the next live segment) even if the aggregate doesn't show it under K=1 per arm.
-
-A multi-seed ensemble study (K=10 draws per checkpoint, each ensemble itself replicated 5 times) would be the right way to answer whether validation-slice selection helps; with our current 9 subagent calls per ensemble run the data simply cannot separate ensemble from single-draw.
-
-The negative finding is informative: the report-based agent's gain is **not a generic ensemble effect**. Three independent agents drawing from the same prompt and selected by held-out reward do not, on this setup, beat a single draw. Whatever the agent is doing right (§5.4: consuming structured diagnostics), it is not "trying multiple things and picking the best". Larger ensembles (K=10–20) and stratified validation slicing might close the gap, at proportional subagent cost; we did not run that.
+- **Robust-EDP wrapper.** Generate K=8 perturbations of the agent's edit batch, pick the best on a 500-session validation slice. Single rep: 11.7 % vs 11.9 % for plain EDP-agent on LLM — within the 13.3 ± 0.8 % multi-seed SE, so the apparent win does not survive. Per-round diagnostics show 5–7 % reward spread across perturbations, i.e. real fragility a larger validation slice could select against.
+- **Structural exploration.** A new widget `virtual_try_on` is added to the catalog at session 5000 with a `STRUCTURAL CHANGE` notice in the report; the agent activates it on round 2 and dials it back on round 3. Regret is unchanged (12.5 % vs 12.4 %), but the mechanism is the point: the agent integrated a previously non-existent widget within one checkpoint, no system change beyond the catalog patch — something a bandit cannot do without warming the new arm from zero.
+- **Ensemble selection.** Three independent subagent draws per checkpoint, best-on-validation adopted: 13.7 %, within the 13.3 ± 0.8 % SE. The informative negative: the report-based gain is *not* a generic "try several, keep the best" effect (§5.4 attributes it to structured diagnostics); three draws selected on held-out reward do not beat one draw here.
 
 ## 6. Discussion
 
 ### 6.0 What the GAM class buys when regret is a tie
 
-§5.3 is deliberately deflationary: a tuned, feature-matched per-slot bandit matches the best GAM on regret on the primary simulator. If regret were the only axis, the honest verdict would be "use whichever your team can tune." The reason to prefer the GAM policy class is four properties it has *and the bandit does not*, each visible in the orchestrator demo's four-column composition flow (clickstream → problem fingerprint → widget registry → page) and each scoped here to the evidence that supports it:
+§5.3 is deliberately deflationary, and we say it plainly: **bandits are strong**. Tuned and handed the EDP problem-features, a per-slot bandit matches the best GAM on regret on the primary simulator. On the regret axis the honest verdict is "use whichever your team can tune."
+
+The reason to prefer the GAM class is a different axis the bandit has no analogue for: **the policy is an LLM-authored, LLM-editable, human-readable artifact.** This is the unique contribution. A bandit's intelligence lives in per-arm posteriors that no LLM can author from domain knowledge, no human can read as a page of curves, and no agent can edit with a one-line reasoned diff. EDP's lives in 245 named scalars on a typed grammar that all three can. Every other distinguishing property below is a *consequence* of that one — they are what LLM-edit closure buys, each visible in the orchestrator demo's four-column flow (clickstream → problem fingerprint → widget registry → page) and scoped to its evidence:
 
 1. **It follows the customer through the funnel by construction.** The same signal → problem → widget pipeline instantiates on every surface (the demo carries registries for Home, Search, Category, Product, Cart, Checkout, Post-purchase); a problem like *return hesitation* detected on the PDP is the same latent that re-weights a cart-page or post-purchase widget. A per-slot bandit's arms are surface-local and its learned posteriors do not transfer across surfaces. *Scope: our experiments evaluate the Product surface only; multi-surface transfer is a demonstrated architecture capability (shared Layer-1 taxonomy, per-surface Layer-2), not an evaluated result (§7).*
 
@@ -747,20 +720,11 @@ The negative finding is informative: the report-based agent's gain is **not a ge
 
 4. **It is expandable by both coding agents and humans.** Because the policy is named scalars on a typed grammar, a new problem dimension, a new widget, or a reshaped curve is a small reviewable diff — emittable by the LLM agent (§3.3) or hand-written by a PM in a PR (the same grammar). §5.4d adds a Layer-1 curve-edit capability and §5.9 adds a new widget mid-run; the demo lets a human drag a breakpoint and watch the composition change. *Scope: the edit grammar and the mid-run add are demonstrated capabilities; that structural growth reliably improves regret is not yet shown at multi-seed (§7), and we are explicit about that.*
 
-The throughline: when two policy classes tie on the benchmark's headline metric, the tie-breaker is which class a team can *operate, audit, and extend*. That is the case for the GAM class, and it is a different kind of claim than a regret margin — one the benchmark enables a reader to inspect (the demo) but does not by itself prove. We state it as the paper's qualitative thesis, kept separate from the quantitative leaderboard.
+The throughline: bandits win or tie on regret, but only the LLM-editable GAM can be *authored, audited, and extended as readable code*. When the metric ties, that is the deciding axis, and it is the paper's qualitative thesis — inspectable in the demo, distinct from (and not proven by) the leaderboard.
 
 ### 6.1 GAMs as Software 3.0 primitive
 
-The framing of this paper is that the GAM is not a baseline policy class we happened to choose; it is the **symbolic substrate** that makes the Software 3.0 loop work for online decisions. Classic ML: collect logs → train black-box model → deploy. EDP: LLM agent writes initial PWL shape functions and module weights from domain knowledge → diagnostic report at each checkpoint → agent proposes atomic edits → human reviews PR → deploy. The unit of work is *a named scalar with a reason*, not a weight update.
-
-The four closure properties of §1 each have a sharp practical consequence here, beyond what we quantified in §3.4:
-
-- *Cold start collapses.* The LLM authors a competent initial policy from domain knowledge (zero training data). A bandit pays an exploration tax to discover the same structure from clicks. For arms with low N per cell, which is the production reality, that exploration tax never amortises.
-- *Edits are atomic.* A PR diff is one scalar change, auditable in seconds. The same diff is simultaneously a behaviour change and an explanation change; the two cannot desynchronise because the policy class is the explanation. A coding agent editing a 10K-line policy codebase does not get this property for free, because the agent has to read the surrounding code each round to remember what an edit means.
-- *The whole policy is in working memory.* About 3,200 tokens of policy plus diagnostic report plus edit grammar is small enough for the agent to reason globally. The agent can change a Layer-1 weight and simultaneously add a Layer-2 synergy that depends on the new weight, in the same edit batch. A larger codebase forces local edits and loses this property.
-- *Policy class grows.* The edit grammar extends naturally to new shape functions, new widgets, and new synergies, which is a structural growth direction a fixed-policy bandit cannot take. §5.4d and §5.9 exercise this affordance; the single-trial wins are small (multi-seed evaluation is open work), but the capability is what the primitive enables.
-
-The deeper claim is closure under edits. A neural net is not closed under LLM edits, since there is no addressable handle on `weights[847][22]`. A large codebase is not closed under single-checkpoint LLM edits, since the agent cannot hold the full surface globally. A 245-parameter named GAM sits in the sweet spot between the two: small enough that the whole policy is the prompt, large enough to express a competitive policy, and structured enough that every edit is well-typed and locally meaningful. We did not invent any of the components; GAMs, LLM authorship, agent-edited code, and plot-based interpretability all predate this work. To our knowledge, the fit between them, and the resulting closure property, has not been crisply identified before. The empirical chapters of the paper exist to substantiate that the fit is real, by showing that a primitive with these closure properties is competitive with the strongest non-primitive baselines.
+§6.0 argued the unique axis; this is the novelty claim about it. We did not invent any component — GAMs, LLM authorship, agent-edited code, and plot-based interpretability all predate this work. The contribution is their *fit*: a 245-parameter named GAM sits in a sweet spot a neural net and a 10K-line codebase both miss. A neural net is not closed under LLM edits (no addressable handle on `weights[847][22]`); a large codebase is not closed under *single-checkpoint* LLM edits (the agent cannot hold the full surface globally). The named GAM is small enough that the whole policy (~3,200 tokens with the diagnostic report) is the prompt, so the agent can change a Layer-1 weight and add a dependent Layer-2 synergy in one batch, yet large enough to express a competitive policy. To our knowledge this fit, and the resulting closure-under-edits property, has not been crisply identified before; the empirical chapters exist to show the fit is real — competitive with the strongest baselines, not a toy.
 
 ### 6.2 Explainability is architectural, not bolted on
 
