@@ -1,4 +1,4 @@
-"""Build the plain (single-column) paper.pdf from paper.md.
+"""Build the plain (single-column) paper.pdf from paper/paper.md.
 
 pdflatex doesn't speak Unicode without per-symbol macros, and lualatex
 is missing luaotfload in this image. We pre-process paper.md to:
@@ -11,7 +11,7 @@ is missing luaotfload in this image. We pre-process paper.md to:
 
 then hand off to pandoc + pdflatex.
 
-Output: paper.pdf at the repo root.
+Output: paper/paper.pdf.
 """
 from __future__ import annotations
 import re
@@ -19,9 +19,10 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / 'paper.md'
-TMP_MD = ROOT / 'paper.normalized.md'
-OUT = ROOT / 'paper.pdf'
+PAPER_DIR = ROOT / 'paper'
+SRC = PAPER_DIR / 'paper.md'
+TMP_MD = PAPER_DIR / 'paper.normalized.md'
+OUT = PAPER_DIR / 'paper.pdf'
 
 # Substitutions for prose. Use raw-TeX `\(...\)` math instead of `$...$`
 # because pandoc's tex_math_dollars heuristics drop the dollars around
@@ -172,9 +173,9 @@ def main() -> None:
             '-V', 'geometry:margin=1in',
             '-V', 'linkcolor:blue',
             '-V', 'urlcolor:blue',
-            '--resource-path', f'.:{ROOT}:{ROOT / "figures"}',
+            '--resource-path', f'.:{PAPER_DIR}:{PAPER_DIR / "figures"}',
             '--metadata', 'title=Evolvable Decision Programs',
-        ], check=True, cwd=ROOT)
+        ], check=True, cwd=PAPER_DIR)
         print(f'OK -> {OUT}')
     finally:
         TMP_MD.unlink(missing_ok=True)

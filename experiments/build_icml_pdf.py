@@ -12,11 +12,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent.resolve()
-MD = ROOT / 'paper.md'
-ABSTRACT_TEX = ROOT / 'paper-abstract.tex'
-BODY_TEX = ROOT / 'paper-body.tex'
-ABSTRACT_MD = ROOT / 'paper-abstract.md'
-BODY_MD = ROOT / 'paper-body.md'
+PAPER_DIR = ROOT / 'paper'
+MD = PAPER_DIR / 'paper.md'
+ABSTRACT_TEX = PAPER_DIR / 'paper-abstract.tex'
+BODY_TEX = PAPER_DIR / 'paper-body.tex'
+ABSTRACT_MD = PAPER_DIR / 'paper-abstract.md'
+BODY_MD = PAPER_DIR / 'paper-body.md'
 
 src = MD.read_text()
 
@@ -254,11 +255,11 @@ for run in range(2):
     print(f'pdflatex run {run+1}...')
     r = subprocess.run(
         ['pdflatex', '-interaction=nonstopmode', '-halt-on-error', 'paper-icml.tex'],
-        cwd=str(ROOT),
+        cwd=str(PAPER_DIR),
         capture_output=True)
     if r.returncode != 0:
         print('pdflatex FAILED. last 60 lines:')
         out = r.stdout.decode('utf-8', errors='replace')
         print('\n'.join(out.splitlines()[-60:]))
         sys.exit(2)
-print('OK -> paper-icml.pdf')
+print(f'OK -> {PAPER_DIR / "paper-icml.pdf"}')

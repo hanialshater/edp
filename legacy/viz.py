@@ -16,7 +16,7 @@ from matplotlib.patches import Patch
 
 from edp import make_session_stream, oracle_reward, TRUE_NEEDS
 
-FIG_DIR = 'figures'
+FIG_DIR = '../paper/figures'
 os.makedirs(FIG_DIR, exist_ok=True)
 
 plt.rcParams.update({

@@ -48,7 +48,7 @@ PROBLEM_LABEL = {
 }
 
 
-def fig9_pwl_shapes(out='figures/fig9_pwl_shapes.png'):
+def fig9_pwl_shapes(out='paper/figures/fig9_pwl_shapes.png'):
     """Grid of Layer-1 PWL curves, one panel per problem."""
     shapes = make_problem_shapes()
     fig, axes = plt.subplots(2, 4, figsize=(13, 6))
@@ -79,7 +79,7 @@ def fig9_pwl_shapes(out='figures/fig9_pwl_shapes.png'):
     print(f'  -> {out}')
 
 
-def fig10_decision_trace(out='figures/fig10_decision_trace.png'):
+def fig10_decision_trace(out='paper/figures/fig10_decision_trace.png'):
     """Single session decision trace: 14 signals -> 7 problems -> slot-1 score
     decomposition for the top-3 widgets."""
     set_source('parametric')
@@ -175,7 +175,7 @@ def fig10_decision_trace(out='figures/fig10_decision_trace.png'):
     print(f'  -> {out}')
 
 
-def fig11_agent_edit_diff(out='figures/fig11_agent_edit_diff.png'):
+def fig11_agent_edit_diff(out='paper/figures/fig11_agent_edit_diff.png'):
     """Bar chart of agent's round-2500 edits with reasons printed alongside."""
     edits, note = load_edits_json('state/evolve_state/edits_round_2500.json')
     # take the first 10 scalar edits with both `from` and `to`
@@ -213,7 +213,7 @@ def fig11_agent_edit_diff(out='figures/fig11_agent_edit_diff.png'):
     print(f'    (note: {note[:120]}…)')
 
 
-def fig12_bayesian_drift(out='figures/fig12_bayesian_drift.png'):
+def fig12_bayesian_drift(out='paper/figures/fig12_bayesian_drift.png'):
     """Run Bayesian-EDP for 10K sessions, snapshot widget `base` parameters
     before and after, plot the drift away from the LLM prior."""
     set_source('parametric')
