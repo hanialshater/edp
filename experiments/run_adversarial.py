@@ -31,11 +31,29 @@ from edp.policies.edp import make_problem_shapes, load_edits_json, apply_edits
 from edp.catalog import TRUE_PROVISIONS, WIDGETS
 
 
-def perturb_provisions(rng: np.random.Generator, scale: float = 0.15):
-    """Return a perturbed TRUE_PROVISIONS dict where each provision
-    value is multiplied by uniform(1-scale, 1+scale), then clipped to
-    [0, 1]. Nonzero entries stay nonzero; zero entries stay zero."""
+def perturb_provisions(rng: np.random.Generator, scale: float = 0.15,
+                       mode: str = 'iid'):
+    """Perturb TRUE_PROVISIONS. Two modes:
+
+    'iid'        — each provision value multiplied by uniform(1±scale)
+                   independently. Jitters magnitudes, preserves structure.
+                   This is the weak null: an LLM bias that is *structural*
+                   (the relative importance of needs) survives it untouched.
+
+    'structured' — one factor uniform(1±scale) drawn per *need* and applied
+                   coherently to that need across every widget. This changes
+                   the relative importance of needs (the generative theory),
+                   which is the perturbation that actually tests whether the
+                   EDP win depends on the specific structure Claude authored.
+    """
     out = {}
+    if mode == 'structured':
+        needs = {n for provs in TRUE_PROVISIONS.values() for n in provs}
+        need_factor = {n: 1 + scale * (2 * rng.random() - 1) for n in needs}
+        for w, provs in TRUE_PROVISIONS.items():
+            out[w] = {n: (0.0 if v == 0 else float(np.clip(v * need_factor[n], 0.0, 1.0)))
+                      for n, v in provs.items()}
+        return out
     for w, provs in TRUE_PROVISIONS.items():
         out[w] = {}
         for need, val in provs.items():
@@ -87,14 +105,15 @@ def perturbed_oracle(persona, category, provisions, *, needs_map):
     return total
 
 
-def run_perturbation_seed(seed: int, stream, sched_files):
+def run_perturbation_seed(seed: int, stream, sched_files,
+                          scale: float = 0.15, mode: str = 'iid'):
     """Run one perturbation seed for: LinTS-warm, CombLinUCB, EDP-static,
     EDP-agent (canned), Bayesian-EDP (canned). Return %-of-oracle-lost
     for each."""
     from edp.ground_truth import TRUE_NEEDS
 
     rng = np.random.default_rng(seed)
-    provisions = perturb_provisions(rng, scale=0.15)
+    provisions = perturb_provisions(rng, scale=scale, mode=mode)
 
     oracle_cache = {}
     for p, c, _ in stream:
@@ -186,6 +205,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=10_000)
     ap.add_argument('--seeds', type=int, default=5)
+    ap.add_argument('--scale', type=float, default=0.15)
+    ap.add_argument('--mode', choices=['iid', 'structured'], default='iid')
     ap.add_argument('--out', type=str, default='results/results_adversarial.json')
     args = ap.parse_args()
 
@@ -201,8 +222,9 @@ def main():
 
     cells = {}
     for seed in range(1, args.seeds + 1):
-        print(f'[seed {seed}/{args.seeds}] running...')
-        out = run_perturbation_seed(seed, stream, sched)
+        print(f'[seed {seed}/{args.seeds}] running ({args.mode}, scale={args.scale})...')
+        out = run_perturbation_seed(seed, stream, sched,
+                                    scale=args.scale, mode=args.mode)
         for k, v in out.items():
             cells.setdefault(k, []).append(v)
             print(f'    {k}: {v:.2f} %')
@@ -219,9 +241,10 @@ def main():
         }
 
     with open(args.out, 'w') as f:
-        json.dump({'scale': 0.15, 'seeds': args.seeds, 'cells': summary}, f, indent=2)
+        json.dump({'scale': args.scale, 'mode': args.mode,
+                   'seeds': args.seeds, 'cells': summary}, f, indent=2)
     print(f'\nsaved -> {args.out}')
-    print(f'\nAdversarial perturbation (±15 %, N={args.seeds} seeds):')
+    print(f'\nAdversarial perturbation ({args.mode}, ±{args.scale:.0%}, N={args.seeds} seeds):')
     for k, v in summary.items():
         print(f'  {k:14s}  {v["mean_pct"]:5.2f} ± {v["sem_pct"]:.2f} %  '
               f'(range {v["min_pct"]:.2f}–{v["max_pct"]:.2f})')
