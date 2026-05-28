@@ -1246,6 +1246,7 @@ the primary LLM-persona simulator under production conditions
 <th>Policy</th>
 <th>Class</th>
 <th>LLM · Prod regret %</th>
+<th>tuned-α</th>
 </tr>
 </thead>
 <tbody>
@@ -1253,72 +1254,91 @@ the primary LLM-persona simulator under production conditions
 <td>1</td>
 <td>Bayesian-EDP</td>
 <td>GAM (LLM prior + SGD)</td>
-<td><strong>10.8 ± 0.2</strong></td>
+<td><strong>11.0 ± 0.2</strong></td>
+<td>—</td>
 </tr>
 <tr class="even">
 <td>2</td>
 <td>EDP-agent</td>
 <td>GAM (LLM prior + edits)</td>
 <td>13.3 ± 0.8</td>
+<td>—</td>
 </tr>
 <tr class="odd">
 <td>3</td>
 <td>GreedyLinTS</td>
 <td>GAM (no LLM, SGD)</td>
-<td>13.5 ± 0.0</td>
+<td>13.3 ± 0.4</td>
+<td>—</td>
 </tr>
 <tr class="even">
 <td>4</td>
 <td>Slate-LinTS</td>
 <td>combinatorial bandit</td>
 <td>16.6 ± 0.1</td>
+<td><strong>12.5 ± 0.6</strong></td>
 </tr>
 <tr class="odd">
 <td>5</td>
 <td>CombLinUCB</td>
 <td>combinatorial bandit</td>
 <td>16.9 ± 0.0</td>
+<td>16.4 ± 0.0</td>
 </tr>
 <tr class="even">
 <td>6</td>
 <td>EDP-static</td>
 <td>GAM (frozen LLM prior)</td>
 <td>19.8</td>
+<td>—</td>
 </tr>
 <tr class="odd">
 <td>7</td>
-<td>LinTS-warm (α=0.3)</td>
+<td>LinTS-warm</td>
 <td>per-slot bandit</td>
 <td>21.6 ± 0.1</td>
+<td><strong>10.5 ± 0.4</strong></td>
 </tr>
 <tr class="even">
 <td>8</td>
-<td>LinTS-cold (α=0.3)</td>
+<td>LinTS-cold</td>
 <td>per-slot bandit</td>
 <td>22.8 ± 0.0</td>
+<td>(not swept)</td>
 </tr>
 <tr class="odd">
 <td>9</td>
 <td>Random</td>
 <td>—</td>
 <td>30.6 ± 0.1</td>
+<td>—</td>
 </tr>
 <tr class="even">
 <td>10</td>
 <td>Static top-6</td>
 <td>—</td>
 <td>40.7</td>
+<td>—</td>
 </tr>
 </tbody>
 </table>
-<p>(One harness, <code>run_leaderboard.py</code> →
+<p>The fourth column previews §5.3: each bandit at its <em>best</em>
+exploration <code>α</code> (per-condition sweep). At default
+<code>α=0.3</code> the per-arm bandits sit at ranks 4–8; tuned,
+LinTS-warm (10.5 %) and Slate-LinTS (12.5 %) jump <em>above</em> the GAM
+learners — so the default-<code>α</code> ranking overstates the GAM
+advantage, and we present the tuned column beside it rather than burying
+the correction.</p>
+<p>(Provenance: one harness, <code>run_leaderboard.py</code> →
 <code>results/leaderboard.json</code>. Bandit rows vary their internal
-Thompson seed; EDP-agent varies over its 3 committed edit trajectories;
-GreedyLinTS and Bayesian-EDP are deterministic at the fixed harness
-seed, so the ± shown for them is the multi-seed SE from §5.4b–c, where
-Bayesian-EDP’s 5-seed mean is 11.0 ± 0.2. EDP-static / Static / Random
-are as labelled. The leaderboard reproduces the canonical §5.1/§5.4c
-numbers within seed noise, which is itself a check on provenance.)</p>
+Thompson seed (10 seeds); EDP-agent varies over its 3 committed edit
+trajectories. Rows 1 and 3 are SGD methods that <em>are</em> stochastic
+across the SGD/jitter seed; the single-seed leaderboard run gives 10.8 %
+and 13.5 %, but we report their canonical 5-seed mean ± SE from §5.4b–c
+(11.0 ± 0.2, 13.3 ± 0.4) so the column is consistent with the rest of
+the paper, and the single-run values sit within that SE. EDP-static /
+Static are deterministic. The leaderboard reproducing the §5.1/§5.4c
+numbers within seed noise is itself a provenance check.)</p>
 <p>Three readings, in increasing order of how much they complicate the
 naive story:</p>
 <ol type="1">
@@ -1607,52 +1627,66 @@ single experiment in the paper.</p>
 <p><strong>Exploration sweep (the result that reshapes the naive
 reading).</strong> We sweep
 <code>α ∈ {0.05, 0.1, 0.2, 0.3, 0.5, 1.0}</code> per method per
-condition and report each method’s best
-(<code>run_alpha_sweep.py</code>; LLM-persona, production):</p>
+condition and report each method’s best (<code>run_alpha_sweep.py</code>
+→ <code>results/alpha_sweep.json</code>, 3 seeds for the TS
+methods):</p>
 <table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
 <thead>
 <tr class="header">
 <th>Method</th>
-<th>regret @ α=0.3 (default)</th>
-<th>regret @ best α</th>
-<th>best α</th>
+<th>LLM @ α=0.3</th>
+<th>LLM @ best α</th>
+<th>Parametric @ best α</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>LinTS-warm</td>
 <td>21.5 %</td>
-<td><strong>10.5 ± 0.4 %</strong></td>
-<td>0.05</td>
+<td><strong>10.5 ± 0.4 %</strong> (α=0.05)</td>
+<td>9.2 ± 0.2 % (α=0.05)</td>
 </tr>
 <tr class="even">
 <td>Slate-LinTS</td>
 <td>16.7 %</td>
-<td><strong>12.5 ± 0.6 %</strong></td>
-<td>0.05</td>
+<td><strong>12.5 ± 0.6 %</strong> (α=0.05)</td>
+<td>10.2 ± 0.3 % (α=0.05)</td>
 </tr>
 <tr class="odd">
 <td>CombLinUCB</td>
 <td>16.9 %</td>
-<td>16.4 %</td>
-<td>0.2</td>
+<td>16.4 % (α=0.2)</td>
+<td>8.5 % (α=0.1)</td>
 </tr>
 </tbody>
 </table>
-<p>Two things fall out. First, <strong>most of the per-slot bandit’s
+<p>Reference GAM entries: Bayesian-EDP 11.0 % / 7.6 %, EDP-agent 13.3 %
+/ 6.5 % (LLM / parametric).</p>
+<p>Three things fall out. First, <strong>most of the per-slot bandit’s
 apparent collapse was over-exploration.</strong> Under page-level reward
 the per-arm signal is uninformative, so exploration spends regret to
 learn almost nothing; cutting <code>α</code> from 0.3 to 0.05 drops
-LinTS-warm from 21.5 % to <strong>10.5 %</strong> — tied with
-Bayesian-EDP (10.8 %) and below every other GAM learner. Slate-LinTS
-similarly drops to 12.5 %. (Parametric shows the same direction:
-LinTS-warm falls from 18.8 % to ~9.2 % at α=0.05.) Second,
-<strong>CombLinUCB cannot tune out of it.</strong> Its exploration is a
-confidence bonus, not a free scalar; its best (16.4 % at α=0.2) barely
-improves on its default and is now the <em>worst</em> of the three tuned
-bandits. So among tuned bandits the Thompson-sampling variants dominate
-the UCB variant — the inversion §5.1’s table hinted at, now grounded in
-a sweep rather than a single α.</p>
+LinTS-warm from 21.5 % to <strong>10.5 %</strong> on LLM, tied with
+Bayesian-EDP (11.0 %), and Slate-LinTS to 12.5 %. Second, <strong>the
+tie is simulator-dependent.</strong> On the primary LLM simulator a
+tuned per-slot bandit <em>matches</em> the best GAM; on parametric the
+GAM keeps a ~2 pp edge (EDP-agent 6.5 % vs best tuned bandit 8.5 %). So
+the honest statement is “tuned bandits close most of the gap and erase
+it on the harder simulator,” not “bandits are uniformly worse.” Third,
+<strong>the tuned ordering among bandits depends on the rule.</strong>
+On LLM, CombLinUCB cannot tune out of the over-exploration — its
+confidence bonus is not a free scalar, and its best (16.4 %) is the
+<em>worst</em> of the tuned bandits, so the Thompson-sampling variants
+dominate UCB there (the inversion §5.1 hinted at, now sweep-grounded);
+on parametric, where the signal is cleaner, CombLinUCB tunes down to 8.5
+% and leads. The exploration rate, not the bandit family, is the
+dominant axis.</p>
 <p>This is the benchmark correcting its own headline, and it is the
 honest finding: <strong>at matched, tuned exploration a per-slot bandit
 handed the EDP problem-features (the warm 7-d context) matches the best
@@ -3138,14 +3172,18 @@ in a latency-budgeted page render; the dependency row decides whether it
 survives a model-server outage. The “sessions to cold-start viability”
 row is the deployment property §5.7 quantifies directly.</p>
 <h2 id="conclusion">8. Conclusion</h2>
-<p><strong>The architecture carries most of the gain.</strong> Per-slot
-LinTS is the wrong abstraction for slate-with-submodular-reward problems
-under page-level reward; the framing was always misapplied. GreedyLinTS
-— the EDP architecture with no LLM prior and pure SGD — already closes 6
-pp of the lab-to-production gap that per-slot LinTS suffers (12.8 %
-parametric, 13.3 % LLM-persona in production). Most of the
-production-stack advantage comes from the policy class, not from the
-LLM.</p>
+<p><strong>Exploration and features matter more than the policy
+class.</strong> At default exploration, per-slot LinTS loses heavily
+under page-level reward, and the GAM architecture (GreedyLinTS, no LLM)
+already closes 6 pp of that gap (12.8 % parametric, 13.3 % LLM in
+production). But the α-sweep (§5.3) shows much of the bandit loss is
+over-exploration: tuned and handed the EDP problem-features, a per-slot
+bandit ties the best GAM on the LLM simulator (10.5 % vs 11.0 %) and
+trails by only ~2 pp on parametric. So the durable finding is not
+“bandits are the wrong abstraction”; it is that under page-level reward
+the exploration rate and the context features dominate the bandit-vs-GAM
+label, and the GAM class’s standing edge is operational (cold-start,
+audit, sub-ms serving), not a regret margin.</p>
 <p><strong>The LLM-anchored prior and continuous SGD trade off by
 simulator.</strong> On the harder LLM-persona simulator, Bayesian-EDP
 (LLM-anchored prior + regularised SGD) is the best method at 11.0 ± 0.2

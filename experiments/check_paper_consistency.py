@@ -145,6 +145,18 @@ else:
     warns.append('leaderboard file missing')
     print('  WARN  results/leaderboard.json missing')
 
+print('\n== 5c. Alpha-sweep (§5.3) matches results/alpha_sweep.json ==')
+sw = jload('alpha_sweep.json')
+if sw:
+    lw = sw['cells']['llm']['lints_warm']['mean_pct']
+    sl = sw['cells']['llm']['slate_lints']['mean_pct']
+    approx('sweep llm lints_warm best', lw, lo=10.0, hi=11.0)
+    approx('sweep llm slate_lints best', sl, lo=12.0, hi=13.0)
+    check_present('sweep tuned LinTS-warm 10.5 in paper', '10.5 ± 0.4', '10.5')
+else:
+    warns.append('alpha_sweep file missing')
+    print('  WARN  results/alpha_sweep.json missing (run run_alpha_sweep.py)')
+
 print('\n== 6. Seed-count consistency ==')
 # §4 says 10 TS seeds; §5.1 caption must not still say "5 LinTS seeds"
 check_absent('5.1 caption seed count', 'across 5 LinTS seeds')

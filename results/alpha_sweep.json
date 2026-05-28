@@ -1,0 +1,48 @@
+{
+  "alphas": [
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.5,
+    1.0
+  ],
+  "n": 10000,
+  "seeds": 3,
+  "cells": {
+    "llm": {
+      "lints_warm": {
+        "alpha": 0.05,
+        "mean_pct": 10.498767692339426,
+        "sem_pct": 0.44272226872697307
+      },
+      "slate_lints": {
+        "alpha": 0.05,
+        "mean_pct": 12.456539493660005,
+        "sem_pct": 0.6180465324480459
+      },
+      "comblinucb": {
+        "alpha": 0.2,
+        "mean_pct": 16.40330995627219,
+        "sem_pct": 0.0
+      }
+    },
+    "parametric": {
+      "lints_warm": {
+        "alpha": 0.05,
+        "mean_pct": 9.16660077395322,
+        "sem_pct": 0.16168730962584452
+      },
+      "slate_lints": {
+        "alpha": 0.05,
+        "mean_pct": 10.179164459746943,
+        "sem_pct": 0.2617399641439086
+      },
+      "comblinucb": {
+        "alpha": 0.1,
+        "mean_pct": 8.458093166615367,
+        "sem_pct": 0.0
+      }
+    }
+  }
+}
