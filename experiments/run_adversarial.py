@@ -186,7 +186,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=10_000)
     ap.add_argument('--seeds', type=int, default=5)
-    ap.add_argument('--out', type=str, default='results_adversarial.json')
+    ap.add_argument('--out', type=str, default='results/results_adversarial.json')
     args = ap.parse_args()
 
     from edp.ground_truth import set_source
@@ -194,9 +194,9 @@ def main():
     stream = make_session_stream(args.n, seed=42)
 
     sched = {
-        2500: 'evolve_state/edits_round_2500.json',
-        5000: 'evolve_state/edits_round_5000.json',
-        7500: 'evolve_state/edits_round_7500.json',
+        2500: 'state/evolve_state/edits_round_2500.json',
+        5000: 'state/evolve_state/edits_round_5000.json',
+        7500: 'state/evolve_state/edits_round_7500.json',
     }
 
     cells = {}

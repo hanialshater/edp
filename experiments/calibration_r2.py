@@ -32,7 +32,7 @@ def main():
         pol = BayesianEDPPolicy(lr=5e-4, lam=2.0, prior_sigma=0.3)
         fb = DelayedFeedback(delay=500, noise_sigma=0.2, seed=12345)
 
-        edits_dir = 'evolve_state' if source == 'parametric' else 'evolve_state_llm'
+        edits_dir = 'state/evolve_state' if source == 'parametric' else 'state/evolve_state_llm'
         schedule = {
             2500: f'{edits_dir}/edits_round_2500.json',
             5000: f'{edits_dir}/edits_round_5000.json',

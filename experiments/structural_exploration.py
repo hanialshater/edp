@@ -76,7 +76,7 @@ def add_module_default(modules):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--out', type=str, default='results_structural_exploration.json')
+    ap.add_argument('--out', type=str, default='results/results_structural_exploration.json')
     args = ap.parse_args()
 
     patch_catalog()
@@ -104,9 +104,9 @@ def main():
     print('Running EDP-canned...')
     pol = EDPPolicy()
     sched = [
-        (2500, load_edits_json('edits/round1.json')[0]),
-        (5000, load_edits_json('edits/round2.json')[0]),
-        (7500, load_edits_json('edits/round3.json')[0]),
+        (2500, load_edits_json('state/edits/round1.json')[0]),
+        (5000, load_edits_json('state/edits/round2.json')[0]),
+        (7500, load_edits_json('state/edits/round3.json')[0]),
     ]
     sched_idx = 0
     r_canned = np.zeros(len(stream))
@@ -121,9 +121,9 @@ def main():
     print('Running EDP-agent (LLM-source live-agent edits)...')
     pol = EDPPolicy()
     sched = [
-        (2500, load_edits_json('evolve_state_llm/edits_round_2500.json')[0]),
-        (5000, load_edits_json('evolve_state_llm/edits_round_5000.json')[0]),
-        (7500, load_edits_json('evolve_state_llm/edits_round_7500.json')[0]),
+        (2500, load_edits_json('state/evolve_state_llm/edits_round_2500.json')[0]),
+        (5000, load_edits_json('state/evolve_state_llm/edits_round_5000.json')[0]),
+        (7500, load_edits_json('state/evolve_state_llm/edits_round_7500.json')[0]),
     ]
     sched_idx = 0
     r_agent = np.zeros(len(stream))
@@ -146,7 +146,7 @@ def main():
     # For this script, we just leave the path here but rely on the agent's
     # per-checkpoint edit JSONs in struct_state_llm/. The script runs the
     # already-cached agent edits.
-    struct_dir = 'struct_state_llm'
+    struct_dir = 'state/struct_state_llm'
     if all(os.path.exists(f'{struct_dir}/edits_round_{x}.json')
            for x in (2500, 5000, 7500)):
         print(f'Running EDP-agent + structural exploration (cached from {struct_dir}/)...')

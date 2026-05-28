@@ -67,7 +67,7 @@ def main():
     ap.add_argument('--delay', type=int, default=500)
     ap.add_argument('--noise', type=float, default=0.2)
     ap.add_argument('--alpha', type=float, default=0.3)
-    ap.add_argument('--out', type=str, default='results.npz')
+    ap.add_argument('--out', type=str, default='results/results.npz')
     ap.add_argument('--methods', type=str, default='all')
     ap.add_argument('--with-category-context', action='store_true',
                     help='append one-hot category to bandit context')
@@ -104,9 +104,9 @@ def main():
         print('\n-- edp_evolved (canned) --')
         t0 = time.time()
         try:
-            edits_r1, _ = load_edits_json('edits/round1.json')
-            edits_r2, _ = load_edits_json('edits/round2.json')
-            edits_r3, _ = load_edits_json('edits/round3.json')
+            edits_r1, _ = load_edits_json('state/edits/round1.json')
+            edits_r2, _ = load_edits_json('state/edits/round2.json')
+            edits_r3, _ = load_edits_json('state/edits/round3.json')
             schedule = [(2500, edits_r1), (5000, edits_r2), (7500, edits_r3)]
             r, _ = run_edp(stream, EDPPolicy(), evolution_schedule=schedule, label='edp_evolved')
             print(f'  cum regret = {(oracle - r).sum():.1f}  ({time.time() - t0:.1f}s)')

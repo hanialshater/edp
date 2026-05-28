@@ -33,7 +33,7 @@ from sim import (N_SLOTS, make_session_stream, true_page_reward,
 from policy_edp import (EDPPolicy, make_problem_shapes, make_modules,
                         apply_edits, score_problems, PROBLEMS, PROBLEM_NAMES)
 
-STATE_DIR = os.environ.get('EDP_STATE_DIR', 'evolve_state')
+STATE_DIR = os.environ.get('EDP_STATE_DIR', '../state/evolve_state')
 os.makedirs(STATE_DIR, exist_ok=True)
 
 

@@ -103,7 +103,7 @@ def main():
     ap.add_argument('--noise', type=float, default=0.05,
                     help='Gaussian sigma on observed page reward')
     ap.add_argument('--alpha', type=float, default=0.3, help='LinTS exploration')
-    ap.add_argument('--out', type=str, default='results.npz')
+    ap.add_argument('--out', type=str, default='../results/results.npz')
     ap.add_argument('--methods', type=str, default='all',
                     help='comma-separated subset (edp_static,edp_evolved,bandit_warm,bandit_cold)')
     args = ap.parse_args()

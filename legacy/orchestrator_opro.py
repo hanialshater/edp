@@ -26,7 +26,7 @@ from sim import (N_SLOTS, make_session_stream, true_page_reward,
                  oracle_reward)
 from policy_edp import EDPPolicy, make_modules, apply_edits
 
-STATE_DIR = os.environ.get('EDP_STATE_DIR', 'opro_state')
+STATE_DIR = os.environ.get('EDP_STATE_DIR', '../state/opro_state')
 os.makedirs(STATE_DIR, exist_ok=True)
 
 

@@ -129,7 +129,7 @@ def run_edp(stream, schedule=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--out', type=str, default='results_drift_test.json')
+    ap.add_argument('--out', type=str, default='results/results_drift_test.json')
     args = ap.parse_args()
 
     stream = make_drift_stream(seed=42)
@@ -142,16 +142,16 @@ def main():
     r_static = run_edp(stream)
     print('Running EDP-canned...')
     sched = [
-        (2500, load_edits_json('edits/round1.json')[0]),
-        (5000, load_edits_json('edits/round2.json')[0]),
-        (7500, load_edits_json('edits/round3.json')[0]),
+        (2500, load_edits_json('state/edits/round1.json')[0]),
+        (5000, load_edits_json('state/edits/round2.json')[0]),
+        (7500, load_edits_json('state/edits/round3.json')[0]),
     ]
     r_canned = run_edp(stream, schedule=sched)
     print('Running EDP-agent (re-applies the LLM-source live-agent edits)...')
     sched_agent = [
-        (2500, load_edits_json('evolve_state_llm/edits_round_2500.json')[0]),
-        (5000, load_edits_json('evolve_state_llm/edits_round_5000.json')[0]),
-        (7500, load_edits_json('evolve_state_llm/edits_round_7500.json')[0]),
+        (2500, load_edits_json('state/evolve_state_llm/edits_round_2500.json')[0]),
+        (5000, load_edits_json('state/evolve_state_llm/edits_round_5000.json')[0]),
+        (7500, load_edits_json('state/evolve_state_llm/edits_round_7500.json')[0]),
     ]
     r_agent = run_edp(stream, schedule=sched_agent)
     print('Running LinTS-warm (5 seeds)...')

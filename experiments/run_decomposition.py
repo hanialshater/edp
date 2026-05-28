@@ -60,10 +60,10 @@ def main():
     ap.add_argument('--lam', type=float, default=2.0)
     ap.add_argument('--prior-sigma', type=float, default=0.3)
     ap.add_argument('--prior-jitter', type=float, default=0.05)
-    ap.add_argument('--out', type=str, default='results_decomposition.json')
+    ap.add_argument('--out', type=str, default='results/results_decomposition.json')
     args = ap.parse_args()
 
-    edits_for = {'parametric': 'evolve_state', 'llm': 'evolve_state_llm'}
+    edits_for = {'parametric': 'state/evolve_state', 'llm': 'state/evolve_state_llm'}
 
     summary = {}
     for source in ['parametric', 'llm']:

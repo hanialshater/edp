@@ -177,7 +177,7 @@ def fig10_decision_trace(out='figures/fig10_decision_trace.png'):
 
 def fig11_agent_edit_diff(out='figures/fig11_agent_edit_diff.png'):
     """Bar chart of agent's round-2500 edits with reasons printed alongside."""
-    edits, note = load_edits_json('evolve_state/edits_round_2500.json')
+    edits, note = load_edits_json('state/evolve_state/edits_round_2500.json')
     # take the first 10 scalar edits with both `from` and `to`
     rows = [e for e in edits if 'from' in e and 'to' in e][:10]
 
@@ -224,9 +224,9 @@ def fig12_bayesian_drift(out='figures/fig12_bayesian_drift.png'):
 
     sched = {2500, 5000, 7500}
     sched_files = {
-        2500: 'evolve_state/edits_round_2500.json',
-        5000: 'evolve_state/edits_round_5000.json',
-        7500: 'evolve_state/edits_round_7500.json',
+        2500: 'state/evolve_state/edits_round_2500.json',
+        5000: 'state/evolve_state/edits_round_5000.json',
+        7500: 'state/evolve_state/edits_round_7500.json',
     }
 
     fb = DelayedFeedback(delay=500, noise_sigma=0.20, seed=42)

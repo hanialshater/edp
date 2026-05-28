@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 NEW_WIDGET = 'virtual_try_on'
 NEW_PROVISIONS = {'N1_fit': 0.65, 'N2_visual': 0.45, 'N6_trust': 0.20}
 ADD_AT = 5000
-STATE_DIR = 'struct_state_llm'
+STATE_DIR = 'state/struct_state_llm'
 
 
 def patch_catalog():
@@ -80,7 +80,7 @@ def cmd_init():
     print(f'[init] phase 1: 0 -> 2500 done')
 
     # Phase 2: apply existing round-1 edits, run 2500 -> 5000
-    state = orch.apply_edits_from_file(state, 'evolve_state_llm/edits_round_2500.json')
+    state = orch.apply_edits_from_file(state, 'state/evolve_state_llm/edits_round_2500.json')
     state = orch.run_batch(state, 5000)
     orch.save_state(state)
     print(f'[init] phase 2: 2500 -> 5000 done (with round-1 edits)')

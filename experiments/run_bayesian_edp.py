@@ -108,14 +108,14 @@ def run_bayesian(stream, *, page_attribution: bool, delay: int, sigma: float,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=10_000)
-    ap.add_argument('--out', type=str, default='results_bayesian_edp.json')
+    ap.add_argument('--out', type=str, default='results/results_bayesian_edp.json')
     ap.add_argument('--lr', type=float, default=1e-3)
     ap.add_argument('--lam', type=float, default=0.5)
     ap.add_argument('--prior-sigma', type=float, default=0.5)
     args = ap.parse_args()
 
     # Map: persona source -> agent edits dir
-    edits_for = {'parametric': 'evolve_state', 'llm': 'evolve_state_llm'}
+    edits_for = {'parametric': 'state/evolve_state', 'llm': 'state/evolve_state_llm'}
 
     summary = {}
     for source in ['parametric', 'llm']:

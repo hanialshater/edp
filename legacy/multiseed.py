@@ -73,7 +73,7 @@ def main():
     ap.add_argument('--reps', type=int, default=10)
     ap.add_argument('--delay', type=int, default=500)
     ap.add_argument('--noise', type=float, default=0.2)
-    ap.add_argument('--out', type=str, default='results_multiseed.npz')
+    ap.add_argument('--out', type=str, default='../results/results_multiseed.npz')
     args = ap.parse_args()
 
     print(f'== Multi-seed runs ==')

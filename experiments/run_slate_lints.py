@@ -70,7 +70,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=10_000)
     ap.add_argument('--reps', type=int, default=5)
-    ap.add_argument('--out', type=str, default='results_slate_lints.json')
+    ap.add_argument('--out', type=str, default='results/results_slate_lints.json')
     args = ap.parse_args()
 
     summary = {}

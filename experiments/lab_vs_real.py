@@ -98,7 +98,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=10_000)
     ap.add_argument('--reps', type=int, default=10)
-    ap.add_argument('--out', type=str, default='results_lab_vs_real.json')
+    ap.add_argument('--out', type=str, default='results/results_lab_vs_real.json')
     args = ap.parse_args()
 
     summary = {}

@@ -18,7 +18,7 @@ import numpy as np
 from sim import make_session_stream, oracle_reward
 
 
-def load_npz_results(path='results_prod_stack.npz'):
+def load_npz_results(path='../results/results_prod_stack.npz'):
     data = np.load(path, allow_pickle=True)
     return {k: data[k] for k in data.files if k != 'stream_personas'}
 
@@ -39,9 +39,9 @@ def main():
     stream = make_session_stream(n, seed=42)
     oracle = np.array([oracle_reward(p, c) for p, c, _ in stream])
 
-    npz = load_npz_results('results_prod_stack.npz')
-    r_report, o_report = load_orchestrator_rewards('evolve_state/state.json')
-    r_opro, o_opro = load_orchestrator_rewards('opro_state/state.json')
+    npz = load_npz_results('../results/results_prod_stack.npz')
+    r_report, o_report = load_orchestrator_rewards('../state/evolve_state/state.json')
+    r_opro, o_opro = load_orchestrator_rewards('../state/opro_state/state.json')
 
     # Sanity: all oracles should agree
     assert np.allclose(oracle, o_report), 'report-agent oracle stream differs!'

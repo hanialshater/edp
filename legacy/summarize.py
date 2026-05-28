@@ -41,11 +41,11 @@ def load_agent_reps(prefix, n):
 
 
 def main():
-    d = np.load('results_multiseed.npz')
+    d = np.load('../results/results_multiseed.npz')
     oracle = d['oracle']
     n = len(oracle)
-    agent = load_agent_reps('evolve_state', n)
-    opro = load_agent_reps('opro_state', n)
+    agent = load_agent_reps('../state/evolve_state', n)
+    opro = load_agent_reps('../state/opro_state', n)
 
     milestones = [500, 1000, 2500, 5000, 7500, 10000]
     methods = [

@@ -114,8 +114,8 @@ def band(reps, oracle):
 # ============================================================================
 # fig1: cumulative regret over time (both persona sources side by side)
 # ============================================================================
-def fig1_cumregret_both(parametric_path='results_multiseed_parametric_cat.npz',
-                        llm_path='results_multiseed_llm_cat.npz'):
+def fig1_cumregret_both(parametric_path='../results/results_multiseed_parametric_cat.npz',
+                        llm_path='../results/results_multiseed_llm_cat.npz'):
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.0), sharey=False)
     for ax, (path, title) in zip(axes, [(parametric_path, 'Parametric personas (8) + categories'),
                                           (llm_path, 'LLM-generated personas (14) + categories')]):
@@ -136,9 +136,9 @@ def fig1_cumregret_both(parametric_path='results_multiseed_parametric_cat.npz',
         plot_method(ax, x, cum_regret(bd['edp_canned'], oracle), None, 'edp_canned')
         # EDP-agent — pick the appropriate state dir
         if 'llm' in path.lower() or 'llm' in title.lower():
-            agent_dir = 'evolve_state_llm'
+            agent_dir = '../state/evolve_state_llm'
         else:
-            agent_dir = 'evolve_state'
+            agent_dir = '../state/evolve_state'
         agent_reps = load_orch_rewards(f'{agent_dir}/state.json', n)
         if agent_reps.shape[0] > 0:
             m, s = band(agent_reps, oracle)
@@ -212,8 +212,8 @@ def fig2_stressor():
 # ============================================================================
 # fig3: % regret kept by each method, both sources side by side
 # ============================================================================
-def fig3_relative_regret(parametric_path='results_multiseed_parametric_cat.npz',
-                          llm_path='results_multiseed_llm_cat.npz'):
+def fig3_relative_regret(parametric_path='../results/results_multiseed_parametric_cat.npz',
+                          llm_path='../results/results_multiseed_llm_cat.npz'):
     def cr10k_pct(path, agent_dir):
         if not os.path.exists(path):
             return None
@@ -234,8 +234,8 @@ def fig3_relative_regret(parametric_path='results_multiseed_parametric_cat.npz',
                                  float(cr.std(ddof=1) / np.sqrt(len(cr))) if len(cr) > 1 else 0.0)
         return out
 
-    p = cr10k_pct(parametric_path, 'evolve_state')
-    l = cr10k_pct(llm_path, 'evolve_state_llm')
+    p = cr10k_pct(parametric_path, '../state/evolve_state')
+    l = cr10k_pct(llm_path, '../state/evolve_state_llm')
 
     methods = ['edp_agent', 'edp_canned', 'edp_static', 'bandit_warm', 'bandit_cold']
     fig, ax = plt.subplots(figsize=(8.5, 4.6))
@@ -272,7 +272,7 @@ def fig3_relative_regret(parametric_path='results_multiseed_parametric_cat.npz',
 # ============================================================================
 # fig4: per-persona regret heatmap (LLM personas + categories)
 # ============================================================================
-def fig4_persona_heatmap_llm(path='results_multiseed_llm_cat.npz'):
+def fig4_persona_heatmap_llm(path='../results/results_multiseed_llm_cat.npz'):
     if not os.path.exists(path):
         return
     bd = load_multiseed(path)
@@ -284,7 +284,7 @@ def fig4_persona_heatmap_llm(path='results_multiseed_llm_cat.npz'):
     stream = make_session_stream(n, seed=42)
     persona_arr = np.array([p for p, _, _ in stream])
 
-    agent = load_orch_rewards('evolve_state_llm/state.json', n)
+    agent = load_orch_rewards('../state/evolve_state_llm/state.json', n)
 
     def mean_method(arr):
         return arr.mean(axis=0) if arr.ndim == 2 and arr.shape[0] else arr
@@ -334,7 +334,7 @@ def fig4_persona_heatmap_llm(path='results_multiseed_llm_cat.npz'):
 # ============================================================================
 # fig5: per-category regret heatmap (LLM personas + 6 categories)
 # ============================================================================
-def fig5_category_heatmap(path='results_multiseed_llm_cat.npz'):
+def fig5_category_heatmap(path='../results/results_multiseed_llm_cat.npz'):
     if not os.path.exists(path):
         return
     bd = load_multiseed(path)
@@ -346,7 +346,7 @@ def fig5_category_heatmap(path='results_multiseed_llm_cat.npz'):
     stream = make_session_stream(n, seed=42)
     cat_arr = np.array([c for _, c, _ in stream])
 
-    agent = load_orch_rewards('evolve_state_llm/state.json', n)
+    agent = load_orch_rewards('../state/evolve_state_llm/state.json', n)
 
     def mean_method(arr):
         return arr.mean(axis=0) if arr.ndim == 2 and arr.shape[0] else arr
@@ -395,10 +395,10 @@ def fig5_category_heatmap(path='results_multiseed_llm_cat.npz'):
 # ============================================================================
 # fig6: full baseline bar chart with all methods including static & LLM-policy
 # ============================================================================
-def fig6_all_baselines(parametric_path='results_multiseed_parametric_cat.npz',
-                       llm_path='results_multiseed_llm_cat.npz',
-                       baselines_param='results_baselines_parametric.npz',
-                       baselines_llm='results_baselines_llm.npz'):
+def fig6_all_baselines(parametric_path='../results/results_multiseed_parametric_cat.npz',
+                       llm_path='../results/results_multiseed_llm_cat.npz',
+                       baselines_param='../results/results_baselines_parametric.npz',
+                       baselines_llm='../results/results_baselines_llm.npz'):
     def collect(multiseed_path, baselines_path, agent_dir, robust_dir):
         if not os.path.exists(multiseed_path):
             return None
@@ -433,8 +433,8 @@ def fig6_all_baselines(parametric_path='results_multiseed_parametric_cat.npz',
             out['edp_robust'] = (float(cr.mean()), 0.0)
         return out
 
-    p = collect(parametric_path, baselines_param, 'evolve_state', None)
-    l = collect(llm_path, baselines_llm, 'evolve_state_llm', 'robust_state_llm')
+    p = collect(parametric_path, baselines_param, '../state/evolve_state', None)
+    l = collect(llm_path, baselines_llm, '../state/evolve_state_llm', '../state/robust_state_llm')
 
     # Hand-stamped canonical values from §5.1 (multi-seed where applicable).
     # We override the loaded numbers with these to keep the figure
@@ -488,11 +488,11 @@ def fig6_all_baselines(parametric_path='results_multiseed_parametric_cat.npz',
 # ============================================================================
 # fig7: lab-vs-real per-method on each persona source
 # ============================================================================
-def fig7_lab_vs_real(json_path='results_lab_vs_real.json',
-                      parametric_baselines='results_baselines_parametric.npz',
-                      llm_baselines='results_baselines_llm.npz',
-                      parametric_path='results_multiseed_parametric_cat.npz',
-                      llm_path='results_multiseed_llm_cat.npz'):
+def fig7_lab_vs_real(json_path='../results/results_lab_vs_real.json',
+                      parametric_baselines='../results/results_baselines_parametric.npz',
+                      llm_baselines='../results/results_baselines_llm.npz',
+                      parametric_path='../results/results_multiseed_parametric_cat.npz',
+                      llm_path='../results/results_multiseed_llm_cat.npz'):
     if not os.path.exists(json_path):
         print('  fig7 SKIP (no results_lab_vs_real.json)')
         return
@@ -520,8 +520,8 @@ def fig7_lab_vs_real(json_path='results_lab_vs_real.json',
                     out[k] = float((oracle - bl[k]).sum()) / total_o * 100
         return out
 
-    p_edp = edp_pcts(parametric_path, parametric_baselines, 'evolve_state')
-    l_edp = edp_pcts(llm_path, llm_baselines, 'evolve_state_llm')
+    p_edp = edp_pcts(parametric_path, parametric_baselines, '../state/evolve_state')
+    l_edp = edp_pcts(llm_path, llm_baselines, '../state/evolve_state_llm')
 
     # Build a wide table: method × (parametric_lab, parametric_prod, llm_lab, llm_prod)
     methods = ['edp_agent', 'edp_canned', 'edp_static',
@@ -581,12 +581,12 @@ def fig7_lab_vs_real(json_path='results_lab_vs_real.json',
 
 def fig_opro_only():
     """Dedicated OPRO ablation chart: report-agent vs OPRO vs static (parametric)."""
-    bd = load_multiseed('results_multiseed_parametric_cat.npz')
+    bd = load_multiseed('../results/results_multiseed_parametric_cat.npz')
     oracle = bd['oracle']
     n = len(oracle)
     x = np.arange(1, n + 1)
-    agent = load_orch_rewards('evolve_state/state.json', n)
-    opro = load_orch_rewards('opro_state/state.json', n)
+    agent = load_orch_rewards('../state/evolve_state/state.json', n)
+    opro = load_orch_rewards('../state/opro_state/state.json', n)
     fig, ax = plt.subplots(figsize=(8.0, 4.6))
     plot_method(ax, x, cum_regret(bd['edp_static'], oracle), None, 'edp_static')
     if opro.shape[0] > 0:

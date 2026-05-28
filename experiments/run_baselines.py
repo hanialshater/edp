@@ -38,7 +38,7 @@ def main():
     ap.add_argument('--n', type=int, default=10_000)
     ap.add_argument('--source', type=str, default='llm',
                     help='persona source (parametric|llm)')
-    ap.add_argument('--out', type=str, default='results_baselines_llm.npz')
+    ap.add_argument('--out', type=str, default='results/results_baselines_llm.npz')
     args = ap.parse_args()
 
     if args.source:

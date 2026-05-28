@@ -185,7 +185,7 @@ def main():
                     help='same-type substitutes penalty per pair')
     ap.add_argument('--reps', type=int, default=3,
                     help='reps for stochastic bandit methods')
-    ap.add_argument('--out', type=str, default='results_nonsubmodular.json')
+    ap.add_argument('--out', type=str, default='results/results_nonsubmodular.json')
     args = ap.parse_args()
 
     from edp.ground_truth import set_source
@@ -218,16 +218,16 @@ def main():
     print(f'  {pct:.2f}%')
 
     print('EDP-agent (canned edits from evolve_state, single rep)...')
-    sched = {ms: load_edits_json(f'evolve_state/edits_round_{ms}.json')[0]
+    sched = {ms: load_edits_json(f'state/evolve_state/edits_round_{ms}.json')[0]
               for ms in (2500, 5000, 7500)
-              if os.path.exists(f'evolve_state/edits_round_{ms}.json')}
+              if os.path.exists(f'state/evolve_state/edits_round_{ms}.json')}
     r = run_edp_with_schedule(stream, sched, reward_fn)
     pct = (oracle - r).sum() / total * 100
     summary['edp_agent'] = {'mean_pct': float(pct), 'sem_pct': 0.0}
     print(f'  {pct:.2f}%')
 
     print('Bayesian-EDP (single rep)...')
-    r = run_bayesian(stream, reward_fn, 'evolve_state')
+    r = run_bayesian(stream, reward_fn, 'state/evolve_state')
     pct = (oracle - r).sum() / total * 100
     summary['bayesian_edp'] = {'mean_pct': float(pct), 'sem_pct': 0.0}
     print(f'  {pct:.2f}%')
