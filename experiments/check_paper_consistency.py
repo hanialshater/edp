@@ -131,7 +131,21 @@ if adv and advs:
     print(f'  info  i.i.d. comblinucb={adv["cells"]["comblinucb"]["mean_pct"]:.1f}, '
           f'structured comblinucb={advs["cells"]["comblinucb"]["mean_pct"]:.1f}')
 
-print('\n== 5. Seed-count consistency ==')
+print('\n== 5b. Leaderboard (§5.0) matches results/leaderboard.json ==')
+lb = jload('leaderboard.json')
+if lb:
+    llm = lb['cells']['llm']
+    # the §5.0 table values, one decimal
+    for m, lo, hi in [('bayesian_edp', 10.5, 11.2), ('edp_agent', 12.9, 13.8),
+                      ('greedy_lints', 13.2, 13.8), ('slate_lints', 16.3, 16.9),
+                      ('comblinucb', 16.6, 17.1), ('lints_warm', 21.3, 21.9),
+                      ('random', 30.0, 31.0), ('static_top6', 40.0, 41.5)]:
+        approx(f'leaderboard llm {m}', llm[m]['mean_pct'], lo=lo, hi=hi)
+else:
+    warns.append('leaderboard file missing')
+    print('  WARN  results/leaderboard.json missing')
+
+print('\n== 6. Seed-count consistency ==')
 # §4 says 10 TS seeds; §5.1 caption must not still say "5 LinTS seeds"
 check_absent('5.1 caption seed count', 'across 5 LinTS seeds')
 check_present('5.1 caption seed count', 'across 10 Thompson-sampling seeds', '10 Thompson-sampling seeds')

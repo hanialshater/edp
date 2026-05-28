@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>EDP paper</title>
+  <title>WPO-Gym</title>
   <style>
 html {
 color: #1a1a1a;
@@ -228,20 +228,40 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">EDP paper</h1>
+<h1 class="title">WPO-Gym</h1>
 </header>
-<h1 id="evolvable-decision-programs-explainable-page-composition-under-production-reward-conditions">Evolvable
-Decision Programs: Explainable Page Composition under Production Reward
-Conditions</h1>
+<h1 id="wpo-gym-a-simulation-benchmark-for-whole-page-optimization-with-evolvable-decision-programs-as-a-reference-policy">WPO-Gym:
+A Simulation Benchmark for Whole-Page Optimization, with Evolvable
+Decision Programs as a Reference Policy</h1>
 <h2 id="abstract">Abstract</h2>
-<p><strong>Where should the intelligence of a decision system
-live?</strong> The default answer is <em>in model weights</em>. We study
-an alternative: a small generalised additive model (GAM) with named
-piecewise-linear shape functions as the <strong>symbolic substrate for
-LLM-authored policies</strong>. The proposal is not to use GAMs (decades
-old) or to let LLMs write code (also not new); it is about <em>fit</em>.
-We argue that a 200–300-parameter named GAM is the smallest policy
-representation that is simultaneously:</p>
+<p><strong>Whole-page optimization (WPO)</strong> — choosing
+<em>which</em> modules to show and <em>in what order</em> on a page,
+jointly, for a given user — cannot be studied the way the field usually
+studies decision policies. The action space is ordered slates over tens
+of modules (here 22 widgets into 6 slots, ≈10⁸ ordered pages); a live
+A/B test can compare a handful of hand-built designs, never the space;
+and logged production data is confounded by whatever policy produced it
+and never covers the combinatorial action set. The honest methodology is
+the one reinforcement learning adopted for control: a calibrated
+<strong>simulator</strong> with a transparent, swappable reward, against
+which any policy can be run reproducibly. This paper contributes that
+environment.</p>
+<p><strong>WPO-Gym</strong> is a simulation benchmark for whole-page
+composition under the reward signal production actually has — page-level
+attribution, multi-day delay, and observation noise — not the per-slot
+signal academic slate-bandit work assumes. It ships: a customer
+simulator with two interchangeable persona sources (parametric
+8-persona; LLM-driven 14-persona × 6-category); a policy-agnostic
+ground-truth reward and oracle; a Gym-style
+<code>reset()/step()/drain()</code> API whose delayed-feedback contract
+exposes exactly the reward a production learner may see; and an
+inaugural leaderboard of ten policies. The ground truth is a
+transparent, swappable component of the benchmark, not a hidden
+assumption; we report the policy ranking’s invariance to i.i.d. and
+structured perturbations of it.</p>
+<p>As the benchmark’s reference policy we study <strong>Evolvable
+Decision Programs (EDP)</strong>: a 200–300-parameter named GAM with
+piecewise-linear shape functions, which is simultaneously:</p>
 <ul>
 <li><strong>LLM-writable.</strong> An LLM can author a competent initial
 policy directly from domain knowledge (245 named parameters, ~9 KB of
@@ -270,53 +290,108 @@ large enough to express a competitive policy, structured enough that
 edits are well-typed and the post-edit artifact is still
 human-reviewable. We call a GAM equipped with this evolution loop an
 <strong>Evolvable Decision Program</strong> (EDP).</p>
-<p>We demonstrate the primitive on page composition: at each session,
-choose and order 6 widgets out of 22 candidates given 14 raw behavioural
-signals and 6 fashion categories, under the reward signal production
-actually has (page-level attribution, multi-day delay, observation
-noise). The empirical contribution is that the closure properties do not
-cost performance. Against eight baselines on two simulators (parametric
-8-persona; LLM-driven 14-persona × 6-category) under production reward
-conditions, EDP variants reach 6.5 ± 0.2 % oracle-regret on parametric
-(EDP-agent) and 11.0 ± 0.2 % on LLM-persona (Bayesian-EDP), roughly 2×
-better than the strongest combinatorial bandit we measured. We are
-deliberate about <em>why</em>: a decomposition (§5.4c) shows the honest
-comparator is not per-slot LinTS — which is the wrong abstraction under
-page-level reward — but <strong>GreedyLinTS</strong>, the same GAM
-architecture with no LLM, which already closes most of the gap (12.8 % /
-13.3 %). The LLM’s measured contribution on top is a competent zero-data
-prior and, on the harder simulator, an SGD-fused refinement; on the
-primary (LLM) simulator the LLM <em>editing</em> loop does not beat the
-architecture alone. We therefore frame the result as an existence proof
-that a readable, LLM-authorable primitive can match the strongest
-baselines we tried — not as an LLM-beats-bandits headline. The thesis is
-what the primitive enables in deployment: cold-start with zero training
-data (§5.7), zero serving dependencies, inline audit, and well-typed
-agent edits — none of which any bandit in the comparison supports.</p>
+<p><strong>What the inaugural leaderboard shows.</strong> Run through
+one harness (§5.0), the ten policies separate by class. At default
+exploration, per-slot and combinatorial bandits lose heavily under
+page-level attribution, because the per-arm credit they rely on is
+structurally absent (§5.2): LinTS-warm loses 21.6 %, the best
+combinatorial bandit 16.6 %, while the adaptive-submodular GAM class
+leads (GreedyLinTS, no LLM, 13.5 %; Bayesian-EDP 10.8 %; EDP-agent 13.3
+% on the primary LLM-persona simulator, and EDP-agent 6.5 % on
+parametric). But the benchmark also corrects its own naive reading: a
+per-condition exploration sweep (§5.3) drops a <em>tuned</em> LinTS-warm
+to 10.5 % on LLM — tied with the best GAM — showing that much of the
+apparent bandit “collapse” is over-exploration under an uninformative
+signal, not an inability to compete. The durable finding is therefore
+about <em>policy classes and what the regime rewards</em>, not “LLM
+beats bandits”: the GAM class wins at default settings and ties a tuned,
+feature-matched bandit at best settings, while uniquely supporting
+cold-start with zero data (§5.7), zero serving dependencies, and inline
+audit — none of which any bandit entry has. Code, the Gym API, the
+committed policy/edit artifacts, and the leaderboard harness are
+released so the benchmark is runnable and extensible.</p>
 <h2 id="introduction">1. Introduction</h2>
-<p>Where should the intelligence of a decision system live?</p>
-<p>The default answer is <em>in model weights</em>: a transformer ranker
-or contextual bandit absorbs engagement signal into millions of opaque
-parameters, and the system gets smarter by retraining. This works, but
-at three costs that compound at scale. Decisions are not explainable in
-detail. The system can only get smarter in directions gradient descent
-finds. And the most capable reasoning tool we have, an LLM, cannot read
-or contribute to the policy without running expensively in the serving
-path.</p>
-<p>Karpathy’s <em>Software 3.0</em> framing names a different locus:
-<strong>natural language and LLM authorship as the program</strong>. In
-its current instantiations the LLM sits in the execution path (steering
-a runtime via prompts) or generates code that runs once (coding agents
-producing Python). Neither model is what we want for an online decision
-system: serving has hard latency budgets, and a 10K-line codebase is too
-much surface for an LLM to refactor coherently at every checkpoint.</p>
-<p>This paper argues that a <strong>small GAM with named
-piecewise-linear shape functions</strong> is the right symbolic
-substrate for the Software 3.0 paradigm applied to online decisions. The
-argument is about fit. GAMs are decades old; LLMs editing code is a year
-old; what is new is the way the two compose. The claim is that a
-200–300-parameter named GAM is the smallest policy representation with
-all four of the following properties:</p>
+<h3 id="why-whole-page-optimization-needs-a-simulator">1.1 Why
+whole-page optimization needs a simulator</h3>
+<p>A product page is <em>composed</em>, not just ranked: a recommender
+chooses which modules to place — fit reassurance, a comparison card,
+outfit completion, a returns explainer — and in what order, jointly, for
+the user in front of it. This is <strong>whole-page optimization
+(WPO)</strong>, and it has a property that makes it hard to study with
+the field’s usual instruments. The action is an <em>ordered slate</em>
+over the module registry; with 22 widgets into 6 slots the space is ≈10⁸
+ordered pages, and the reward is a property of the <em>whole page</em>,
+not of any module in isolation.</p>
+<p>That combination defeats the three standard evaluation routes:</p>
+<ul>
+<li><strong>Live A/B testing</strong> can compare a handful of
+hand-built page designs. It cannot search a 10⁸-action space, and every
+arm costs weeks of traffic and a real customer experience. You learn
+whether design A beats design B, never which region of the space is
+good.</li>
+<li><strong>Logged/offline data</strong> is generated by <em>some</em>
+production policy, so it covers only the slates that policy chose; the
+combinatorial remainder is unobserved, and counterfactual estimators
+(IPS, DR) need a known logging propensity over an action space this
+large, which production rarely has.</li>
+<li><strong>Per-slot bandit benchmarks</strong> assume the reward is
+attributed to each slot. Production attributes reward at the page or
+order level, after a multi-day return window, with noise — precisely the
+signal per-slot methods cannot consume (§5.2).</li>
+</ul>
+<p>Reinforcement learning faced the same wall for control and answered
+it with simulators: MuJoCo, the Arcade Learning Environment, Gym, D4RL.
+You cannot cheaply learn locomotion on real robots, so a calibrated
+simulator with a transparent reward became the field’s substrate, and
+progress was measured on it. WPO is in the same position. The
+contribution of this paper is the corresponding environment.</p>
+<h3 id="wpo-gym">1.2 WPO-Gym</h3>
+<p><strong>WPO-Gym</strong> is a simulation benchmark for whole-page
+composition under the reward signal production actually has — page-level
+attribution, multi-day delay, and observation noise. It has four
+components (§2):</p>
+<ol type="1">
+<li>A <strong>customer simulator</strong> with two interchangeable
+persona sources — a parametric 8-persona mixture and an LLM-authored
+14-persona × 6-category source — exposing one interface so policies are
+agnostic to which is active.</li>
+<li>A <strong>policy-agnostic ground truth</strong>: latent per-persona
+needs and per-widget provisions define a diminishing-returns page reward
+and a per-persona oracle. The ground truth is an explicit, swappable
+component of the benchmark, not a hidden modelling assumption; §5.4e and
+Appendix C report how the policy ranking moves under perturbations of
+it.</li>
+<li>A <strong>Gym-style API</strong> (<code>reset()</code>,
+<code>step(page, payload)</code>, <code>drain()</code>) whose
+delayed-feedback contract surfaces exactly the (noisy, page-level,
+delayed) reward a production learner is allowed to see, while
+withholding the latent persona. One harness drives per-slot bandits,
+slate bandits, and GAM policies alike (<code>edp/env.py</code>,
+<code>edp/agents.py</code>).</li>
+<li>An <strong>inaugural leaderboard</strong> of ten policies (§5.0),
+run through that single harness with one seed protocol, released for
+extension.</li>
+</ol>
+<p>The benchmark’s headline finding is a <strong>policy-class ranking
+with a caveat the benchmark itself surfaces</strong>: at default
+exploration, per-slot and combinatorial bandits lose heavily under
+page-level attribution (§5.1–5.2), while an adaptive-submodular GAM
+policy class leads; but a per-condition exploration sweep (§5.3) shows a
+tuned, feature-matched per-slot bandit <em>ties</em> the best GAM on
+regret. We make the <em>why</em> explicit rather than crowning a method:
+page-level attribution removes the per-arm credit bandits rely on,
+over-exploration compounds the loss when that signal is uninformative,
+and a model class that scores pages compositionally sidesteps both
+(§5.4c). What separates the GAM class in deployment is not regret but
+cold-start and the closure properties below.</p>
+<h3 id="evolvable-decision-programs-the-reference-policy">1.3 Evolvable
+Decision Programs: the reference policy</h3>
+<p>The strongest entries are instances of a policy class we call an
+<strong>Evolvable Decision Program (EDP)</strong>: a 200–300-parameter
+named generalised additive model (GAM) with piecewise-linear shape
+functions, authored and edited by an LLM offline and served as pure
+code. We study it as the benchmark’s reference policy because it has
+four properties no weight-based learner combines:</p>
 <p>The four properties are: <strong>LLM-writable</strong> (the LLM
 authors a competent initial policy directly from domain knowledge);
 <strong>LLM-editable</strong> (every parameter has an addressable dotted
@@ -325,82 +400,76 @@ path, so the agent emits well-typed scalar edits with attached reasons);
 named contributions and every edit is a PR diff); and
 <strong>Microsecond-servable</strong> (evaluating ~245 numbers and a
 6-step greedy composition is roughly 1 ms in pure Python, with the LLM
-strictly offline). §3.4 quantifies each in turn. Together they give
+strictly offline). §3.4 quantifies each. Together they give
 <strong>closure under both human and LLM editing</strong>: the LLM
-reads, the human reviews, the LLM re-edits, with no translation layer in
-between. We call a GAM equipped with this evolution loop an
-<strong>Evolvable Decision Program</strong> (EDP).</p>
-<p>The application in this paper is page composition: choose and order 6
-widgets out of 22 candidates on a fashion product page given 14 raw
-behavioural signals and 6 categories. The reward signal is the one
-production actually has, observed at the page level, delayed by several
-days, and noisy, rather than the per-slot signal academic bandit work
-assumes. Per-slot LinTS, the canonical contextual bandit, loses 4.9 % of
-oracle reward under lab conditions and 18.9 % under production
-conditions (§5.1). The degradation comes from a structurally absent
-per-slot signal, not from algorithmic weakness.</p>
-<p>Against eight baselines (per-slot LinTS warm and cold context,
-Slate-LinTS, CombLinUCB, GreedyLinTS, static placement, one-shot
-LLM-as-policy, OPRO ablation) on two simulators, the EDP variants are
-competitive. Bayesian-EDP loses 11.0 ± 0.2 % of oracle reward on the
-LLM-persona simulator (the primary setting); EDP-agent loses 6.5 ± 0.2 %
-on the parametric simulator (the robustness check). Neither EDP variant
-is uniformly best — the winner is simulator-conditional (§5.4c) — and
-both are reported against their best simulator, which the reader should
-weigh accordingly. Both are roughly 2× better than the strongest
-combinatorial bandit (CombLinUCB at 17.3 % / 10.5 %). We frame this as
-an existence proof that the primitive can compete, not a horse race.
-Crucially, §5.4c shows the honest comparator is GreedyLinTS — the same
-GAM architecture with no LLM, at 12.8 % / 13.3 % — which already closes
-most of the gap; the LLM contributes a zero-data prior and an SGD-fused
-refinement, not a categorical win over the architecture. EDP’s closure
-properties don’t cost performance. That is the empirical
-contribution.</p>
-<p>The “evolvable” qualifier deserves a stronger disclaimer than the
-term suggests. What the experiments cleanly support is <em>coefficient
-updates within a fixed policy class</em>: the agent edits values along
-named paths, and the regularised SGD inside Bayesian-EDP moves the same
-values continuously. Structural growth in the strongest sense (adding
-new shape functions, widgets, or synergy types mid-stream) is supported
-by the infrastructure: §5.4d adds the Layer-1 PWL edit grammar; §5.9
-adds a new widget mid-run. Neither delivers a single-trial empirical
-win, and we have not multi-seed-evaluated either. A more accurate name
-for the artifact would be “Editable Decision Programs.” We keep
-“Evolvable” because the edit grammar already covers structural moves and
-because multi-seed evaluation of the term is a near-term follow-up, not
-a research bet. The reader should treat structural evolvability as a
-capability claim until §5.4d and §5.9 are replicated at K ≥ 5.</p>
-<p>§2 specifies the simulators, §3 details the 2-layer GAM and the
-evolution loop, and §5 reports results. Appendix A walks one session
-through the full open-box trace.</p>
+reads, the human reviews, the LLM re-edits, with no translation layer.
+This is the <em>Software 3.0</em> idea (Karpathy) made serviceable for
+an online decision system — the LLM authors a readable artifact rather
+than sitting in the serving path. A neural net is not closed under LLM
+edits (there is no <code>weights[847][22]</code> an LLM can reason
+about); a 10K-line codebase is not closed under single-checkpoint edits
+(too much surface). A 245-parameter named GAM sits in between.</p>
+<p>On the leaderboard, EDP-agent reaches 6.5 ± 0.2 % oracle-regret on
+the parametric simulator and Bayesian-EDP reaches 11.0 ± 0.2 % on the
+primary LLM-persona simulator — best among the ten entries at their
+default settings. We are explicit about two qualifications. First, the
+architecture, not the LLM, carries most of this: GreedyLinTS — the same
+GAM with no LLM — already reaches 12.8 % / 13.3 % (§5.4c). Second, a
+<em>tuned</em> per-slot bandit handed the EDP problem-features matches
+Bayesian-EDP on regret (§5.3). EDP’s distinctive value is therefore not
+a regret margin but the deployment properties its closure buys —
+cold-start with zero data (§5.7), zero serving dependencies, inline
+audit — that no bandit entry has.</p>
+<p>The “evolvable” qualifier carries a disclaimer. What the experiments
+cleanly support is <em>coefficient updates within a fixed policy
+class</em>. Structural growth (new shape functions, widgets, synergies
+mid-stream) is supported by the edit grammar (§5.4d, §5.9) but not yet
+shown to pay off at multi-seed; treat it as a capability claim until
+§5.4d/§5.9 are replicated at K ≥ 5.</p>
 <p><strong>Contributions:</strong></p>
 <ol type="1">
-<li><strong>The GAM-as-Software-3.0-primitive claim (§3).</strong> A
-200–300-parameter named GAM is the smallest policy representation with
-closure under both human and LLM editing. We quantify the property: 245
-learnable parameters, 9 KB policy JSON, ~900-token diagnostic report, 15
-well-typed edits per checkpoint round.</li>
-<li><strong>GAM-as-prior Bayesian fusion (§5.4b).</strong> Regularised
-SGD anchored at the LLM-authored shape functions. Best method on the
-LLM-persona simulator at 11.0 ± 0.2 %. The fusion preserves the readable
-representation while consuming online reward signal between
-checkpoints.</li>
-<li><strong>Existence proof that the primitive can compete
-(§5).</strong> Against eight baselines on two simulators under
-production reward conditions, EDP variants are within 2× of optimal and
-2× better than the strongest combinatorial bandit. The closure
-properties do not cost performance; that is the empirical
-contribution.</li>
-<li><strong>Direct measurement of the academic-vs-production gap (§5.1)
-and OPRO-style ablation (§5.4).</strong> Per-slot LinTS degrades by 14
-pp under page-level attribution. The gap is structural, not
-method-specific. The OPRO ablation isolates structured context, not the
-LLM’s general intelligence, as the carrier of the LLM-side gain.</li>
+<li><strong>WPO-Gym (§2, §5.0).</strong> A simulation benchmark for
+whole-page optimization under production reward conditions, with two
+interchangeable persona sources, a transparent swappable ground truth, a
+Gym-style delayed-feedback API, and an inaugural ten-policy leaderboard
+— all released and reproducible from one harness. The methodological
+claim is that simulation is the appropriate, not merely convenient, way
+to study WPO.</li>
+<li><strong>A policy-class finding, with an honest caveat
+(§5.1–5.4c).</strong> At default exploration, per-slot and combinatorial
+bandits lose heavily under page-level attribution and the
+adaptive-submodular GAM class leads. A per-condition exploration sweep
+(§5.3) shows much of the bandit loss is over-exploration: a tuned,
+feature-matched per-slot bandit ties the best GAM on regret. The
+structural point — page-level reward removes per-arm credit (§5.2) —
+stands for the from-scratch (cold) bandit and at default settings; the
+durable class difference is in cold-start and deployment properties, not
+a regret margin.</li>
+<li><strong>Evolvable Decision Programs as a reference policy (§3,
+§3.4).</strong> A 200–300-parameter named GAM with closure under both
+human and LLM editing — LLM-writable, -editable, human-auditable,
+microsecond-servable — and the GAM-as-prior Bayesian fusion (§5.4b) that
+is the best leaderboard entry on the primary simulator.</li>
+<li><strong>An OPRO-style ablation (§5.4)</strong> isolating structured
+context, not the LLM’s raw intelligence, as the carrier of the LLM-side
+gain.</li>
 </ol>
-<h3 id="related-work-and-positioning">1.1 Related work and
+<h3 id="related-work-and-positioning">1.4 Related work and
 positioning</h3>
-<p>EDP sits at the intersection of four lines of work; none of its
-ingredients are new, and we position against each explicitly.</p>
+<p>WPO-Gym relates to simulation benchmarks; EDP relates to four method
+lines. We position against each.</p>
+<p><strong>Simulation benchmarks for decision-making.</strong> RL
+standardised on simulators when real interaction was too costly to
+search: MuJoCo, the Arcade Learning Environment, OpenAI Gym, and
+offline-RL suites like D4RL. WPO-Gym is the analogue for whole-page
+composition — a calibrated environment with a transparent, swappable
+reward and a Gym-style API — motivated by the same impossibility
+argument (§1.1). Recommender simulators exist (RecoGym, RecSim) but
+target single-slot or sequential-item recommendation with per-item
+feedback; WPO-Gym’s distinguishing features are the
+<em>ordered-slate</em> action, the <em>page-level</em> delayed reward,
+and a ground truth designed to be perturbed and swapped as part of the
+evaluation.</p>
 <p><strong>LLMs as optimizers and program authors.</strong> OPRO (Yang
 et al., 2023) uses an LLM to propose solutions from a trajectory of
 (solution, score) pairs — exactly our OPRO ablation (§5.4), which we use
@@ -443,18 +512,44 @@ under page-level reward (§5.2), and that an adaptive-submodular GAM
 (GreedyLinTS, §5.4c) sidesteps the problem by changing the model class.
 We do not test neural bandits (NeuralUCB) or offline/counterfactual
 estimators (IPS, DR); these are acknowledged gaps (§7).</p>
-<h2 id="simulation-setup">2. Simulation setup</h2>
-<p>We separate four concerns: the <strong>customer simulator</strong>
-(session sampling), the <strong>persona source</strong> (parametric or
-LLM-driven), the <strong>ground-truth reward</strong> (policy-agnostic),
-and the <strong>observable reward signal</strong> the policy actually
-receives (delayed, noisy, page-level). A session is a tuple
+<h2 id="the-wpo-gym-environment">2. The WPO-Gym environment</h2>
+<p>WPO-Gym separates four concerns: the <strong>customer
+simulator</strong> (session sampling), the <strong>persona
+source</strong> (parametric or LLM-driven), the <strong>ground-truth
+reward</strong> (policy-agnostic), and the <strong>observable reward
+signal</strong> the policy actually receives (delayed, noisy,
+page-level). A session is a tuple
 <code>(persona, category, features)</code> where features are 14 raw
 behavioural signals plus one product-side signal
 (<code>price_norm</code>). All policies see the same 10K-session stream
 at seed 42; the production reward stack is layered on top via a single
 <code>DelayedFeedback</code> queue. Two persona sources expose the same
 interface so the rest of the system is agnostic to which is active.</p>
+<p>The environment is exposed through a Gym-style contract
+(<code>edp/env.py</code>): <code>reset()</code> returns an
+<code>Observation(index, category, feat)</code> — note the persona is
+<em>withheld</em>, since it is the latent the reward depends on;
+<code>step(page, payload)</code> advances one session and returns a
+<code>StepResult</code> whose <code>matured</code> field carries only
+the delayed, page-level, noisy feedback that has become visible at the
+current tick (the queue holds each reward for <code>delay</code>
+sessions and adds Gaussian noise on release); <code>drain()</code>
+flushes the queue at episode end. A policy that reads
+<code>true_reward</code> or the persona instead of the matured feedback
+is cheating, and the API makes that boundary explicit. Crucially, reward
+<em>attribution</em> lives in the policy’s <code>payload</code>, not the
+environment — so a per-slot bandit (which packs per-slot contexts into
+the payload and splits the page reward across them) and a page-level GAM
+(which consumes the scalar directly) run against the <em>same</em>
+environment with no special-casing. The agent adapters that wrap each
+policy family behind one <code>act/learn/maybe_checkpoint</code>
+protocol are in <code>edp/agents.py</code>, and one runner
+(<code>run_episode</code>) drives all of them; this is the harness
+behind the §5.0 leaderboard.</p>
+<p>The ground truth (§2.2) is an explicit, swappable component, not a
+hidden modelling choice: it is a pair of LLM-authored maps that any user
+of the benchmark can replace or perturb, and §5.4e / Appendix C report
+how the policy ranking responds when we do.</p>
 <h3 id="customer-simulator-parametric-source">2.1 Customer simulator
 (parametric source)</h3>
 <p>A session is a tuple
@@ -1132,15 +1227,124 @@ and all reports are persisted under <code>evolve_state_rep*/</code>
 the repository so the experiment is byte-for-byte reproducible.</p>
 <h2 id="results">5. Results</h2>
 <p>We treat <strong>LLM-persona as the primary simulator</strong> and
-parametric as a robustness check; results tables put LLM-persona first
-throughout. Bayesian-EDP loses 11.0 ± 0.2 % of oracle reward on
-LLM-persona; EDP-agent loses 6.5 ± 0.2 % on parametric; both are roughly
-2× better than the strongest combinatorial bandit. The remainder of the
-section unpacks where that gap comes from: §5.1 measures the
-lab-to-production gap that motivates the primitive, and §5.4c decomposes
-the EDP gain into architecture, LLM-anchored prior, and continuous SGD.
-Where a subsection’s claim is supported by a single-trial result rather
-than a multi-seed mean, we say so in line.</p>
+parametric as a robustness check; results tables put LLM-persona first.
+§5.0 is the inaugural leaderboard; §5.1 isolates the lab-to-production
+gap; §5.2 attributes it to page-level credit; §5.3 sweeps bandit
+exploration (the result that most reshapes the naive reading); §5.4–5.4c
+decompose the EDP gain; §5.5–5.10 add per-cell, robustness, drift, and
+negative results. Single-trial claims are flagged in line.</p>
+<h3 id="the-inaugural-leaderboard">5.0 The inaugural leaderboard</h3>
+<p>All ten policies, run through the one Gym harness
+(<code>run_episode</code> over <code>PageCompositionEnv</code>, §2) on
+the primary LLM-persona simulator under production conditions
+(page-level attribution, delay=500, σ=0.20), % of oracle reward lost @
+10K sessions (lower is better):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Rank</th>
+<th>Policy</th>
+<th>Class</th>
+<th>LLM · Prod regret %</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Bayesian-EDP</td>
+<td>GAM (LLM prior + SGD)</td>
+<td><strong>10.8 ± 0.2</strong></td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>EDP-agent</td>
+<td>GAM (LLM prior + edits)</td>
+<td>13.3 ± 0.8</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>GreedyLinTS</td>
+<td>GAM (no LLM, SGD)</td>
+<td>13.5 ± 0.0</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Slate-LinTS</td>
+<td>combinatorial bandit</td>
+<td>16.6 ± 0.1</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>CombLinUCB</td>
+<td>combinatorial bandit</td>
+<td>16.9 ± 0.0</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>EDP-static</td>
+<td>GAM (frozen LLM prior)</td>
+<td>19.8</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>LinTS-warm (α=0.3)</td>
+<td>per-slot bandit</td>
+<td>21.6 ± 0.1</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>LinTS-cold (α=0.3)</td>
+<td>per-slot bandit</td>
+<td>22.8 ± 0.0</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>Random</td>
+<td>—</td>
+<td>30.6 ± 0.1</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td>Static top-6</td>
+<td>—</td>
+<td>40.7</td>
+</tr>
+</tbody>
+</table>
+<p>(One harness, <code>run_leaderboard.py</code> →
+<code>results/leaderboard.json</code>. Bandit rows vary their internal
+Thompson seed; EDP-agent varies over its 3 committed edit trajectories;
+GreedyLinTS and Bayesian-EDP are deterministic at the fixed harness
+seed, so the ± shown for them is the multi-seed SE from §5.4b–c, where
+Bayesian-EDP’s 5-seed mean is 11.0 ± 0.2. EDP-static / Static / Random
+are as labelled. The leaderboard reproduces the canonical §5.1/§5.4c
+numbers within seed noise, which is itself a check on provenance.)</p>
+<p>Three readings, in increasing order of how much they complicate the
+naive story:</p>
+<ol type="1">
+<li><strong>The GAM policy class leads.</strong> The top three entries
+share the adaptive-submodular GAM architecture; the best bandit at its
+<em>default</em> setting (Slate-LinTS, 16.6 %) trails the worst GAM
+learner (GreedyLinTS, 13.5 %). The architecture, not the LLM, is what
+separates the classes — GreedyLinTS has no LLM at all (§5.4c).</li>
+<li><strong>EDP-static is not the point.</strong> A frozen LLM prior
+(19.8 %) is beaten by the tuned combinatorial bandits; the LLM’s value
+is as a <em>prior plus an update channel</em> (Bayesian-EDP, EDP-agent),
+and especially as cold-start (§5.7), not as a static config.</li>
+<li><strong>Exploration tuning closes much of the bandit gap
+(§5.3).</strong> The bandit entries above use the default exploration
+rate α=0.3. That is not their best: a per-condition sweep (§5.3) drops
+LinTS-warm to <strong>10.5 %</strong> on LLM at α=0.05 — tied with
+Bayesian-EDP. So the headline is <em>not</em> “GAMs beat bandits by 2×”.
+It is that the bandits’ apparent collapse at default settings is largely
+an over-exploration pathology under uninformative page-level reward, and
+that a <em>tuned</em> per-slot bandit handed the EDP-derived
+problem-features matches the GAM class on regret — while still lacking
+its cold-start and deployment properties (§5.7, §6). The benchmark’s
+contribution is surfacing exactly this kind of correction.</li>
+</ol>
+<p>The remainder of §5 unpacks the leaderboard. Parametric (robustness)
+numbers appear in §5.1.</p>
 <h3 id="the-labproduction-gap">5.1 The lab–production gap</h3>
 <p>The bandit literature evaluates page composition under “lab”
 conditions: per-slot reward attribution, low delay, low noise. Our
@@ -1397,15 +1601,73 @@ Slate-LinTS: replace Thompson sampling with the upper-confidence-bound
 more sample-efficient than TS in low-noise regimes; we expected this to
 be the strongest bandit in the lab.</li>
 </ul>
-<p>All bandits run at a single exploration setting
-(<code>α = 0.3</code>); we did not sweep <code>α</code> per condition. A
-condition-specific sweep could shift the absolute numbers and is the
-right way to make the bandit baselines maximally competitive — we flag
-it as a limitation (§7). The qualitative conclusion (every per-arm
-variant loses 8–15 pp moving from lab to production) is robust to
-<code>α</code> because the cause is the credit-assignment structure, not
-the exploration rate; but the precise CombLinUCB-vs-Slate-LinTS ordering
-below should be read with the no-sweep caveat in mind.</p>
+<p>The table above fixes exploration at <code>α = 0.3</code>. That turns
+out to matter a great deal, and sweeping it is the most informative
+single experiment in the paper.</p>
+<p><strong>Exploration sweep (the result that reshapes the naive
+reading).</strong> We sweep
+<code>α ∈ {0.05, 0.1, 0.2, 0.3, 0.5, 1.0}</code> per method per
+condition and report each method’s best
+(<code>run_alpha_sweep.py</code>; LLM-persona, production):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>regret @ α=0.3 (default)</th>
+<th>regret @ best α</th>
+<th>best α</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LinTS-warm</td>
+<td>21.5 %</td>
+<td><strong>10.5 ± 0.4 %</strong></td>
+<td>0.05</td>
+</tr>
+<tr class="even">
+<td>Slate-LinTS</td>
+<td>16.7 %</td>
+<td><strong>12.5 ± 0.6 %</strong></td>
+<td>0.05</td>
+</tr>
+<tr class="odd">
+<td>CombLinUCB</td>
+<td>16.9 %</td>
+<td>16.4 %</td>
+<td>0.2</td>
+</tr>
+</tbody>
+</table>
+<p>Two things fall out. First, <strong>most of the per-slot bandit’s
+apparent collapse was over-exploration.</strong> Under page-level reward
+the per-arm signal is uninformative, so exploration spends regret to
+learn almost nothing; cutting <code>α</code> from 0.3 to 0.05 drops
+LinTS-warm from 21.5 % to <strong>10.5 %</strong> — tied with
+Bayesian-EDP (10.8 %) and below every other GAM learner. Slate-LinTS
+similarly drops to 12.5 %. (Parametric shows the same direction:
+LinTS-warm falls from 18.8 % to ~9.2 % at α=0.05.) Second,
+<strong>CombLinUCB cannot tune out of it.</strong> Its exploration is a
+confidence bonus, not a free scalar; its best (16.4 % at α=0.2) barely
+improves on its default and is now the <em>worst</em> of the three tuned
+bandits. So among tuned bandits the Thompson-sampling variants dominate
+the UCB variant — the inversion §5.1’s table hinted at, now grounded in
+a sweep rather than a single α.</p>
+<p>This is the benchmark correcting its own headline, and it is the
+honest finding: <strong>at matched, tuned exploration a per-slot bandit
+handed the EDP problem-features (the warm 7-d context) matches the best
+GAM on regret.</strong> Three caveats keep it in perspective. (i)
+“LinTS-warm” is linear TS <em>on EDP’s Layer-1 problem fingerprint</em>
+— it is gifted the architecture’s feature construction; the from-scratch
+cold bandit (raw signals) is 22.8 % and we did not sweep it. (ii) The
+bandit must be tuned and must warm up; the GAM computes those features
+itself and launches competently with zero data (§5.7). (iii) Regret
+parity does not confer the deployment properties (cold-start, audit,
+sub-ms serving) that motivate the GAM class (§6). The defensible claim
+is thus narrower and truer than “GAMs beat bandits 2×”: under page-level
+reward, <em>exploration rate and context features dominate the
+bandit-vs-GAM label</em>, and the GAM class’s durable advantage is
+operational, not a regret margin.</p>
 <table>
 <colgroup>
 <col style="width: 20%" />
@@ -1516,21 +1778,22 @@ draws from a posterior that is wrong in the same way UCB’s mean is
 wrong, but the draw still produces nonzero exploration probability on
 every arm, so the policy is more robust to a miscalibrated
 posterior.</p>
-<p>We present this as a <strong>conjecture, not a result</strong>. Two
-caveats weaken it. First, the inversion is a 0.8 pp gap (17.3 vs 16.5)
-at a single, un-swept <code>α</code>; it could be tuning noise rather
-than a structural effect, and only a per-condition <code>α</code> sweep
-would settle that. Second, the UCB-vs-TS asymmetry is not derived:
-Thompson sampling’s posterior is <em>also</em> miscalibrated under
-correlated per-slot targets (indeed Bayesian-EDP needs heavy
-regularisation for exactly this reason, §5.4b), so it is not obvious a
-priori that TS’s sampling is more robust than UCB’s bonus to the
-residual-variance floor. A formal version would derive the floor and the
-resulting regret scaling for both rules. We have only the empirical
-inversion and offer the variance-floor story as a hypothesis to motivate
-that analysis, not as an established mechanism. What <em>is</em> robust
-across §5.2–5.3 is the direction: every per-arm method loses heavily
-moving to page-level reward.</p>
+<p>The exploration sweep gives this conjecture real support. Tuning each
+rule to its best <code>α</code> (table above), the two Thompson-sampling
+bandits fall to 10.5 % (LinTS-warm) and 12.5 % (Slate-LinTS), while
+CombLinUCB barely moves (16.9 → 16.4 %) and ends up the worst tuned
+bandit. That is exactly the asymmetry the variance-floor story predicts:
+TS explores via posterior sampling whose spread <em>can</em> be dialed
+down with <code>α</code> when the per-arm signal is uninformative,
+whereas UCB’s additive confidence bonus keeps injecting exploration that
+the page-level signal cannot reward. We still stop short of calling it a
+proof — a formal version would derive the residual-variance floor and
+the regret scaling of each rule, and we have a sweep over six
+<code>α</code> values on one benchmark, not a theorem. But it is now a
+swept empirical regularity, not a single-<code>α</code> artefact. What
+is robust across §5.2–5.3: every per-arm method loses heavily at default
+exploration, TS variants recover most of it under tuning, and UCB does
+not.</p>
 <p>The structural conclusion holds across every combinatorial-bandit
 variant we tested: <strong>page-level attribution is fatal to per-arm
 credit assignment</strong>. Slate-action methods, pooled bandits, and
