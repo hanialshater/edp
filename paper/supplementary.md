@@ -169,3 +169,65 @@ Robust EDP wrapper (§5.8):
 - perturbation σ = 0.15 (Gaussian) on every parameter the agent's edits touched, except `slot_decay`
 - validation slice = 500 sessions at seed 99991
 - selection score = mean − 0.5·std of validation reward
+
+---
+
+## Deployment walkthrough
+
+*(Moved from the main paper to keep the page budget; referenced from §6 as the deployment-properties artifact.)*
+
+
+This appendix sketches how the primitive would embed in a production page-render path, so the deployment claims of §1 and §6.3 have a concrete artifact to discuss.
+
+**Step 1 — the policy ships as a JSON file.** The 245-parameter learnable policy plus the metadata needed for serving (problem labels, widget descriptors, edit-grammar version) is approximately 9 KB of JSON. It is checked into the same repository as the application code. There is no separate model registry, no model server, no feature store.
+
+```json
+// policy_v_017.json  (9.2 KB)
+{
+  "version": "017",
+  "approved_by": "alice@team.example",
+  "from_round": 7500,
+  "shapes": { "F32": { "size_chart": {"bps": [0, 0.2, 0.5, 0.8, 1],
+                                       "vals":[0, 0.1, 0.45, 0.75, 0.95],
+                                       "weight": 0.45 }, ... }, ... },
+  "modules": { "fit_reassurance": {"base": 0.10, "addr": {"F32": 0.55, ...},
+                                    "on_rem": {"F32": 2.2, ...},
+                                    "on_cov": {"F32": -1.2}, ... }, ... }
+}
+```
+
+**Step 2 — the serving function is ~80 lines of Python.** `score_problems`, `score_module`, and `compose` from `edp/policies/edp.py` are the entire decision logic. Given a session feature vector and a category, they return a 6-widget page. No external calls. The same code path runs in CI tests.
+
+```python
+# Production serving path (sketch)
+from edp.policies.edp import compose
+import json
+
+POLICY = json.load(open("policy_v_017.json"))
+
+def render_page(session_features, category):
+    page = compose(session_features, POLICY["shapes"], POLICY["modules"])
+    # page is ['fit_reassurance', 'low_return_alts', ...]
+    return [fill_widget(w, category) for w in page]
+```
+
+`fill_widget(name, category)` pulls cached content from the widget retriever output — already a production capability today. The EDP layer adds about 1 ms to the page render. The 9 KB policy fits in any inline cache and is loaded at process start.
+
+**Step 3 — the audit log is the policy repository's git log.** Each agent edit batch is committed as a PR. The PR body is the diagnostic report the agent read plus the edit batch with its reasons. A reviewer reads ten lines and either merges or requests changes (the reviewer-rejection vignette in §6.2 is the realistic shape of one round). The serving policy file is updated by merging the PR; there is no separate deployment.
+
+```
+$ git log --oneline policy_v_*.json
+b3f2a1c policy v017: round-7500 edits — strengthen F46 synergy chain (alice)
+8d7e120 policy v016: round-5000 edits — cut over-firing on outfit_completion (alice)
+3a9c2f5 policy v015: round-2500 edits — revive dead returns/size widgets (bob)
+0001abc policy v014: initial LLM-authored config from shopping psychology (LLM)
+```
+
+A new team member reads the git log to understand what the system has learned. A regulator subpoenas the same log and reads the diagnostic reports and reasons. A non-ML PM proposes a manual edit by opening a PR. None of these workflows require ML infrastructure.
+
+**Step 4 — Bayesian-EDP adds a small async loop.** If the deployment uses Bayesian-EDP, a separate process drains the delayed-reward queue and SGD-updates the policy file every hour or so. The SGD code is ~50 lines (`edp/policies/bayesian_edp.py`). The resulting numeric drift relative to the LLM prior is logged and bounded; if the SGD wants to move a parameter by more than (say) 50 % of its prior value, the move is held for a human checkpoint review (current implementation is unbounded; bounded drift is a one-line addition).
+
+**Step 5 — checkpoint cadence is operational.** Every K sessions (we use K = 2,500 in experiments; production probably 50K–500K depending on traffic), the orchestrator builds the diagnostic report and invokes the agent. This is an offline cron job, not a serving-path dependency. If the agent is unavailable, the previous policy keeps serving indefinitely; the system degrades gracefully.
+
+**What this isn't.** This is a *walkthrough*, not a production case study. We have not deployed this stack at Zalando-scale traffic; the production-scale follow-up is left as the next concrete experiment. The artifact-level claims (policy ships as JSON, audit log is git log, no model server) are mechanical consequences of the primitive's properties; the latency claim (~1 ms) is measured in-process but not in a production rendering pipeline. The cold-start, audit, and serving-cost claims are first-principles. The benchmark claim is empirical, not a deployment result.
+

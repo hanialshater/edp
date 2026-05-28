@@ -157,6 +157,18 @@ else:
     warns.append('alpha_sweep file missing')
     print('  WARN  results/alpha_sweep.json missing (run run_alpha_sweep.py)')
 
+print('\n== 5d. Cold-start (§5.7) matches results/coldstart.json ==')
+cs = jload('coldstart.json')
+if cs:
+    c = cs['curves']
+    approx('coldstart edp_static @500', c['edp_static']['500'][0], lo=20.0, hi=21.5)
+    approx('coldstart tuned-bandit @500', c['lints_warm_a0.05']['500'][0], lo=29.0, hi=31.0)
+    approx('coldstart bayesian @2500', c['bayesian_edp']['2500'][0], lo=15.0, hi=16.5)
+    check_present('cold-start advantage stated (9.4 pp)', '9.4 pp')
+else:
+    warns.append('coldstart file missing')
+    print('  WARN  results/coldstart.json missing (run run_coldstart.py)')
+
 print('\n== 6. Seed-count consistency ==')
 # §4 says 10 TS seeds; §5.1 caption must not still say "5 LinTS seeds"
 check_absent('5.1 caption seed count', 'across 5 LinTS seeds')
