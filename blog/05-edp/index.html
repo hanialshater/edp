@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5 · When world knowledge replaces exploration</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;padding:24px 16px 96px}
+.page{max-width:760px;margin:0 auto}
+.nav{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:24px;letter-spacing:0.04em}
+.nav a{color:var(--accent);text-decoration:none}
+h1{font-size:30px;line-height:1.2;margin:8px 0 12px;font-weight:700;letter-spacing:-0.01em}
+.subtitle{color:var(--dim);font-size:17px;margin:0 0 24px;line-height:1.5}
+h2{font-size:20px;margin:36px 0 12px;font-weight:600}
+h3{font-size:13px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+p{margin:14px 0}a{color:var(--accent)}
+code{font-family:var(--mono);background:var(--code);padding:1px 6px;border-radius:4px;font-size:13.5px}
+em{color:var(--fg);font-style:italic}strong{color:#fff}
+hr.scene{border:0;text-align:center;margin:36px 0 20px;color:var(--faint)}
+hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);font-size:12px}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+.widget h2{margin-top:0;font-size:18px;border:0}
+.legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:700px){.row{grid-template-columns:1fr}}
+.col{background:var(--code);border-radius:8px;padding:12px}
+.col h3{margin-top:0;margin-bottom:10px;font-size:11px}
+.persona-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.persona-pills button{font-family:var(--mono);font-size:11px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:14px;padding:3px 9px;cursor:pointer}
+.persona-pills button.on{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.slider-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.slider-row .name{min-width:90px}
+.slider-row input{flex:1;accent-color:var(--accent)}
+.slider-row .val{min-width:34px;text-align:right;color:var(--fg)}
+.problem-bar{margin:6px 0;font-family:var(--mono);font-size:11px}
+.problem-bar .lbl{display:flex;justify-content:space-between;color:var(--dim);margin-bottom:3px}
+.problem-bar .lbl span:first-child{color:var(--fg)}
+.bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bar > div{height:100%;background:var(--accent);transition:width 0.3s}
+.bar > div.f{background:var(--bad)}
+.bar > div.b{background:var(--blue)}
+.slot{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:5px 0;display:flex;justify-content:space-between;align-items:center;transition:all 0.25s}
+.slot .pos{font-family:var(--mono);font-size:10px;color:var(--dim)}
+.slot .w{font-family:var(--mono);font-size:13px;color:var(--fg);font-weight:600}
+.slot .s{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer}
+button:hover{background:var(--accent2);border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.banner{background:linear-gradient(180deg,var(--card),var(--bg));border:1px solid var(--border);border-radius:14px;padding:16px;margin:0 0 32px;font-family:var(--mono);font-size:12.5px;color:var(--dim)}
+.banner b{color:var(--good);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0;font-family:var(--mono);font-size:13px}
+.stat{background:var(--code);padding:9px 11px;border-radius:6px}
+.stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+.stat .value{color:var(--fg);font-size:17px;margin-top:3px}
+footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
+@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 5 / 6 · <a href="../04-tsp/">← prev</a> · <a href="../">index</a> · <a href="../06-edp-adapts/">next →</a></span></div>
+
+<h1>When world knowledge replaces exploration</h1>
+<p class="subtitle">Posts 1–4 watched algorithms learn the problem from scratch. What if, instead, someone read the problem and wrote down a sensible policy? In 2025 that someone can be an LLM, and the policy can be a readable artefact that runs at sub-millisecond serving cost.</p>
+
+<div class="banner">
+<b>Live: an actual policy from the research project</b> · 245 named parameters, authored offline from shopping psychology, zero training data. Drag the sliders — watch a page recompose. No clicks were needed to build this; no clicks are needed to serve it.
+</div>
+
+<p>The previous posts each fixed the same problem from a different angle: how do you find the best <em>k</em>-tuple, edge, or permutation when you can only sample noisily? The answer was always some form of bandit exploration. This post is the move that the rest of the series sets up: <strong>if the problem has domain structure that a human (or LLM) can read, you can often write down a competent policy without exploring at all.</strong></p>
+
+<hr class="scene">
+
+<h3>Act 1 — The widget you're about to play with</h3>
+
+<p>Below is a live instance of the EDP from <a href="../../paper/paper.md">the paper</a>: a 2-layer GAM with named piecewise-linear shape functions, on the whole-page-composition problem (choose 6 widgets out of 22 for a fashion product page). The whole policy is 245 numbers. Authored by an LLM, offline, from "size-anxious shoppers need fit reassurance" and similar statements — never trained on any data.</p>
+
+<p>Move the persona sliders to simulate different shoppers; watch the 7 problem scores (Layer 1) recompute; watch the 6-widget page (Layer 2) recompose. This is what the policy <em>does</em> at every page render in production: it reads ~15 signals, evaluates ~300 named scalars in pure code, and returns a page in about 1 ms. No LLM in the serving path.</p>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>1 — Persona → page (live EDP, zero learning)</h2>
+<p class="legend">Pick a persona, or move the sliders. The middle column is the policy's problem fingerprint (what's worrying this shopper); the right column is the page it composes for them. Everything updates in real time, computed entirely in your browser from the actual policy JSON.</p>
+
+<div class="persona-pills" id="personas"></div>
+
+<div class="row">
+  <div class="col">
+    <h3>1 · Signals (you control)</h3>
+    <div id="sliders"></div>
+  </div>
+  <div class="col">
+    <h3>2 · Problem fingerprint</h3>
+    <div id="problems"></div>
+  </div>
+  <div class="col">
+    <h3>3 · Composed page</h3>
+    <div id="page"></div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="label">parameters total</div><div class="value">245</div></div>
+  <div class="stat"><div class="label">serving cost</div><div class="value">~1 ms</div></div>
+  <div class="stat"><div class="label">training sessions used</div><div class="value">0</div></div>
+  <div class="stat"><div class="label">LLM calls per render</div><div class="value">0</div></div>
+</div>
+</div>
+
+<p>Notice what just happened. You moved sliders; the policy responded with sensible widget choices for each persona archetype. <strong>It had never seen a click.</strong> The LLM that authored it just <em>knew</em> things about shopping psychology — size-anxious shoppers benefit from fit reassurance and return policy clarity; comparison shoppers benefit from side-by-side cards; outfit-seekers benefit from complete-the-look modules — and encoded those things as numbers in a typed grammar.</p>
+
+<hr class="scene">
+
+<h3>Act 2 — Why this is different from "use a rules engine"</h3>
+
+<p>Two reasons. First, the grammar is small and named, so an LLM can hold the entire policy in one prompt, edit a curve, and have the change be both <em>readable</em> (a human sees what changed) and <em>executable</em> (the system serves the new version with no retraining). Try this in your codebase: pick a 10K-line rules engine and ask Claude to "make returns_policy fire harder for the size-anxious." It will struggle. Now ask it to set <code>fit_reassurance.on_rem.F32 = 2.4</code> in a 9 KB JSON. That works.</p>
+
+<p>Second — and this is the load-bearing move — the small named GAM is a <em>fixed compositional structure</em>, not free-form code. Every page decision factors as <code>base + Σ(on_rem · remaining) + Σ(on_cov · coverage) − slot_decay · slot</code>. The LLM doesn't write the algorithm; it writes the numbers. The algorithm runs in microseconds, deterministically, in pure Python or compiled JavaScript.</p>
+
+<h3>Act 3 — What this skips, and what it doesn't</h3>
+
+<p>Posts 1–4 needed exploration because the algorithms knew nothing about the problem. EDP needs no exploration <em>for the things the LLM already knows</em>: that fit_reassurance addresses size anxiety, that comparison cards help comparison shoppers, that outfit_completion is irrelevant when the persona is paralyzed by choice. These were learnable from clicks but expensive to learn; they are free if you read them off a shopping-psychology textbook.</p>
+
+<p>What it does <em>not</em> skip: calibration. The LLM said "size_chart at 0.6 means moderate concern" but you may need to nudge it to 0.55. It said "fit_reassurance addresses F3.2 with weight 2.2" but production data might want 2.4. These are small calibrations to the LLM's prior, and they should still come from data.</p>
+
+<p>So you have an LLM-authored, zero-data, sub-millisecond policy that is already most of the way to optimal. The natural next question is whether you can still <em>improve it</em> as data arrives, without giving up the readable representation. That's the research bet, and the next post lets you play it.</p>
+
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> can the LLM-authored policy keep improving as clicks come in — racing a tuned bandit from session 0? <a href="../06-edp-adapts/">Post 6 — EDP that adapts and explores</a>.</p>
+
+<footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. <a href="../">series index</a>.</footer>
+</div>
+
+<script>
+const POLICY = {"shapes":{"F32":{"size_chart":{"bps":[0,0.2,0.5,0.8,1],"vals":[0,0.1,0.45,0.75,0.95],"weight":0.45},"size_conf_inv":{"bps":[0,0.3,0.6,1],"vals":[0.95,0.6,0.25,0.05],"weight":0.3},"return_hist":{"bps":[0,0.2,0.5,1],"vals":[0,0.1,0.4,0.7],"weight":0.25}},"F33":{"zoom":{"bps":[0,0.3,0.6,1],"vals":[0,0.15,0.5,0.85],"weight":0.55},"price_norm":{"bps":[0,0.3,0.6,1],"vals":[0,0.2,0.5,0.8],"weight":0.45}},"F41":{"tab_switch":{"bps":[0,0.2,0.5,0.8,1],"vals":[0,0.1,0.5,0.85,0.95],"weight":0.55},"revisit":{"bps":[0,0.3,0.6,1],"vals":[0,0.2,0.55,0.8],"weight":0.25},"price_dwell":{"bps":[0,0.3,0.6,1],"vals":[0,0.1,0.35,0.55],"weight":0.2}},"F43":{"style_stretch":{"bps":[0,0.3,0.6,1],"vals":[0,0.2,0.6,0.95],"weight":0.65},"mobile":{"bps":[0,0.5,1],"vals":[0,0.3,0.55],"weight":0.35}},"F45":{"price_dwell":{"bps":[0,0.3,0.6,0.9,1],"vals":[0,0.15,0.5,0.8,0.95],"weight":0.5},"price_sens":{"bps":[0,0.4,0.7,1],"vals":[0,0.2,0.55,0.85],"weight":0.5}},"F46":{"return_view":{"bps":[0,0.2,0.5,1],"vals":[0,0.15,0.55,0.9],"weight":0.55},"return_hist":{"bps":[0,0.2,0.5,1],"vals":[0,0.15,0.5,0.8],"weight":0.45}},"F51":{"cart_osc":{"bps":[0,0.2,0.5,1],"vals":[0,0.15,0.55,0.9],"weight":0.45},"wishlist":{"bps":[0,0.3,0.6,1],"vals":[0,0.1,0.4,0.7],"weight":0.3},"revisit":{"bps":[0,0.3,0.6,1],"vals":[0,0.1,0.4,0.65],"weight":0.25}}},"modules":{"fit_reassurance":{"addr":{"F32":0.55,"F46":0.2},"base":0.1,"on_rem":{"F32":2.2,"F46":0.6},"on_cov":{"F32":-1.2},"slot_decay":0.05,"type":"reassurance"},"size_guide":{"addr":{"F32":0.5},"base":0.05,"on_rem":{"F32":2.0},"on_cov":{"F32":-1.4},"slot_decay":0.1,"type":"guide"},"low_return_alts":{"addr":{"F32":0.3,"F46":0.45},"base":0.05,"on_rem":{"F32":1.0,"F46":1.8},"on_cov":{"F46":-1.0},"slot_decay":0.06,"type":"alternatives"},"comparison_card":{"addr":{"F41":0.6,"F45":0.2},"base":0.05,"on_rem":{"F41":2.3,"F45":0.7},"on_cov":{"F41":-1.3},"slot_decay":0.04,"type":"comparison"},"customers_chose":{"addr":{"F41":0.3,"F51":0.25},"base":0.1,"on_rem":{"F41":0.8,"F51":1.2},"on_cov":{"F41":0.5,"F51":-0.6},"slot_decay":0.05,"type":"social"},"value_breakdown":{"addr":{"F45":0.55,"F33":0.2},"base":0.05,"on_rem":{"F45":2.1,"F33":0.5},"on_cov":{"F45":-1.2},"slot_decay":0.06,"type":"value"},"outfit_completion":{"addr":{"F43":0.55},"base":0.2,"on_rem":{"F43":1.8},"on_cov":{"F43":-0.8},"slot_decay":0.04,"type":"outfit"},"style_bridge":{"addr":{"F43":0.4},"base":0.05,"on_rem":{"F43":2.0},"on_cov":{"F43":-1.0},"slot_decay":0.06,"type":"outfit"},"occasion_lookbook":{"addr":{"F43":0.3},"base":0.08,"on_rem":{"F43":1.4},"on_cov":{"F43":-0.5},"slot_decay":0.05,"type":"outfit"},"return_explainer":{"addr":{"F46":0.5},"base":0.05,"on_rem":{"F46":2.0},"on_cov":{"F46":-1.3},"slot_decay":0.07,"type":"returns"},"easy_returns_promise":{"addr":{"F46":0.3},"base":0.1,"on_rem":{"F46":1.2},"on_cov":{"F46":-0.5},"slot_decay":0.05,"type":"returns"},"brand_story":{"addr":{"F33":0.5},"base":0.1,"on_rem":{"F33":1.9},"on_cov":{"F33":-1.0},"slot_decay":0.05,"type":"premium"},"material_deep_dive":{"addr":{"F33":0.45},"base":0.05,"on_rem":{"F33":1.7},"on_cov":{"F33":-0.9},"slot_decay":0.07,"type":"premium"},"price_history":{"addr":{"F45":0.45},"base":0.05,"on_rem":{"F45":1.7},"on_cov":{"F45":-0.8},"slot_decay":0.06,"type":"price"},"price_drop_notify":{"addr":{"F51":0.35,"F45":0.2},"base":0.08,"on_rem":{"F51":1.3,"F45":0.6},"on_cov":{"F51":-0.5},"slot_decay":0.05,"type":"price"},"recently_viewed":{"addr":{"F51":0.2},"base":0.1,"on_rem":{"F51":0.7},"on_cov":{"F51":-0.3},"slot_decay":0.05,"type":"context"},"wishlist_save":{"addr":{"F51":0.3},"base":0.05,"on_rem":{"F51":1.2},"on_cov":{"F51":-0.6},"slot_decay":0.06,"type":"action"},"expert_pick":{"addr":{"F51":0.3,"F33":0.15},"base":0.05,"on_rem":{"F51":1.4,"F33":0.4},"on_cov":{"F51":-0.7},"slot_decay":0.07,"type":"guidance"},"similar_items":{"addr":{"F41":0.1,"F43":0.05,"F51":0.05},"base":0.45,"on_rem":{},"on_cov":{},"slot_decay":0.03,"type":"default"},"also_bought":{"addr":{"F41":0.1,"F51":0.1},"base":0.4,"on_rem":{},"on_cov":{},"slot_decay":0.03,"type":"default"},"trending_now":{"addr":{},"base":0.3,"on_rem":{},"on_cov":{},"slot_decay":0.04,"type":"default"},"personal_recs":{"addr":{"F43":0.1,"F51":0.1},"base":0.35,"on_rem":{},"on_cov":{},"slot_decay":0.04,"type":"default"}}};
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',fg:'#e6edf3'};
+const SIGNALS=['size_chart','size_conf','return_hist','tab_switch','revisit','price_dwell','zoom','style_stretch','mobile','price_sens','cart_osc','wishlist','return_view','new','price_norm'];
+const SIG_LABELS={size_chart:'size chart opens',size_conf:'size confidence',return_hist:'return history',tab_switch:'tab switching',revisit:'product revisits',price_dwell:'price dwell',zoom:'image zoom',style_stretch:'style stretch',mobile:'mobile device',price_sens:'price sensitivity',cart_osc:'cart osc.',wishlist:'wishlist depth',return_view:'return policy views',new:'new visitor',price_norm:'price premium'};
+const PROB_LABELS={F32:'size anxiety',F33:'quality deficit',F41:'comparison',F43:'outfit visualization',F45:'price-quality',F46:'return hesitation',F51:'decision paralysis'};
+
+const PERSONAS={
+  'size-anxious':{size_chart:0.75,size_conf:0.15,return_hist:0.4,tab_switch:0.25,revisit:0.3,price_dwell:0.3,zoom:0.55,style_stretch:0.4,mobile:0.7,price_sens:0.5,cart_osc:0.2,wishlist:0.3,return_view:0.5,new:0.85,price_norm:0.5},
+  'comparison-shopper':{size_chart:0.2,size_conf:0.7,return_hist:0.15,tab_switch:0.85,revisit:0.7,price_dwell:0.55,zoom:0.4,style_stretch:0.35,mobile:0.4,price_sens:0.55,cart_osc:0.3,wishlist:0.5,return_view:0.15,new:0.3,price_norm:0.55},
+  'outfit-seeker':{size_chart:0.25,size_conf:0.65,return_hist:0.1,tab_switch:0.3,revisit:0.4,price_dwell:0.2,zoom:0.45,style_stretch:0.8,mobile:0.45,price_sens:0.3,cart_osc:0.15,wishlist:0.45,return_view:0.1,new:0.3,price_norm:0.5},
+  'returner-anxious':{size_chart:0.5,size_conf:0.35,return_hist:0.85,tab_switch:0.35,revisit:0.4,price_dwell:0.3,zoom:0.5,style_stretch:0.3,mobile:0.55,price_sens:0.4,cart_osc:0.25,wishlist:0.3,return_view:0.85,new:0.2,price_norm:0.55},
+  'paralyzed':{size_chart:0.35,size_conf:0.4,return_hist:0.25,tab_switch:0.45,revisit:0.7,price_dwell:0.4,zoom:0.4,style_stretch:0.5,mobile:0.45,price_sens:0.45,cart_osc:0.75,wishlist:0.8,return_view:0.25,new:0.25,price_norm:0.5},
+  'confident-buyer':{size_chart:0.15,size_conf:0.85,return_hist:0.1,tab_switch:0.15,revisit:0.15,price_dwell:0.2,zoom:0.3,style_stretch:0.45,mobile:0.4,price_sens:0.35,cart_osc:0.1,wishlist:0.2,return_view:0.1,new:0.15,price_norm:0.55},
+};
+
+const N_SLOTS=6;
+function pwl(x,bps,vals){if(x<=bps[0])return vals[0];if(x>=bps[bps.length-1])return vals[vals.length-1];for(let i=0;i<bps.length-1;i++)if(x<=bps[i+1]){const t=(x-bps[i])/(bps[i+1]-bps[i]);return vals[i]+t*(vals[i+1]-vals[i]);}return vals[vals.length-1];}
+function scoreProblems(feat){const out={};for(const prob in POLICY.shapes){let s=0,w=0;for(const sig in POLICY.shapes[prob]){const c=POLICY.shapes[prob][sig];const x=sig==='size_conf_inv'?(feat.size_conf||0):(feat[sig]||0);s+=c.weight*pwl(x,c.bps,c.vals);w+=c.weight;}out[prob]=Math.max(0,Math.min(1,s/Math.max(w,1e-9)));}return out;}
+function compose(feat){
+  const problems=scoreProblems(feat);
+  const remaining=Object.assign({},problems);const coverage={};for(const p in POLICY.shapes)coverage[p]=0;
+  const used=new Set();const page=[];
+  for(let slot=0;slot<N_SLOTS;slot++){
+    let best=null,bestS=-1e9;
+    for(const name in POLICY.modules){
+      if(used.has(name))continue;
+      const m=POLICY.modules[name];
+      let s=m.base;
+      for(const p in (m.on_rem||{}))s+=m.on_rem[p]*(remaining[p]||0);
+      for(const p in (m.on_cov||{}))s+=m.on_cov[p]*(coverage[p]||0);
+      s-=m.slot_decay*slot;
+      if(s>bestS){bestS=s;best=name;}
+    }
+    page.push({widget:best,score:bestS});used.add(best);
+    const m=POLICY.modules[best];
+    for(const p in (m.addr||{})){remaining[p]=Math.max(0,(remaining[p]||0)-m.addr[p]);coverage[p]=Math.min(1,(coverage[p]||0)+m.addr[p]);}
+  }
+  return {page,problems};
+}
+
+const feat={};for(const s of SIGNALS)feat[s]=0.5;
+
+function setPersona(name){const p=PERSONAS[name];for(const k in p)feat[k]=p[k];renderSliders();render();document.querySelectorAll('#personas button').forEach(b=>b.classList.toggle('on',b.textContent===name));}
+function renderSliders(){const div=document.getElementById('sliders');div.innerHTML='';for(const s of SIGNALS){const v=feat[s]||0;const row=document.createElement('div');row.className='slider-row';row.innerHTML=`<span class="name">${SIG_LABELS[s]||s}</span><input type="range" min="0" max="1" step="0.01" value="${v}" data-s="${s}"><span class="val">${v.toFixed(2)}</span>`;row.querySelector('input').oninput=(e)=>{feat[s]=parseFloat(e.target.value);row.querySelector('.val').textContent=feat[s].toFixed(2);render();};div.appendChild(row);}}
+function render(){
+  const {page,problems}=compose(feat);
+  const pd=document.getElementById('problems');pd.innerHTML='';for(const p in problems){const v=problems[p];const row=document.createElement('div');row.className='problem-bar';row.innerHTML=`<div class="lbl"><span>${p} · ${PROB_LABELS[p]||''}</span><span>${v.toFixed(2)}</span></div><div class="bar"><div style="width:${(v*100).toFixed(0)}%;background:${v>0.5?COLORS.red:COLORS.blue}"></div></div>`;pd.appendChild(row);}
+  const pg=document.getElementById('page');pg.innerHTML='';page.forEach((it,i)=>{const div=document.createElement('div');div.className='slot';div.innerHTML=`<div><div class="pos">slot ${i+1}</div><div class="w">${it.widget}</div></div><div class="s">${it.score.toFixed(2)}</div>`;pg.appendChild(div);});
+}
+
+const pdiv=document.getElementById('personas');for(const k of Object.keys(PERSONAS)){const b=document.createElement('button');b.textContent=k;b.onclick=()=>setPersona(k);pdiv.appendChild(b);}
+setPersona('size-anxious');
+</script>
+</body>
+</html>

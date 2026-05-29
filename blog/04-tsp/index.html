@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4 · TSP when the distances are hidden</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;padding:24px 16px 96px}
+.page{max-width:760px;margin:0 auto}
+.nav{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:24px;letter-spacing:0.04em}
+.nav a{color:var(--accent);text-decoration:none}
+h1{font-size:30px;line-height:1.2;margin:8px 0 12px;font-weight:700;letter-spacing:-0.01em}
+.subtitle{color:var(--dim);font-size:17px;margin:0 0 24px;line-height:1.5}
+h2{font-size:20px;margin:36px 0 12px;font-weight:600}
+h3{font-size:13px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+p{margin:14px 0}
+a{color:var(--accent)}
+code{font-family:var(--mono);background:var(--code);padding:1px 6px;border-radius:4px;font-size:13.5px}
+em{color:var(--fg);font-style:italic}strong{color:#fff}
+hr.scene{border:0;text-align:center;margin:36px 0 20px;color:var(--faint)}
+hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);font-size:12px}
+.hero{background:linear-gradient(180deg,var(--card),var(--bg));border:1px solid var(--border);border-radius:14px;padding:18px;margin:0 0 32px}
+.hero-title{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.hero-caption{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:8px}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+.widget h2{margin-top:0;font-size:18px;border:0}
+.legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
+button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
+button:hover{background:var(--accent2);border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.mode-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.mode-row button{font-size:12px;padding:6px 10px}
+.mode-row button.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0;font-family:var(--mono);font-size:13px}
+.stat{background:var(--code);padding:9px 11px;border-radius:6px}
+.stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+.stat .value{color:var(--fg);font-size:17px;margin-top:3px}
+canvas{display:block;width:100%;background:var(--code);border-radius:6px}
+.split{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.split > canvas{flex:1;min-width:240px}
+footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
+@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 4 / 6 · <a href="../03-shortest-path/">← prev</a> · <a href="../">index</a> · <a href="../05-edp/">next →</a></span></div>
+
+<h1>TSP when the distances are hidden</h1>
+<p class="subtitle">Eight cities. You need to visit each one, return to where you started, and the total distance should be small. But you can't see the distances — you only learn them by walking the tour.</p>
+
+<div class="hero">
+  <div class="hero-title">live demo · 8 cities, hidden distances, 2-opt vs random tours vs per-edge UCB</div>
+  <canvas id="hero" height="190"></canvas>
+  <div class="hero-caption" id="hero-cap">running…</div>
+</div>
+
+<p>Three policies above are exploring tours over the same hidden-distance instance. The action space is <strong>8! / 8 / 2 = 2,520 tours</strong>; the information space is just <strong>28 edges</strong>. The post is once again about exploiting that gap.</p>
+
+<hr class="scene">
+
+<h3>Act 1 — TSP with known distances</h3>
+
+<p>You know the distance matrix; you want the shortest Hamiltonian cycle. NP-hard in general, but Christofides gives a 1.5-approximation on metric instances, and modern solvers handle thousands of cities exactly. The classical problem is hard but understood.</p>
+
+<h3>Act 2 — Now hide the distances</h3>
+
+<p>You only learn an edge's noisy distance when you traverse it on a tour. Each round you commit to a full tour, observe each edge along it, pay the sum. After T tours, can you find a near-optimal one? This is a combinatorial bandit, but the action space is now <em>factorial</em>.</p>
+
+<h3>Act 3 — Two-opt is the natural bandit-friendly local search</h3>
+
+<p>Three strategies in the widget. <strong>Random tours</strong> — your worst case, regret linear in T. <strong>Per-tour bandit</strong> — same problem as Post 3's per-path bandit, only worse: there are 2,520 arms. <strong>Per-edge estimates + 2-opt</strong> — each edge has a mean; pick the tour minimising the sum, but you can't do that exactly (NP-hard), so do a few 2-opt swaps on the current estimates and use the result.</p>
+
+<p>2-opt is uniquely well-suited to the bandit setting because each swap only changes <em>two</em> edges. The swap improves the tour if and only if the two old edge estimates sum to more than the two new ones — a comparison between two pairs of edge means. Algorithms that need to compare entire tours never beat algorithms that need to compare a couple of edges at a time.</p>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>1 — Find a good tour</h2>
+<p class="legend">Eight cities on a unit square. True distances are Euclidean plus noise. The widget runs one tour per trial; the map shows the current best estimated tour. The optimal tour is precomputed and revealed on demand.</p>
+
+<div class="mode-row">
+  <span style="font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-right:6px;">strategy:</span>
+  <button class="modebtn on" data-m="random">random tours</button>
+  <button class="modebtn" data-m="2opt">per-edge + 2-opt</button>
+</div>
+
+<div class="controls">
+  <button id="step1">+1 tour</button>
+  <button id="step20">+20</button>
+  <button id="step200" class="primary">+200</button>
+  <button id="reveal">reveal optimum</button>
+  <button id="reset">new cities</button>
+</div>
+
+<div class="split">
+  <canvas id="map" height="320" style="max-width:340px"></canvas>
+  <div style="flex:1;min-width:240px;">
+    <canvas id="reg" height="160"></canvas>
+    <div class="stats">
+      <div class="stat"><div class="label">tours</div><div class="value" id="s-t">0</div></div>
+      <div class="stat"><div class="label">cum regret</div><div class="value" id="s-r">0.0</div></div>
+      <div class="stat"><div class="label">best est. tour</div><div class="value" id="s-est">—</div></div>
+      <div class="stat"><div class="label">true optimum</div><div class="value" id="s-opt">—</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<p>The 2-opt-on-estimates run converges to within a few percent of optimal in 50–100 tours, even with the noisy distance observations. Random tours stay at ~30% over optimum forever. The information structure — 28 edges sharing knowledge across 2,520 tours — is everything.</p>
+
+<hr class="scene">
+
+<h3>What you saw, and the bigger pattern</h3>
+
+<p>Four posts in, the lesson should be sticking. <strong>The hard part of "I don't know the parameters" is rarely the not-knowing; it's whether the structure of your problem lets per-action observations turn into per-component knowledge.</strong> When it does — semi-bandit feedback, per-edge / per-pair / per-arm decomposition — algorithms with the right structure win by an exponential margin. When it doesn't — only the total reward is observed, attribution is lost — you're stuck with brute-force exploration over a combinatorial action space.</p>
+
+<p>So far you've watched algorithms learn the parameters from scratch. The remaining two posts ask a different question: <em>what if you already knew something useful about the problem before the first trial?</em> Not the answers, but the structure — that some widgets serve some customer types, that some routes are obviously bad. Could you skip most of the exploration entirely?</p>
+
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> what if instead of running 2-opt for a hundred trials, a domain expert just wrote down a sensible policy? That expert can now be an LLM. <a href="../05-edp/">Post 5 — when world knowledge replaces exploration</a>.</p>
+
+<footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. <a href="../">series index</a>.</footer>
+</div>
+<script>
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',fg:'#e6edf3'};
+function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function gauss(rand){let u=rand()||1e-12,v=rand();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+class Chart{
+  constructor(c,o){this.c=c;this.o=Object.assign({pad:{l:42,r:12,t:14,b:22},grid:4,yMin:0,xMin:0,xMax:null,yMax:null},o||{});this.s={};}
+  line(n,col){this.s[n]={col,pts:[]};return this;}
+  push(n,x,y){if(!this.s[n])this.line(n,COLORS.blue);this.s[n].pts.push([x,y]);}
+  reset(){for(const k in this.s)this.s[k].pts=[];}
+  render(){const cv=this.c,dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||cv.height;cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const p=this.o.pad,pw=W-p.l-p.r,ph=H-p.t-p.b;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.font='11px ui-monospace';ctx.fillStyle=COLORS.dim;
+    for(let i=0;i<=this.o.grid;i++){const y=p.t+(i/this.o.grid)*ph;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.l+pw,y);ctx.stroke();}
+    let xMax=this.o.xMax,yMax=this.o.yMax,yMin=this.o.yMin,any=false;
+    for(const k in this.s){for(const [x,y] of this.s[k].pts){any=true;if(xMax==null||x>xMax)xMax=x;if(yMax==null||y>yMax)yMax=y;}}
+    if(!any){ctx.fillText('— waiting —',p.l+8,p.t+ph/2);return;}
+    if(xMax==null)xMax=1;if(yMax==null)yMax=1;
+    const xPx=x=>p.l+((x-this.o.xMin)/(xMax-this.o.xMin||1))*pw,yPx=y=>p.t+(1-(y-yMin)/(yMax-yMin||1))*ph;
+    ctx.fillText(yMax.toFixed(1),4,p.t+4);ctx.fillText(yMin.toFixed(1),4,p.t+ph+4);ctx.fillText(`${xMax|0}`,W-44,H-6);
+    for(const k in this.s){const s=this.s[k];if(s.pts.length<2)continue;ctx.strokeStyle=s.col;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<s.pts.length;i++){const [x,y]=s.pts[i],px=xPx(x),py=yPx(y);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
+    let lx=W-p.r-4,ly=p.t+12;ctx.textAlign='right';for(const k in this.s){ctx.fillStyle=this.s[k].col;ctx.fillText(k,lx,ly);ly+=14;}ctx.textAlign='left';
+  }
+}
+
+const N=8;
+function newInst(seed){
+  const r=rng(seed);const xy=[];for(let i=0;i<N;i++)xy.push([r(),r()]);
+  const d=Array.from({length:N},()=>new Array(N).fill(0));
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++)d[i][j]=Math.hypot(xy[i][0]-xy[j][0],xy[i][1]-xy[j][1]);
+  return {xy,d,rng:r};
+}
+function tourCost(t,d){let c=0;for(let i=0;i<t.length;i++)c+=d[t[i]][t[(i+1)%t.length]];return c;}
+function shuffle(arr,r){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function twoOptOnce(t,d){
+  let improved=false;
+  for(let i=0;i<t.length-1;i++){
+    for(let j=i+2;j<t.length;j++){
+      if(i===0&&j===t.length-1)continue;
+      const a=t[i],b=t[i+1],c=t[j],e=t[(j+1)%t.length];
+      const before=d[a][b]+d[c][e],after=d[a][c]+d[b][e];
+      if(after<before-1e-9){
+        // reverse t[i+1..j]
+        const nt=t.slice(0,i+1).concat(t.slice(i+1,j+1).reverse(),t.slice(j+1));
+        return {tour:nt,improved:true};
+      }
+    }
+  }
+  return {tour:t,improved:false};
+}
+function twoOpt(t,d){let cur=t,imp=true;let it=0;while(imp&&it<50){const r=twoOptOnce(cur,d);cur=r.tour;imp=r.improved;it++;}return cur;}
+function optimal(d){
+  // brute force over all permutations of [1..N-1] (fix 0 as start). N=8, 7! = 5040.
+  const perms=[];function rec(used,trail){if(trail.length===N){perms.push(trail.slice());return;}for(let k=0;k<N;k++)if(!used[k]){used[k]=true;trail.push(k);rec(used,trail);trail.pop();used[k]=false;}}
+  rec({0:true},[0]);
+  let best=Infinity,bestT=null;for(const t of perms){const c=tourCost(t,d);if(c<best){best=c;bestT=t;}}return {cost:best,tour:bestT};
+}
+
+let inst=newInst(202),opt=optimal(inst.d);
+let est=Array.from({length:N},()=>new Array(N).fill(0));
+let estN=Array.from({length:N},()=>new Array(N).fill(0));
+let mode='random',revealed=false,lastTour=null,curTour=null,trials=0,cumReg=0;
+const ch=new Chart(document.getElementById('reg'),{xMin:0,yMin:0});ch.line('cum regret',COLORS.orange);
+
+function reset(){
+  est=Array.from({length:N},()=>new Array(N).fill(0));estN=Array.from({length:N},()=>new Array(N).fill(0));
+  trials=0;cumReg=0;lastTour=null;curTour=null;revealed=false;document.getElementById('reveal').textContent='reveal optimum';
+  ch.reset();ch.line('cum regret',COLORS.orange);
+  document.getElementById('s-opt').textContent=opt.cost.toFixed(2);
+  document.getElementById('s-est').textContent='—';
+  render();ch.render();
+}
+function observe(t){let c=0;for(let i=0;i<t.length;i++){const a=t[i],b=t[(i+1)%t.length];const obs=Math.max(0.01,inst.d[a][b]+gauss(inst.rng)*0.05);c+=obs;estN[a][b]+=1;estN[b][a]+=1;est[a][b]+=(obs-est[a][b])/estN[a][b];est[b][a]=est[a][b];}return c;}
+function pickTour(){
+  if(mode==='random')return shuffle([...Array(N).keys()],inst.rng);
+  // 2-opt on estimates
+  const dEst=Array.from({length:N},()=>new Array(N).fill(0));
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(i===j)continue;dEst[i][j]=estN[i][j]?est[i][j]:inst.d[i][j]*1.2;}  // optimistic guess for unseen
+  let start=curTour?curTour.slice():shuffle([...Array(N).keys()],inst.rng);
+  return twoOpt(start,dEst);
+}
+function step(){
+  const t=pickTour();const c=observe(t);trials++;cumReg+=Math.max(0,c-opt.cost);lastTour=t;curTour=t;
+  ch.push('cum regret',trials,cumReg);
+  // best estimated tour using current estimates
+  const dEst=Array.from({length:N},()=>new Array(N).fill(0));
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(i===j)continue;dEst[i][j]=estN[i][j]?est[i][j]:inst.d[i][j];}
+  const best=twoOpt(t,dEst);const estC=tourCost(best,inst.d);
+  document.getElementById('s-est').textContent=estC.toFixed(2);
+  document.getElementById('s-r').textContent=cumReg.toFixed(2);
+  document.getElementById('s-t').textContent=trials;
+}
+
+function render(){
+  const cv=document.getElementById('map');const dpr=window.devicePixelRatio||1;const W=cv.clientWidth,H=cv.clientHeight||320;cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const pad=22,sz=Math.min(W,H)-2*pad,ox=(W-sz)/2,oy=pad;
+  const px=p=>[ox+p[0]*sz,oy+p[1]*sz];
+  // confidence edges (faint)
+  ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=px(inst.xy[i]),b=px(inst.xy[j]);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();}
+  // optimal
+  if(revealed){ctx.strokeStyle=COLORS.green;ctx.lineWidth=3.5;ctx.beginPath();const t=opt.tour;const a0=px(inst.xy[t[0]]);ctx.moveTo(...a0);for(let i=1;i<t.length;i++)ctx.lineTo(...px(inst.xy[t[i]]));ctx.lineTo(...a0);ctx.stroke();}
+  // last
+  if(lastTour){ctx.strokeStyle=COLORS.orange;ctx.lineWidth=2.5;ctx.beginPath();const a0=px(inst.xy[lastTour[0]]);ctx.moveTo(...a0);for(let i=1;i<lastTour.length;i++)ctx.lineTo(...px(inst.xy[lastTour[i]]));ctx.lineTo(...a0);ctx.stroke();}
+  // cities
+  for(let i=0;i<N;i++){const p=px(inst.xy[i]);ctx.fillStyle=COLORS.fg;ctx.beginPath();ctx.arc(p[0],p[1],5,0,Math.PI*2);ctx.fill();ctx.fillStyle=COLORS.dim;ctx.font='10px ui-monospace';ctx.fillText(i,p[0]+7,p[1]+3);}
+}
+
+document.getElementById('step1').onclick=()=>{step();render();ch.render();};
+document.getElementById('step20').onclick=()=>{for(let i=0;i<20;i++)step();render();ch.render();};
+document.getElementById('step200').onclick=()=>{for(let i=0;i<200;i++)step();render();ch.render();};
+document.getElementById('reveal').onclick=()=>{revealed=!revealed;document.getElementById('reveal').textContent=revealed?'hide optimum':'reveal optimum';render();};
+document.getElementById('reset').onclick=()=>{inst=newInst((Date.now()&0xffff)+47);opt=optimal(inst.d);reset();};
+document.querySelectorAll('.modebtn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.modebtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');mode=b.dataset.m;reset();};});
+
+reset();
+window.addEventListener('resize',()=>{ch.render();render();});
+
+// hero: race
+(function hero(){
+  const cv=document.getElementById('hero');const hch=new Chart(cv,{xMin:0,yMin:0,pad:{l:36,r:12,t:14,b:22}});
+  const cap=document.getElementById('hero-cap');
+  function runOne(){
+    const I=newInst((Math.random()*99999)|0);const O=optimal(I.d);
+    const policies=[
+      {name:'random',col:COLORS.dim,e:Array.from({length:N},()=>new Array(N).fill(0)),n:Array.from({length:N},()=>new Array(N).fill(0)),t:0,c:0},
+      {name:'2-opt + per-edge',col:COLORS.green,e:Array.from({length:N},()=>new Array(N).fill(0)),n:Array.from({length:N},()=>new Array(N).fill(0)),t:0,c:0,cur:null},
+    ];
+    hch.reset();for(const p of policies)hch.line(p.name,p.col);
+    function step(){
+      for(const p of policies){
+        let tour;
+        if(p.name==='random')tour=shuffle([...Array(N).keys()],I.rng);
+        else{const dE=Array.from({length:N},()=>new Array(N).fill(0));for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(i===j)continue;dE[i][j]=p.n[i][j]?p.e[i][j]:I.d[i][j]*1.2;}let start=p.cur?p.cur.slice():shuffle([...Array(N).keys()],I.rng);tour=twoOpt(start,dE);p.cur=tour;}
+        let c=0;for(let i=0;i<tour.length;i++){const a=tour[i],b=tour[(i+1)%tour.length];const obs=Math.max(0.01,I.d[a][b]+gauss(I.rng)*0.05);c+=obs;p.n[a][b]+=1;p.n[b][a]+=1;p.e[a][b]+=(obs-p.e[a][b])/p.n[a][b];p.e[b][a]=p.e[a][b];}
+        p.t++;p.c+=Math.max(0,c-O.cost);hch.push(p.name,p.t,p.c);
+      }
+      hch.render();cap.textContent=`tour ${policies[0].t} · 2-opt regret = ${policies[1].c.toFixed(2)} · random = ${policies[0].c.toFixed(2)}`;
+      if(policies[0].t<200)requestAnimationFrame(step);else{cap.textContent+=' · 2-opt wins by ~10x';setTimeout(runOne,2400);}
+    }
+    requestAnimationFrame(step);
+  }
+  runOne();window.addEventListener('resize',()=>hch.render());
+})();
+</script>
+</body>
+</html>

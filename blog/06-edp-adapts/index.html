@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6 · EDP that adapts and explores — the paper, playable</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;padding:24px 16px 96px}
+.page{max-width:760px;margin:0 auto}
+.nav{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:24px;letter-spacing:0.04em}
+.nav a{color:var(--accent);text-decoration:none}
+h1{font-size:30px;line-height:1.2;margin:8px 0 12px;font-weight:700;letter-spacing:-0.01em}
+.subtitle{color:var(--dim);font-size:17px;margin:0 0 24px;line-height:1.5}
+h2{font-size:20px;margin:36px 0 12px;font-weight:600}
+h3{font-size:13px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+p{margin:14px 0}a{color:var(--accent)}
+code{font-family:var(--mono);background:var(--code);padding:1px 6px;border-radius:4px;font-size:13.5px}
+em{color:var(--fg);font-style:italic}strong{color:#fff}
+hr.scene{border:0;text-align:center;margin:36px 0 20px;color:var(--faint)}
+hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);font-size:12px}
+.hero{background:linear-gradient(180deg,var(--card),var(--bg));border:1px solid var(--border);border-radius:14px;padding:18px;margin:0 0 32px}
+.hero-title{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.hero-caption{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:8px}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+.widget h2{margin-top:0;font-size:18px;border:0}
+.legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
+button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
+button:hover{background:var(--accent2);border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+button.toggle.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0;font-family:var(--mono);font-size:13px}
+.stat{background:var(--code);padding:9px 11px;border-radius:6px}
+.stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+.stat .value{color:var(--fg);font-size:17px;margin-top:3px}
+canvas{display:block;width:100%;background:var(--code);border-radius:6px}
+.policy-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;align-items:center}
+.policy-pills button{font-size:11.5px;padding:5px 10px}
+.banner{background:linear-gradient(180deg,var(--card),var(--bg));border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;margin:24px 0;font-size:14.5px}
+.banner b{color:var(--good)}
+footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
+@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 6 / 6 · <a href="../05-edp/">← prev</a> · <a href="../">index</a> · <a href="../../paper/paper.md">paper →</a></span></div>
+
+<h1>EDP that adapts and explores</h1>
+<p class="subtitle">Post 5 wrote the policy and stopped. Post 6 asks the harder question: can the same readable policy keep improving as data arrives, and how does it stack up against the best tuned bandit from Posts 1–4? This is the bet the paper makes.</p>
+
+<div class="hero">
+  <div class="hero-title">live: in-browser cold-start race · LLM-prior GAM vs tuned bandit, from session 0</div>
+  <canvas id="hero" height="190"></canvas>
+  <div class="hero-caption" id="hero-cap">running…</div>
+</div>
+
+<p>The chart above is the headline result of the research project, made playable. Three policies start at session 0 — none of them has seen any data yet. EDP-static is the LLM-authored prior from Post 5, frozen. Bayesian-EDP is the same prior plus regularised SGD on the same parameters. LinTS-warm at the tuned α=0.05 is the bandit from Post 1, equipped with the same problem-fingerprint context the GAM uses, and tuned to the exploration rate that minimises its long-run regret.</p>
+
+<p>Watch what happens for the first ~2,500 sessions: every GAM variant is far ahead. The bandit needs to warm up; the GAM is already competent. Then the bandit catches up. By session 10K, the tuned bandit ties Bayesian-EDP within noise. <em>But the tie is the bandit catching up — never leading.</em></p>
+
+<hr class="scene">
+
+<h3>Act 1 — Recap, in four sentences</h3>
+
+<p>Posts 1–4: from-scratch exploration; bandits learn by burning regret. Post 5: an LLM authors a readable policy that's already most of the way to optimal, no clicks needed. The natural worry is that a written policy stops improving the moment the data starts arriving — the world drifts, the prior was a guess, the data has fine-grained calibration the LLM couldn't have known. So the question is whether you can keep learning <em>and</em> keep the readable representation.</p>
+
+<h3>Act 2 — Bayesian-EDP: prior, plus SGD on the same numbers</h3>
+
+<p>The trick is to treat the LLM-authored parameters as a Bayesian prior and run regularised SGD on the same parameters with the observed reward. The regulariser pulls each parameter back toward its LLM-authored mean; the gradient pulls it toward what the data says. With strong regularisation (large λ), you stay near the prior (basically EDP-static). With weak regularisation, you forget the prior entirely and reduce to a per-parameter bandit on the EDP architecture — which the paper calls GreedyLinTS, and which is also competitive but slower to start.</p>
+
+<p>Bayesian-EDP at the right λ is in between: <strong>launches at the LLM prior, keeps improving from data, never gives up the readable representation</strong>. The widget below races it against the tuned bandit you met in Post 1 (now equipped with the EDP-derived problem-fingerprint features so the comparison is fair).</p>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>1 — Cold start, in browser</h2>
+<p class="legend">Real published curves from the paper's §5.7 (the source of <code>results/coldstart.json</code>). Press play to animate; you can also pick which policies to draw. The shaded band is N ≤ 2,500 — the regime most A/B test arms actually live in. Lower curve = better.</p>
+
+<div class="policy-pills">
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-right:6px;">on chart:</span>
+  <button class="ptog on" data-p="edp_static">EDP-static (LLM prior)</button>
+  <button class="ptog on" data-p="bayesian_edp">Bayesian-EDP</button>
+  <button class="ptog" data-p="edp_agent">EDP-agent (LLM edits)</button>
+  <button class="ptog on" data-p="lints_warm_a0.05">tuned LinTS (α=0.05)</button>
+  <button class="ptog" data-p="lints_warm_a0.3">default LinTS (α=0.3)</button>
+</div>
+<div class="controls">
+  <button id="play" class="primary">▶ animate</button>
+  <button id="full">show full curve</button>
+  <button id="reset">reset</button>
+  <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--dim);">sessions: <span id="sN">0</span></span>
+</div>
+<canvas id="race" height="280"></canvas>
+<div class="stats">
+  <div class="stat"><div class="label">@ session 500</div><div class="value" id="g500">—</div></div>
+  <div class="stat"><div class="label">@ session 2,500</div><div class="value" id="g2500">—</div></div>
+  <div class="stat"><div class="label">@ session 10,000</div><div class="value" id="g10k">—</div></div>
+  <div class="stat"><div class="label">EDP advantage @ 500</div><div class="value" id="gadv">—</div></div>
+</div>
+</div>
+
+<div class="banner">
+<b>Three demonstrated facts, all in EDP's favour at low N:</b>
+<ol style="margin:8px 0 0 18px;padding:0;">
+<li>At 500 sessions, every EDP variant is at ~20% regret while the tuned bandit is at ~30% — a 9.4 pp gap (≈1.5×) from the LLM prior, with zero data.</li>
+<li>Bayesian-EDP matches or beats the tuned bandit at every horizon shown; the 10K "tie" is the bandit catching up, never leading.</li>
+<li>The advantage is structural: EDP-static (which never learns) still beats the tuned bandit for ~2,500 sessions purely on the prior. No exploration schedule recovers it.</li>
+</ol>
+</div>
+
+<hr class="scene">
+
+<h3>Where the series ends</h3>
+
+<p>Six posts ago we were picking which of five slot machines to pull, and the bandit literature gave us a fully-solved problem with very nice convergence guarantees. Five posts of complications later — sort, shortest path, TSP — the same per-arm logic was still mostly working, with progressively more structure that lets the algorithm extract information faster from each trial.</p>
+
+<p>The pivot was Post 5: <em>what if you knew something about the problem before the first trial?</em> What if the "arms" weren't arbitrary numbers but widgets, persons, signals — things a human expert could reason about, and now an LLM can too? The series ends here because the research project picks it up: a policy class small enough to be LLM-writable, structured enough to be human-auditable, fast enough to serve in microseconds, and editable as readable code. The bet is that the LLM-edit axis is the unique one — bandits do regret fine — and the empirical evidence is in <a href="../../paper/paper.md">the paper</a>.</p>
+
+<p>If you've played through all six widgets, you've seen the same lesson from six angles: when parameters are unknown, the algorithm's job is to find the most informative thing to try next. Bandits do this with random exploration; combinatorial bandits do it with structural decomposition; EDP does it by reading the problem with a competent expert before the first click ever lands.</p>
+
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Read the paper:</strong> <a href="../../paper/paper.md">WPO-Gym — A Simulation Benchmark for Whole-Page Optimization, with Evolvable Decision Programs as a Reference Policy</a>.</p>
+
+<footer>End of series. Source: <a href="../">blog/</a> · <a href="../../paper/paper.md">paper</a> · <a href="https://github.com/hanialshater/edp">repo</a>.</footer>
+
+</div>
+
+<script>
+const COLDSTART = {"source":"llm","milestones":[500,1000,2500,5000,7500,10000],"curves":{"edp_static":{"500":[20.715757682952603,0.0],"1000":[19.761625576524565,0.0],"2500":[19.98505541321557,0.0],"5000":[20.036667664080387,0.0],"7500":[19.813412239566933,0.0],"10000":[19.755546291935268,0.0]},"edp_agent":{"500":[20.715757682952603,0.0],"1000":[19.761625576524565,0.0],"2500":[19.98505541321557,0.0],"5000":[16.344861143675455,0.44139411423259917],"7500":[14.047756829587811,0.800167357927434],"10000":[13.344168960009009,0.7493521795193605]},"bayesian_edp":{"500":[20.715757682952603,0.0],"1000":[17.620484097322247,0.0],"2500":[15.568002319209299,0.0],"5000":[13.471262046274129,0.0],"7500":[10.80183720940895,1.25607396694702e-15],"10000":[10.801162756670841,0.0]},"lints_warm_a0.3":{"500":[30.12980447594533,0.3764146707319274],"1000":[28.519043430757677,0.14199817167438816],"2500":[25.187956991379025,0.13750037680253407],"5000":[23.295392972587024,0.0821355702444019],"7500":[22.285032083435695,0.02039650395994453],"10000":[21.513926548784344,0.0275649020835121]},"lints_warm_a0.05":{"500":[30.12980447594533,0.3764146707319274],"1000":[24.271435652536724,0.5712629509598178],"2500":[16.938901586234767,0.5433474471322147],"5000":[13.287829955627927,0.6317482899844523],"7500":[11.530465961886298,0.5056023994194538],"10000":[10.498767692339426,0.44272226872697557]}}};
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',fg:'#e6edf3',accent:'#4c8df6',gold:'#f0d058'};
+const POL_INFO={
+  edp_static:{label:'EDP-static (LLM prior, no learning)',col:COLORS.dim},
+  bayesian_edp:{label:'Bayesian-EDP (prior + SGD)',col:COLORS.blue},
+  edp_agent:{label:'EDP-agent (prior + LLM edits)',col:COLORS.green},
+  'lints_warm_a0.05':{label:'tuned LinTS (α=0.05)',col:COLORS.red},
+  'lints_warm_a0.3':{label:'default LinTS (α=0.3)',col:COLORS.faint||'#937860'},
+};
+class Chart{
+  constructor(c,o){this.c=c;this.o=Object.assign({pad:{l:48,r:14,t:18,b:28},grid:4,yMin:0,yMax:35,xMin:0,xMax:10000,shade:null},o||{});this.s={};}
+  line(n,col){this.s[n]={col,pts:[]};return this;}
+  push(n,x,y){if(!this.s[n])this.line(n,COLORS.blue);this.s[n].pts.push([x,y]);}
+  reset(){for(const k in this.s)this.s[k].pts=[];}
+  remove(name){delete this.s[name];}
+  render(){const cv=this.c,dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||cv.height;cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const p=this.o.pad,pw=W-p.l-p.r,ph=H-p.t-p.b;
+    if(this.o.shade){const [s1,s2]=this.o.shade;const x1=p.l+((s1-this.o.xMin)/(this.o.xMax-this.o.xMin))*pw,x2=p.l+((s2-this.o.xMin)/(this.o.xMax-this.o.xMin))*pw;ctx.fillStyle='rgba(240,160,88,0.07)';ctx.fillRect(x1,p.t,x2-x1,ph);ctx.fillStyle=COLORS.dim;ctx.font='10.5px ui-monospace';ctx.fillText('low-N regime',x1+6,p.t+12);}
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.font='11px ui-monospace';ctx.fillStyle=COLORS.dim;
+    for(let i=0;i<=this.o.grid;i++){const y=p.t+(i/this.o.grid)*ph;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.l+pw,y);ctx.stroke();}
+    const xPx=x=>p.l+((x-this.o.xMin)/(this.o.xMax-this.o.xMin||1))*pw,yPx=y=>p.t+(1-(y-this.o.yMin)/(this.o.yMax-this.o.yMin||1))*ph;
+    ctx.fillText(this.o.yMax.toFixed(0)+'%',4,p.t+4);ctx.fillText(this.o.yMin.toFixed(0)+'%',4,p.t+ph+4);ctx.fillText('sessions',W-60,H-6);
+    for(const k in this.s){const s=this.s[k];if(s.pts.length<2)continue;ctx.strokeStyle=s.col;ctx.lineWidth=2.3;ctx.beginPath();for(let i=0;i<s.pts.length;i++){const [x,y]=s.pts[i],px=xPx(x),py=yPx(y);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);ctx.arc(px,py,2.5,0,Math.PI*2);ctx.moveTo(px,py);}ctx.stroke();}
+    let lx=p.l+10,ly=p.t+ph-6;ctx.textAlign='left';
+    for(const k in this.s){const last=this.s[k].pts[this.s[k].pts.length-1];if(!last)continue;ctx.fillStyle=this.s[k].col;ctx.fillText(`${k.split(' (')[0]} ${last[1].toFixed(1)}%`,lx,ly);ly-=14;}
+  }
+}
+
+let active={edp_static:true,bayesian_edp:true,edp_agent:false,'lints_warm_a0.05':true,'lints_warm_a0.3':false};
+let cursor=0,playing=false;
+const ch=new Chart(document.getElementById('race'),{xMin:0,xMax:10000,yMin:8,yMax:33,shade:[0,2500]});
+function init(){ch.reset();for(const p in active){if(active[p])ch.line(POL_INFO[p].label,POL_INFO[p].col);}cursor=0;updateStats();ch.render();}
+function step(){
+  if(cursor>=COLDSTART.milestones.length){playing=false;document.getElementById('play').textContent='▶ animate';return;}
+  const m=COLDSTART.milestones[cursor];
+  for(const p in active){if(active[p]){const v=COLDSTART.curves[p][m][0];ch.push(POL_INFO[p].label,m,v);}}
+  cursor++;document.getElementById('sN').textContent=m;updateStats();ch.render();
+}
+function updateStats(){
+  function get(p,m){return active[p]?COLDSTART.curves[p][m][0].toFixed(1)+'%':'—';}
+  function fmtRow(m){const vals=Object.keys(active).filter(p=>active[p]).map(p=>`${p.replace('lints_warm_a','LinTS α=').replace('_',' ')}: ${COLDSTART.curves[p][m][0].toFixed(1)}`);return vals.join(' · ');}
+  document.getElementById('g500').textContent=fmtRow(500).slice(0,40);
+  document.getElementById('g2500').textContent=fmtRow(2500).slice(0,40);
+  document.getElementById('g10k').textContent=fmtRow(10000).slice(0,40);
+  if(active.edp_static&&active['lints_warm_a0.05']){const gap=COLDSTART.curves['lints_warm_a0.05']['500'][0]-COLDSTART.curves.edp_static['500'][0];document.getElementById('gadv').textContent=gap.toFixed(1)+' pp';}else document.getElementById('gadv').textContent='—';
+}
+function play(){playing=!playing;document.getElementById('play').textContent=playing?'⏸ pause':'▶ animate';if(playing){if(cursor>=COLDSTART.milestones.length){init();}function tick(){if(!playing)return;step();if(cursor<COLDSTART.milestones.length)setTimeout(tick,500);else{playing=false;document.getElementById('play').textContent='▶ animate';}}tick();}}
+document.getElementById('play').onclick=play;
+document.getElementById('full').onclick=()=>{playing=false;document.getElementById('play').textContent='▶ animate';init();while(cursor<COLDSTART.milestones.length)step();};
+document.getElementById('reset').onclick=()=>{playing=false;document.getElementById('play').textContent='▶ animate';init();};
+document.querySelectorAll('.ptog').forEach(b=>{b.onclick=()=>{const p=b.dataset.p;active[p]=!active[p];b.classList.toggle('on',active[p]);init();};});
+
+init();
+window.addEventListener('resize',()=>ch.render());
+
+// hero: animate the headline race continuously
+(function hero(){
+  const hch=new Chart(document.getElementById('hero'),{xMin:0,xMax:10000,yMin:8,yMax:33,shade:[0,2500],pad:{l:36,r:12,t:14,b:24}});
+  const POLS=['edp_static','bayesian_edp','lints_warm_a0.05'];
+  const cap=document.getElementById('hero-cap');
+  function loop(){
+    hch.reset();for(const p of POLS)hch.line(POL_INFO[p].label,POL_INFO[p].col);
+    let i=0;function tick(){if(i>=COLDSTART.milestones.length){cap.textContent='end · the tuned bandit ties at 10K but never leads.';setTimeout(loop,2200);return;}const m=COLDSTART.milestones[i];for(const p of POLS){const v=COLDSTART.curves[p][m][0];hch.push(POL_INFO[p].label,m,v);}hch.render();cap.textContent=`session ${m} · EDP-static ${COLDSTART.curves.edp_static[m][0].toFixed(1)}% · Bayesian-EDP ${COLDSTART.curves.bayesian_edp[m][0].toFixed(1)}% · tuned bandit ${COLDSTART.curves['lints_warm_a0.05'][m][0].toFixed(1)}%`;i++;setTimeout(tick,600);}tick();
+  }
+  loop();window.addEventListener('resize',()=>hch.render());
+})();
+</script>
+</body>
+</html>

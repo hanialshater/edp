@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3 · Shortest path when the edge weights are hidden</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;padding:24px 16px 96px}
+.page{max-width:760px;margin:0 auto}
+.nav{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:24px;letter-spacing:0.04em}
+.nav a{color:var(--accent);text-decoration:none}
+h1{font-size:30px;line-height:1.2;margin:8px 0 12px;font-weight:700;letter-spacing:-0.01em}
+.subtitle{color:var(--dim);font-size:17px;margin:0 0 24px;line-height:1.5}
+h2{font-size:20px;margin:36px 0 12px;font-weight:600}
+h3{font-size:13px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+p{margin:14px 0}
+a{color:var(--accent)}
+code{font-family:var(--mono);background:var(--code);padding:1px 6px;border-radius:4px;font-size:13.5px}
+em{color:var(--fg);font-style:italic}strong{color:#fff}
+hr.scene{border:0;text-align:center;margin:36px 0 20px;color:var(--faint)}
+hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);font-size:12px}
+.hero{background:linear-gradient(180deg,var(--card),var(--bg));border:1px solid var(--border);border-radius:14px;padding:18px;margin:0 0 32px}
+.hero-title{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.hero-caption{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:8px}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+.widget h2{margin-top:0;font-size:18px;border:0}
+.legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
+button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
+button:hover{background:var(--accent2);border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.mode-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.mode-row button{font-size:12px;padding:6px 10px}
+.mode-row button.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0;font-family:var(--mono);font-size:13px}
+.stat{background:var(--code);padding:9px 11px;border-radius:6px}
+.stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+.stat .value{color:var(--fg);font-size:17px;margin-top:3px}
+canvas{display:block;width:100%;background:var(--code);border-radius:6px}
+.grid{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.grid > canvas{flex:1;min-width:240px}
+footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
+@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 3 / 6 · <a href="../02-sort/">← prev</a> · <a href="../">index</a> · <a href="../04-tsp/">next →</a></span></div>
+
+<h1>Shortest path when the edge weights are hidden</h1>
+<p class="subtitle">A grid graph. Hidden edge weights. You can walk a path and learn the weights of edges you stepped on. How few walks until you know the best route?</p>
+
+<div class="hero">
+  <div class="hero-title">live demo · per-edge UCB vs per-path bandit, 5×5 grid</div>
+  <canvas id="hero" height="190"></canvas>
+  <div class="hero-caption" id="hero-cap">running…</div>
+</div>
+
+<p>Two algorithms above are walking paths from the top-left corner to the bottom-right of a hidden-weight grid. One treats <em>each path</em> as an arm and remembers cumulative path cost. The other treats <em>each edge</em> as an arm and shares information across paths. The same trial budget; very different regret. The difference is the punchline of this post.</p>
+
+<hr class="scene">
+
+<h3>Act 1 — Shortest path, the classical version</h3>
+
+<p>Dijkstra. Bellman–Ford. <em>O(V log V + E)</em>, give or take. You know the graph; you know every edge weight; you compute the shortest path once and you're done. It's the worked example in every algorithms course.</p>
+
+<h3>Act 2 — Now hide the weights</h3>
+
+<p>You only learn an edge's (noisy) weight when you walk through it. Each round you commit to a full path; you observe each edge's noisy weight along the way; you pay the sum as your cost. After T rounds you'd like the cumulative cost to be close to T times the cost of the optimal path. The gap is regret.</p>
+
+<p>This setup has a name: <strong>online shortest path with semi-bandit feedback</strong>. <em>Bandit</em> because you only see the cost of the arm you pulled. <em>Semi</em> because the arm is a *combinatorial* action — a path — and the feedback decomposes per-edge.</p>
+
+<h3>Act 3 — Why per-edge beats per-path</h3>
+
+<p>Per-path: the number of arms is the number of paths in the graph, exponential in the grid size. After T trials each path has been pulled at most T / |paths| times. With even a modest 4×4 grid, that's hundreds of paths and you'll never sample most of them. Regret is bad.</p>
+
+<p>Per-edge: each edge has its own mean estimate, shared across every path that uses it. After T trials each <em>edge</em> has been pulled many times — typically O(T · path-length / |E|). Combinatorial UCB picks the path with the smallest sum of lower-confidence-bound edge weights, finds the optimum in O(|E| · log T) regret rather than O(|paths| · log T).</p>
+
+<p>The structure — knowledge is per-edge, actions are paths — buys you exponential savings. <strong>This is the same principle that fails in the WPO paper (<a href="../../paper/paper.md">paper.md §5.2</a>):</strong> there the only feedback is page-level (the sum), <em>not</em> per-slot, so the semi-bandit decomposition is destroyed. Per-arm bandits can't help when you cannot attribute reward to arms.</p>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>1 — Walk the grid</h2>
+<p class="legend">5×5 grid, source = top-left, sink = bottom-right. Edges have hidden weights in [0, 1] + Gaussian noise. The widget walks one path per trial; edge thickness shows visit count, color shows mean estimate (blue = low / good, red = high / bad). Hidden optimum is computed exactly and revealed on demand.</p>
+
+<div class="mode-row">
+  <span style="font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-right:6px;">policy:</span>
+  <button class="modebtn on" data-m="random">random paths</button>
+  <button class="modebtn" data-m="path-bandit">per-path bandit (ε-greedy on paths)</button>
+  <button class="modebtn" data-m="edge-ucb">per-edge UCB (semi-bandit)</button>
+</div>
+
+<div class="controls">
+  <button id="step1">+1 trial</button>
+  <button id="step20">+20</button>
+  <button id="step200" class="primary">+200</button>
+  <button id="reveal">reveal optimum</button>
+  <button id="reset">new grid</button>
+</div>
+
+<div class="grid">
+  <canvas id="canvas" height="320" style="max-width:340px"></canvas>
+  <div style="flex:1;min-width:240px;">
+    <canvas id="reg" height="160"></canvas>
+    <div class="stats">
+      <div class="stat"><div class="label">trials</div><div class="value" id="s-t">0</div></div>
+      <div class="stat"><div class="label">cum regret</div><div class="value" id="s-r">0.0</div></div>
+      <div class="stat"><div class="label">best-path estimate</div><div class="value" id="s-est">—</div></div>
+      <div class="stat"><div class="label">true optimum</div><div class="value" id="s-opt">—</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<p>Try this: run "random paths" for 200 trials, watch regret grow linearly. Reset, switch to "per-edge UCB", run 200. Regret flattens after ~80 trials — by then every edge has been sampled enough times that the UCB picks the true optimal path consistently. The per-path bandit lies between the two, often stuck on a suboptimal path because it doesn't share knowledge across paths.</p>
+
+<hr class="scene">
+
+<h3>What you saw</h3>
+
+<p>Structure transforms a hopelessly combinatorial problem into an easy one. The action space stays exponential — there are still thousands of paths — but the <em>information</em> space is linear in the number of edges. Algorithms that operate on the information space rather than the action space dominate.</p>
+
+<p>The lesson is structural, and the WPO paper bets on its converse: <em>what if the structure is gone?</em> Whole-page reward is "I clicked / didn't click on this whole page" — not "I clicked because of widget 3." There is no per-edge feedback to share across paths. That is why §5.2 of the paper finds page-level attribution to be ten times more harmful than delay or noise: it removes the semi-bandit decomposition you just saw the algorithm exploit, and per-arm bandits revert to their per-path counterpart's miserable regret.</p>
+
+<p>The next post does the same trick again with even more structure to lose: a tour through cities.</p>
+
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> traveling salesperson with hidden distances. Same trick, more cities, and you'll see why local-search on edge estimates is the natural algorithm. <a href="../04-tsp/">Post 4 — TSP with hidden distances</a>.</p>
+
+<footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. <a href="../">series index</a>.</footer>
+</div>
+<script>
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',fg:'#e6edf3'};
+function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function gauss(rand){let u=rand()||1e-12,v=rand();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function argmin(a){let i=0;for(let j=1;j<a.length;j++)if(a[j]<a[i])i=j;return i;}
+class Chart{
+  constructor(c,o){this.c=c;this.o=Object.assign({xlabel:'',pad:{l:42,r:12,t:14,b:22},grid:4,yMin:0,yMax:null,xMin:0,xMax:null},o||{});this.s={};}
+  line(n,col){this.s[n]={col,pts:[]};return this;}
+  push(n,x,y){if(!this.s[n])this.line(n,COLORS.blue);this.s[n].pts.push([x,y]);}
+  reset(){for(const k in this.s)this.s[k].pts=[];}
+  render(){const cv=this.c,dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||cv.height;cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const p=this.o.pad,pw=W-p.l-p.r,ph=H-p.t-p.b;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.font='11px ui-monospace';ctx.fillStyle=COLORS.dim;
+    for(let i=0;i<=this.o.grid;i++){const y=p.t+(i/this.o.grid)*ph;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.l+pw,y);ctx.stroke();}
+    let xMax=this.o.xMax,yMax=this.o.yMax,yMin=this.o.yMin,any=false;
+    for(const k in this.s){for(const [x,y] of this.s[k].pts){any=true;if(xMax==null||x>xMax)xMax=x;if(yMax==null||y>yMax)yMax=y;}}
+    if(!any){ctx.fillText('— waiting —',p.l+8,p.t+ph/2);return;}
+    if(xMax==null)xMax=1;if(yMax==null)yMax=1;
+    const xPx=x=>p.l+((x-this.o.xMin)/(xMax-this.o.xMin||1))*pw,yPx=y=>p.t+(1-(y-yMin)/(yMax-yMin||1))*ph;
+    ctx.fillText(yMax.toFixed(1),4,p.t+4);ctx.fillText(yMin.toFixed(1),4,p.t+ph+4);ctx.fillText(`${xMax|0}`,W-44,H-6);
+    for(const k in this.s){const s=this.s[k];if(s.pts.length<2)continue;ctx.strokeStyle=s.col;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<s.pts.length;i++){const [x,y]=s.pts[i],px=xPx(x),py=yPx(y);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
+    let lx=W-p.r-4,ly=p.t+12;ctx.textAlign='right';for(const k in this.s){ctx.fillStyle=this.s[k].col;ctx.fillText(k,lx,ly);ly+=14;}ctx.textAlign='left';
+  }
+}
+
+// === Grid: 5x5 nodes, only right/down moves. ===
+const G=5;  // grid size
+function edgeKey(i,j,d){return `${i},${j},${d}`;}  // d=R or D
+function newGraph(seed){
+  const r=rng(seed);
+  const w={};   // true weights
+  for(let i=0;i<G;i++)for(let j=0;j<G;j++){
+    if(j<G-1)w[edgeKey(i,j,'R')]=0.1+r()*0.9;
+    if(i<G-1)w[edgeKey(i,j,'D')]=0.1+r()*0.9;
+  }
+  return {w, rng:r};
+}
+// enumerate all paths source(0,0)->sink(G-1,G-1) using right/down moves
+function allPaths(){
+  const paths=[];
+  function rec(i,j,trail){
+    if(i===G-1 && j===G-1){paths.push(trail.slice());return;}
+    if(j<G-1){trail.push(edgeKey(i,j,'R'));rec(i,j+1,trail);trail.pop();}
+    if(i<G-1){trail.push(edgeKey(i,j,'D'));rec(i+1,j,trail);trail.pop();}
+  }
+  rec(0,0,[]);return paths;
+}
+function pathCost(path,weights){let c=0;for(const e of path)c+=weights[e];return c;}
+function optimalCost(gr){
+  // DP shortest path
+  const dp=Array.from({length:G},()=>new Array(G).fill(Infinity));
+  dp[G-1][G-1]=0;
+  for(let i=G-1;i>=0;i--)for(let j=G-1;j>=0;j--){
+    if(i===G-1&&j===G-1)continue;
+    let best=Infinity;
+    if(j<G-1)best=Math.min(best,gr.w[edgeKey(i,j,'R')]+dp[i][j+1]);
+    if(i<G-1)best=Math.min(best,gr.w[edgeKey(i,j,'D')]+dp[i+1][j]);
+    dp[i][j]=best;
+  }
+  return dp[0][0];
+}
+function optimalPath(weights){
+  const dp=Array.from({length:G},()=>new Array(G).fill(Infinity));
+  dp[G-1][G-1]=0;
+  for(let i=G-1;i>=0;i--)for(let j=G-1;j>=0;j--){
+    if(i===G-1&&j===G-1)continue;
+    let best=Infinity;
+    if(j<G-1)best=Math.min(best,weights[edgeKey(i,j,'R')]+dp[i][j+1]);
+    if(i<G-1)best=Math.min(best,weights[edgeKey(i,j,'D')]+dp[i+1][j]);
+    dp[i][j]=best;
+  }
+  // reconstruct path
+  const path=[];let i=0,j=0;
+  while(!(i===G-1&&j===G-1)){
+    if(j<G-1 && (i===G-1 || weights[edgeKey(i,j,'R')]+dp[i][j+1] <= weights[edgeKey(i,j,'D')]+dp[i+1][j])){path.push(edgeKey(i,j,'R'));j++;}
+    else{path.push(edgeKey(i,j,'D'));i++;}
+  }
+  return path;
+}
+
+let gr=newGraph(101);
+let optC=optimalCost(gr);
+const paths=allPaths();  // store the lattice (also used by per-path bandit)
+let estMean={},estN={},pathReward={},pathN={};  // estimates
+let cumRegret=0,trials=0;
+let mode='random',revealed=false,lastPath=null;
+const ch=new Chart(document.getElementById('reg'),{xlabel:'trials',ylabel:'cum regret',xMin:0,yMin:0});
+ch.line('cum regret',COLORS.orange);
+
+function reset(){
+  for(const k in gr.w){estMean[k]=0;estN[k]=0;}
+  for(let p=0;p<paths.length;p++){pathReward[p]=0;pathN[p]=0;}
+  cumRegret=0;trials=0;lastPath=null;revealed=false;document.getElementById('reveal').textContent='reveal optimum';
+  ch.reset();ch.line('cum regret',COLORS.orange);
+  document.getElementById('s-opt').textContent=optC.toFixed(2);
+  document.getElementById('s-est').textContent='—';
+  render();ch.render();
+}
+function noisyWeight(e){return Math.max(0.01, gr.w[e]+gauss(gr.rng)*0.1);}
+function observePath(path){
+  let total=0;
+  for(const e of path){const obs=noisyWeight(e);total+=obs;estN[e]+=1;estMean[e]+=(obs-estMean[e])/estN[e];}
+  return total;
+}
+function pickPath(){
+  if(mode==='random'){return paths[Math.floor(gr.rng()*paths.length)];}
+  if(mode==='path-bandit'){
+    // ε-greedy on paths (treat each path as an arm)
+    if(gr.rng()<0.10)return paths[Math.floor(gr.rng()*paths.length)];
+    const means=paths.map((_,k)=>pathN[k]?pathReward[k]/pathN[k]:0);
+    return paths[argmin(means)];   // minimise estimated cost
+  }
+  if(mode==='edge-ucb'){
+    // lower confidence bound per edge; shortest path on LCBs
+    const lcb={};const t=trials+1;
+    for(const e in gr.w){const n=estN[e];if(n===0){lcb[e]=0;}else{lcb[e]=Math.max(0,estMean[e]-Math.sqrt(2*Math.log(t)/n));}}
+    return optimalPath(lcb);
+  }
+  return paths[0];
+}
+function step(){
+  const path=pickPath();const cost=observePath(path);
+  trials++;cumRegret+=Math.max(0,cost-optC);
+  // also update per-path stats for path-bandit
+  const idx=paths.findIndex(p=>p.length===path.length && p.every((e,k)=>e===path[k]));if(idx>=0){pathReward[idx]+=cost;pathN[idx]+=1;}
+  lastPath=path;
+  ch.push('cum regret',trials,cumRegret);
+  // current best path estimate using means
+  const means={};for(const e in gr.w){means[e]=estN[e]?estMean[e]:0.5;}
+  const est=optimalPath(means);const estC=est.reduce((s,e)=>s+(estN[e]?estMean[e]:gr.w[e]),0);
+  document.getElementById('s-est').textContent=estC.toFixed(2);
+  document.getElementById('s-r').textContent=cumRegret.toFixed(1);
+  document.getElementById('s-t').textContent=trials;
+}
+
+function render(){
+  const cv=document.getElementById('canvas');const dpr=window.devicePixelRatio||1;const W=cv.clientWidth,H=cv.clientHeight||320;cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const pad=22, sz=Math.min(W,H)-2*pad, step=sz/(G-1), ox=(W-sz)/2, oy=pad;
+  // edges
+  for(let i=0;i<G;i++)for(let j=0;j<G;j++){
+    const x=ox+j*step,y=oy+i*step;
+    if(j<G-1){const e=edgeKey(i,j,'R');drawEdge(ctx,x,y,x+step,y,e);}
+    if(i<G-1){const e=edgeKey(i,j,'D');drawEdge(ctx,x,y,x,y+step,e);}
+  }
+  // highlight optimal path if revealed
+  if(revealed){const opt=optimalPath(gr.w);ctx.strokeStyle=COLORS.green;ctx.lineWidth=4;ctx.beginPath();let cx=ox,cy=oy;ctx.moveTo(cx,cy);for(const e of opt){const [r,c,d]=e.split(',');if(d==='R')cx+=step;else cy+=step;ctx.lineTo(cx,cy);}ctx.stroke();}
+  // last path
+  if(lastPath){ctx.strokeStyle=COLORS.orange;ctx.lineWidth=2.5;ctx.setLineDash([5,3]);ctx.beginPath();let cx=ox,cy=oy;ctx.moveTo(cx,cy);for(const e of lastPath){const [r,c,d]=e.split(',');if(d==='R')cx+=step;else cy+=step;ctx.lineTo(cx,cy);}ctx.stroke();ctx.setLineDash([]);}
+  // nodes
+  for(let i=0;i<G;i++)for(let j=0;j<G;j++){const x=ox+j*step,y=oy+i*step;ctx.fillStyle=(i===0&&j===0)||(i===G-1&&j===G-1)?COLORS.blue:COLORS.fg;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();}
+  ctx.fillStyle=COLORS.dim;ctx.font='10px ui-monospace';ctx.fillText('start',ox-12,oy-6);ctx.fillText('end',ox+sz-18,oy+sz+12);
+}
+function drawEdge(ctx,x1,y1,x2,y2,e){
+  const n=estN[e];const mean=n?estMean[e]:0.5;
+  // colour by mean: blue (low) to red (high)
+  const t=Math.min(1,Math.max(0,(mean-0.1)/0.9));
+  const r=Math.floor(76 + t*(225-76)),g=Math.floor(141*(1-t)+108*t),b=Math.floor(246*(1-t)+108*t);
+  ctx.strokeStyle=`rgb(${r},${g},${b})`;
+  ctx.lineWidth=Math.max(1, Math.min(5, 1+Math.log2(1+n)));
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+}
+
+document.getElementById('step1').onclick=()=>{step();ch.render();render();};
+document.getElementById('step20').onclick=()=>{for(let i=0;i<20;i++)step();ch.render();render();};
+document.getElementById('step200').onclick=()=>{for(let i=0;i<200;i++)step();ch.render();render();};
+document.getElementById('reveal').onclick=()=>{revealed=!revealed;document.getElementById('reveal').textContent=revealed?'hide optimum':'reveal optimum';render();};
+document.getElementById('reset').onclick=()=>{gr=newGraph((Date.now()&0xffff)+13);optC=optimalCost(gr);reset();};
+document.querySelectorAll('.modebtn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.modebtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');mode=b.dataset.m;reset();};});
+
+reset();
+window.addEventListener('resize',()=>{ch.render();render();});
+
+// hero: race per-path bandit vs per-edge UCB on the same hidden grid
+(function hero(){
+  const cv=document.getElementById('hero');const hch=new Chart(cv,{xlabel:'trials',ylabel:'',xMin:0,yMin:0,pad:{l:36,r:12,t:14,b:22}});
+  const cap=document.getElementById('hero-cap');
+  function runOne(){
+    const g=newGraph((Math.random()*99999)|0);
+    const opt=optimalCost(g);
+    const P=allPaths();
+    const pol=[
+      {name:'per-edge UCB',col:COLORS.green,em:{},en:{},cum:0,t:0},
+      {name:'per-path bandit',col:COLORS.orange,em:{},en:{},pr:{},pn:{},cum:0,t:0},
+      {name:'random',col:COLORS.dim,cum:0,t:0},
+    ];
+    hch.reset();for(const p of pol)hch.line(p.name,p.col);
+    function step(){
+      for(const p of pol){
+        let path;
+        if(p.name==='random')path=P[Math.floor(g.rng()*P.length)];
+        else if(p.name==='per-path bandit'){if(g.rng()<0.1)path=P[Math.floor(g.rng()*P.length)];else{const means=P.map((_,k)=>p.pn[k]?p.pr[k]/p.pn[k]:0);path=P[argmin(means)];}}
+        else{const lcb={};const t=p.t+1;for(const e in g.w){const n=p.en[e]||0;lcb[e]=n?Math.max(0,p.em[e]-Math.sqrt(2*Math.log(t)/n)):0;}path=optimalPath(lcb);}
+        let c=0;for(const e of path){const obs=Math.max(0.01,g.w[e]+gauss(g.rng)*0.1);c+=obs;if(p.em){p.en[e]=(p.en[e]||0)+1;p.em[e]=(p.em[e]||0)+(obs-(p.em[e]||0))/p.en[e];}}
+        if(p.pr){const k=P.findIndex(q=>q.length===path.length&&q.every((e,i)=>e===path[i]));if(k>=0){p.pr[k]=(p.pr[k]||0)+c;p.pn[k]=(p.pn[k]||0)+1;}}
+        p.t++;p.cum+=Math.max(0,c-opt);hch.push(p.name,p.t,p.cum);
+      }
+      hch.render();cap.textContent=`trial ${pol[0].t} · per-edge=${pol[0].cum.toFixed(1)} · per-path=${pol[1].cum.toFixed(1)} · random=${pol[2].cum.toFixed(1)}`;
+      if(pol[0].t<200)requestAnimationFrame(step);else{cap.textContent+=' · per-edge wins.';setTimeout(runOne,2400);}
+    }
+    requestAnimationFrame(step);
+  }
+  runOne();window.addEventListener('resize',()=>hch.render());
+})();
+</script>
+</body>
+</html>

@@ -3,58 +3,84 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Solving with unknown parameters — a series</title>
-<link rel="stylesheet" href="shared/style.css">
+<title>Solving with unknown parameters — interactive series</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;padding:32px 16px 96px}
+.page{max-width:760px;margin:0 auto}
+.nav{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:32px;letter-spacing:0.06em}
+.nav a{color:var(--accent);text-decoration:none}
+h1{font-size:34px;line-height:1.2;margin:8px 0 12px;font-weight:700;letter-spacing:-0.01em}
+.subtitle{color:var(--dim);font-size:18px;margin:0 0 32px;line-height:1.5}
+h2{font-size:20px;margin:48px 0 16px;font-weight:600}
+p{margin:14px 0}
+a{color:var(--accent)}
+em{color:var(--fg)}strong{color:#fff}
+.post{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px;text-decoration:none;color:var(--fg);display:block;transition:all 0.15s}
+.post:hover{border-color:var(--accent);background:var(--card2);transform:translateX(2px)}
+.post .num{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase}
+.post .title{font-size:18px;margin:4px 0 6px;font-weight:600}
+.post .desc{font-size:14px;color:var(--dim);line-height:1.5}
+.banner{background:linear-gradient(135deg,var(--accent2) 0%,var(--card) 100%);border:1px solid var(--border);border-radius:14px;padding:20px;margin:0 0 36px;font-size:15px}
+.banner b{color:var(--good)}
+footer{margin-top:80px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
+@media (max-width:600px){body{padding:24px 12px 64px;font-size:15px}h1{font-size:28px}}
+</style>
 </head>
 <body>
 <div class="page">
-
-<div class="series-nav">
-  <span>SERIES · SOLVING WITH UNKNOWN PARAMETERS</span>
-  <span>6 POSTS · INTERACTIVE</span>
-</div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>6 POSTS · INTERACTIVE</span></div>
 
 <h1>Solving classical problems when you don't know the numbers</h1>
-<p class="subtitle">A side project of the <a href="../paper/paper.md">WPO-Gym / EDP research</a>. Six posts on what happens to the textbook algorithms when their inputs are hidden — and what changes when you stop pretending you know nothing about the problem.</p>
+<p class="subtitle">Six interactive posts on what happens to your favourite textbook algorithm when its inputs are hidden — and what changes when you stop pretending you know nothing about the problem.</p>
 
-<h2>The posts</h2>
+<div class="banner">
+<b>A side project of the <a href="../paper/paper.md">WPO-Gym / EDP research</a>.</b> Each post is a single self-contained HTML file: read, then play. No build step, no accounts, no external libraries. Six widgets, six insights, walking from "I know nothing" (multi-armed bandits) to "I know quite a lot and I keep learning the rest" (the paper's bet).
+</div>
 
-<ol style="list-style:none; padding:0;">
-  <li style="margin-bottom:18px;">
-    <strong><a href="01-bandit/">1. Picking the max when you don't know the numbers.</a></strong><br>
-    <span style="color:var(--fg-dim);">The k-armed bandit. ε-greedy, UCB, Thompson sampling. Playable.</span>
-  </li>
-  <li style="margin-bottom:18px;">
-    <strong><a href="02-sort/">2. Sorting numbers you cannot read.</a></strong><br>
-    <span style="color:var(--fg-dim);">Noisy comparison sort, dueling bandits, Borda aggregation. <em>stub.</em></span>
-  </li>
-  <li style="margin-bottom:18px;">
-    <strong><a href="03-shortest-path/">3. Shortest path when the edge weights are hidden.</a></strong><br>
-    <span style="color:var(--fg-dim);">Online shortest path, semi-bandit feedback, CombLinUCB. <em>stub.</em></span>
-  </li>
-  <li style="margin-bottom:18px;">
-    <strong><a href="04-tsp/">4. TSP when the city distances are unknown.</a></strong><br>
-    <span style="color:var(--fg-dim);">Combinatorial bandit over tours; structure beats `n!`. <em>stub.</em></span>
-  </li>
-  <li style="margin-bottom:18px;">
-    <strong><a href="05-edp/">5. When world knowledge replaces exploration: EDP.</a></strong><br>
-    <span style="color:var(--fg-dim);">An LLM-authored, human-readable policy that ships with no data. <em>stub.</em></span>
-  </li>
-  <li style="margin-bottom:18px;">
-    <strong><a href="06-edp-adapts/">6. EDP that adapts and explores.</a></strong><br>
-    <span style="color:var(--fg-dim);">The research bet: can the written policy keep improving? <em>stub.</em></span>
-  </li>
-</ol>
+<h2>The series</h2>
+
+<a class="post" href="01-bandit/">
+<div class="num">post 1</div>
+<div class="title">Picking the max when you don't know the numbers</div>
+<div class="desc">Five hidden slot machines, one is best. Race ε-greedy, UCB1, and Thompson sampling on a single chart. Find out why "a small amount of cleverness wins by a lot, more cleverness wins by very little."</div>
+</a>
+
+<a class="post" href="02-sort/">
+<div class="num">post 2</div>
+<div class="title">Sorting numbers you cannot read</div>
+<div class="desc">Eight hidden values, a noisy comparison oracle. Race uniform Borda, noisy mergesort, and active sampling — see how an "easy" pair burns budget when you don't yet know it's easy.</div>
+</a>
+
+<a class="post" href="03-shortest-path/">
+<div class="num">post 3</div>
+<div class="title">Shortest path when the edge weights are hidden</div>
+<div class="desc">A 5×5 grid graph. Walk a path, observe its edges, build a per-edge UCB. Watch the per-path bandit fail and the semi-bandit win exponentially — and meet the structural argument behind <em>paper §5.2</em>.</div>
+</a>
+
+<a class="post" href="04-tsp/">
+<div class="num">post 4</div>
+<div class="title">TSP when the distances are hidden</div>
+<div class="desc">Eight cities, 2,520 tours, 28 edges. Race random tours against per-edge + 2-opt and watch the action / information gap collapse the combinatorial explosion.</div>
+</a>
+
+<a class="post" href="05-edp/">
+<div class="num">post 5</div>
+<div class="title">When world knowledge replaces exploration: EDP</div>
+<div class="desc">A live instance of the actual EDP from the paper — 245 numbers, zero training data. Move persona sliders, watch a page recompose in real time. The point: a competent LLM-authored policy skips most of the exploration you spent four posts learning.</div>
+</a>
+
+<a class="post" href="06-edp-adapts/">
+<div class="num">post 6 · finale</div>
+<div class="title">EDP that adapts and explores — the paper, playable</div>
+<div class="desc">Race the LLM-prior GAM against the tuned bandit from Post 1. Real cold-start data from the paper's §5.7. The tuned bandit ties at 10K sessions but never leads — and the regime production lives in is well before 10K.</div>
+</a>
 
 <h2>The arc, in one sentence</h2>
-<p>Bandits are great when you genuinely know nothing about the problem; they are an expensive way to learn things a domain expert already knows. The series walks from "I know nothing" (Post 1) to "I know quite a lot and I keep learning the rest" (Post 6), and the move that connects them — replacing exploration with authored, editable policy — is what the paper calls EDP.</p>
+<p>Bandits are great when you genuinely know nothing about the problem; they are an expensive way to learn things a domain expert already knows. The series walks from "I know nothing" (Post 1) to "I know quite a lot and I keep learning the rest" (Post 6), and the move that connects them — replacing exploration with authored, editable policy — is what <a href="../paper/paper.md">the paper</a> calls EDP.</p>
 
-<footer>
-  Side project of <a href="../paper/paper.md">WPO-Gym / EDP</a>.
-  Workflow: <a href="WORKFLOW.md">WORKFLOW.md</a>.
-  Source: <a href="../README.md">repo</a>.
-</footer>
-
+<footer>Workflow + sources: <a href="WORKFLOW-v2.md">WORKFLOW-v2.md</a> · <a href="https://github.com/hanialshater/edp/tree/claude/bandit-edp-comparison-SFB0F/blog">github</a>. Side project of <a href="../paper/paper.md">the WPO-Gym / EDP research</a>.</footer>
 </div>
 </body>
 </html>
