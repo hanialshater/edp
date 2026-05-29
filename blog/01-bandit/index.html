@@ -4,7 +4,126 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Post 1 · Picking the max when you don't know the numbers</title>
-<link rel="stylesheet" href="../shared/style.css">
+<style>
+/* Shared styling for the "Solving with unknown parameters" blog series.
+   Dark theme, matching demo/edp_orchestrator.html. */
+
+:root {
+  --bg: #0b1220;
+  --bg-card: #131c30;
+  --bg-card-hover: #1a2440;
+  --fg: #e6edf3;
+  --fg-dim: #8b95a8;
+  --fg-faint: #5b6378;
+  --accent: #4c8df6;
+  --accent-soft: #2a4a7a;
+  --good: #5fd2a3;
+  --warn: #f0a058;
+  --bad:  #e16c6c;
+  --grid: #1f2a44;
+  --code-bg: #0e1626;
+  --border: #1f2a44;
+  --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+body {
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 32px 16px 96px;
+}
+
+.page { max-width: 760px; margin: 0 auto; }
+
+.series-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 12px; color: var(--fg-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px; margin-bottom: 32px;
+}
+.series-nav a { color: var(--accent); text-decoration: none; }
+.series-nav a:hover { text-decoration: underline; }
+
+h1 { font-size: 28px; line-height: 1.25; margin: 0 0 8px; }
+h2 { font-size: 20px; margin: 40px 0 12px; }
+h3 { font-size: 16px; margin: 28px 0 8px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+p { margin: 12px 0; }
+.subtitle { color: var(--fg-dim); margin: 0 0 24px; font-size: 16px; }
+
+code, pre { font-family: var(--mono); }
+code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 14px; }
+pre {
+  background: var(--code-bg); padding: 12px 16px; border-radius: 8px;
+  overflow-x: auto; font-size: 13px; border: 1px solid var(--border);
+}
+
+a { color: var(--accent); }
+strong { color: var(--fg); }
+em { color: var(--fg-dim); font-style: normal; border-bottom: 1px dotted var(--fg-faint); }
+
+.widget {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 32px 0;
+}
+.widget h2 { margin-top: 0; font-size: 18px; }
+.widget .legend { font-size: 13px; color: var(--fg-dim); margin-bottom: 16px; }
+
+.controls {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin: 12px 0 20px;
+}
+button {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--bg-card-hover); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 12px; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+button:hover { background: var(--accent-soft); border-color: var(--accent); }
+button.primary { background: var(--accent); color: #0b1220; border-color: var(--accent); font-weight: 600; }
+button.primary:hover { background: #6ba0ff; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+select {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--bg-card-hover); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin: 16px 0;
+  font-family: var(--mono); font-size: 13px;
+}
+.stat { background: var(--code-bg); padding: 10px 12px; border-radius: 6px; }
+.stat .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.stat .value { color: var(--fg); font-size: 18px; margin-top: 4px; }
+
+canvas { display: block; width: 100%; background: var(--code-bg); border-radius: 6px; }
+
+footer {
+  margin-top: 64px; border-top: 1px solid var(--border);
+  padding-top: 24px; color: var(--fg-dim); font-size: 13px;
+}
+footer a { color: var(--accent); }
+
+@media (max-width: 600px) {
+  body { padding: 20px 12px 64px; font-size: 15px; }
+  h1 { font-size: 24px; }
+}
+
+
+@media (max-width: 600px) {
+  #arms { grid-template-columns: repeat(2, 1fr) !important; }
+}
+</style>
 </head>
 <body>
 <div class="page">
