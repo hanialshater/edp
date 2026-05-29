@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interlude · A combinatorial bandit is a wrapper</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;padding:24px 16px 96px}
+.page{max-width:760px;margin:0 auto}
+.nav{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:24px;letter-spacing:0.04em}
+.nav a{color:var(--accent);text-decoration:none}
+h1{font-size:30px;line-height:1.2;margin:8px 0 12px;font-weight:700;letter-spacing:-0.01em}
+.subtitle{color:var(--dim);font-size:17px;margin:0 0 24px;line-height:1.5}
+h2{font-size:20px;margin:36px 0 12px;font-weight:600}
+h3{font-size:13px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+p{margin:14px 0}a{color:var(--accent)}
+code{font-family:var(--mono);background:var(--code);padding:1px 6px;border-radius:4px;font-size:13.5px}
+em{color:var(--fg);font-style:italic}strong{color:#fff}
+hr.scene{border:0;text-align:center;margin:36px 0 20px;color:var(--faint)}
+hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);font-size:12px}
+pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.55;font-family:var(--mono)}
+pre .hl{color:var(--good)}
+pre .c{color:var(--faint)}
+pre .k{color:var(--purple)}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+.widget h2{margin-top:0;font-size:18px;border:0}
+.legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
+button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
+button:hover{background:var(--accent2);border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.solver-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.solver-pills button{font-size:12px;padding:6px 11px}
+.solver-pills button.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0;font-family:var(--mono);font-size:13px}
+.stat{background:var(--code);padding:9px 11px;border-radius:6px}
+.stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+.stat .value{color:var(--fg);font-size:17px;margin-top:3px}
+canvas{display:block;width:100%;background:var(--code);border-radius:6px}
+.split{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.split>canvas{flex:1;min-width:240px}
+.codebox{position:relative}
+.swap{position:absolute;right:10px;top:10px;font-family:var(--mono);font-size:10.5px;color:var(--good);background:var(--card2);border:1px solid var(--good);border-radius:4px;padding:2px 7px}
+footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
+@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>INTERLUDE · after <a href="../04-tsp/">Post 4</a> · <a href="../">index</a> · <a href="../05-edp/">Post 5 →</a></span></div>
+
+<h1>A combinatorial bandit is a wrapper, not an algorithm</h1>
+<p class="subtitle">Posts 1–4 looked like four different problems with four different solutions. They were the same algorithm four times. Here is the wrapper that proves it — change one function call, learn a different classical algorithm's parameters.</p>
+
+<div class="widget">
+<h2>The reduction</h2>
+<p class="legend">This is the entire combinatorial-bandit pattern. The only line that changes between Posts 1–4 is the one marked.</p>
+<div class="codebox">
+<span class="swap">↓ swap this line</span>
+<pre><span class="c"># one scalar estimate per parameter (edge / pair / arm)</span>
+est = Estimates()
+<span class="k">for</span> t <span class="k">in</span> range(T):
+    optimistic = est.mean − bonus(est.count, t)   <span class="c"># UCB optimism</span>
+    action     = <span class="hl">solver</span>(problem, optimistic)    <span class="c"># ← the classical algorithm</span>
+    observed   = problem.play(action)             <span class="c"># semi-bandit feedback</span>
+    est.update(observed)                          <span class="c"># only touched params</span></pre>
+</div>
+<p style="font-size:14px;color:var(--dim)">Set <code>solver = argmax</code> and you have Post 1's multi-armed bandit. Set <code>solver = Dijkstra</code> and you have Post 3. Set <code>solver = 2opt</code> and you have Post 4. The learning machinery — optimistic estimates, semi-bandit updates, the regret it incurs — is byte-for-byte identical.</p>
+</div>
+
+<hr class="scene">
+
+<h3>Act 1 — Why they're the same</h3>
+
+<p>Each of the first four posts had a classical algorithm that solves the problem <em>when the parameters are known</em>: scan-for-max, sort, Dijkstra, Christofides/2-opt. The "unknown parameters" version doesn't replace that algorithm. It wraps it: run the classical solver on your current best (optimistic) guess of the parameters, take the action it returns, observe the parameters you touched, update your guess, repeat.</p>
+
+<p>The optimism — subtracting a confidence bonus so under-sampled parameters look attractively cheap — is what makes the wrapper explore. The classical solver is what makes it exploit structure. Neither half is new; the combination is the combinatorial bandit.</p>
+
+<h3>Act 2 — Swap the solver, keep the wrapper</h3>
+
+<p>The widget below runs that exact loop on one shared hidden-weight graph (7 nodes, 21 edges, weights you can't see). The dropdown changes only <code>solver</code>. Watch three different classical algorithms — shortest path, minimum spanning tree, traveling salesman — all learn their unknown edge weights through the identical wrapper.</p>
+
+<div class="widget">
+<h2>One wrapper, four solvers</h2>
+<p class="legend">Hidden complete graph on 7 nodes. Pick a base solver; the wrapper learns the edge weights it needs and converges to the optimal structure. Edge brightness = how confident the estimate is; the coloured structure is the current solution.</p>
+
+<div class="solver-pills">
+  <span style="font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-right:6px;">solver =</span>
+  <button class="sbtn" data-s="argmax">argmax (1 best arm)</button>
+  <button class="sbtn on" data-s="dijkstra">Dijkstra (shortest path)</button>
+  <button class="sbtn" data-s="mst">Prim (spanning tree)</button>
+  <button class="sbtn" data-s="tsp">2-opt (TSP tour)</button>
+</div>
+
+<div class="controls">
+  <button id="step1">+1 trial</button>
+  <button id="step20">+20</button>
+  <button id="step200" class="primary">+200</button>
+  <button id="reveal">reveal optimum</button>
+  <button id="reset">new graph</button>
+</div>
+
+<div class="split">
+  <canvas id="graph" height="300" style="max-width:320px"></canvas>
+  <div style="flex:1;min-width:240px">
+    <canvas id="reg" height="160"></canvas>
+    <div class="stats">
+      <div class="stat"><div class="label">solver</div><div class="value" id="s-name">Dijkstra</div></div>
+      <div class="stat"><div class="label">trials</div><div class="value" id="s-t">0</div></div>
+      <div class="stat"><div class="label">cum regret</div><div class="value" id="s-r">0.0</div></div>
+      <div class="stat"><div class="label">gap to optimum</div><div class="value" id="s-gap">—</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<p>Three classical algorithms, written decades apart for fully-specified inputs, all learning their hidden inputs through one loop you never edited. That is the content of "combinatorial bandits work on top of other algorithms": they are a generic adapter that turns any <em>known-parameter</em> solver into an <em>unknown-parameter</em> learner, provided the feedback decomposes per component (semi-bandit) so estimates are shared across actions.</p>
+
+<hr class="scene">
+
+<h3>Act 3 — Bradley-Terry is the same trick for ranking</h3>
+
+<p>Post 2 (sorting with noisy comparisons) is this wrapper too — the base "solver" is a ranking aggregator, and the parameters are <strong>Bradley-Terry skills</strong>. The Bradley-Terry model says a comparison goes <code>P(i ≻ j) = σ(s_i − s_j)</code> for latent skills <em>s</em>. Each comparison you run is a noisy observation of one skill <em>difference</em>; fit the skills by maximum likelihood; sort by fitted skill. The combinatorial bandit's job is the <em>experimental design</em> — which pairs to compare next so the skill estimates converge fastest. (Post 2 now shows that fit converging live.)</p>
+
+<p>So the menu of "solvers" the wrapper accepts is broad: argmax, sort/rank-aggregate, Dijkstra, Prim, 2-opt, and — the reason this series exists — the greedy submodular page composer of the research project. Running the wrapper on <em>that</em> solver is exactly what the paper calls <strong>GreedyLinTS</strong> (paper §5.4c): a combinatorial bandit on top of the EDP page-composition algorithm.</p>
+
+<hr class="scene">
+
+<h3>Where this points</h3>
+
+<p>If a combinatorial bandit is "optimism + a classical solver," then EDP is "<em>a prior</em> + the same classical solver." Instead of an optimism term that explores from scratch, the LLM writes down a starting guess of the parameters that is already good — and a small online correction (the SGD in Bayesian-EDP) plays the role the optimism term used to play. Same wrapper shape; the exploration budget is replaced by world knowledge.</p>
+
+<p>That is the move Posts 5 and 6 make concrete. The combinatorial bandit learns the parameters from clicks; EDP starts most of the way there because someone who understood the problem wrote them down first.</p>
+
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> meet the solver this whole series was built around, with its parameters authored by an LLM instead of learned. <a href="../05-edp/">Post 5 — when world knowledge replaces exploration</a>.</p>
+
+<footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. <a href="../">series index</a>.</footer>
+</div>
+<script>
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',fg:'#e6edf3'};
+function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function gauss(rand){let u=rand()||1e-12,v=rand();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+class Chart{
+  constructor(c,o){this.c=c;this.o=Object.assign({pad:{l:42,r:12,t:14,b:22},grid:4,yMin:0,xMin:0,xMax:null,yMax:null},o||{});this.s={};}
+  line(n,col){this.s[n]={col,pts:[]};return this;}
+  push(n,x,y){if(!this.s[n])this.line(n,COLORS.blue);this.s[n].pts.push([x,y]);}
+  reset(){for(const k in this.s)this.s[k].pts=[];}
+  render(){const cv=this.c,dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||cv.height;cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const p=this.o.pad,pw=W-p.l-p.r,ph=H-p.t-p.b;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.font='11px ui-monospace';ctx.fillStyle=COLORS.dim;
+    for(let i=0;i<=this.o.grid;i++){const y=p.t+(i/this.o.grid)*ph;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.l+pw,y);ctx.stroke();}
+    let xMax=this.o.xMax,yMax=this.o.yMax,yMin=this.o.yMin,any=false;
+    for(const k in this.s)for(const [x,y] of this.s[k].pts){any=true;if(xMax==null||x>xMax)xMax=x;if(yMax==null||y>yMax)yMax=y;}
+    if(!any){ctx.fillText('— waiting —',p.l+8,p.t+ph/2);return;}
+    if(xMax==null)xMax=1;if(yMax==null)yMax=1;
+    const xPx=x=>p.l+((x-this.o.xMin)/(xMax-this.o.xMin||1))*pw,yPx=y=>p.t+(1-(y-yMin)/(yMax-yMin||1))*ph;
+    ctx.fillText(yMax.toFixed(1),4,p.t+4);ctx.fillText(yMin.toFixed(1),4,p.t+ph+4);ctx.fillText(`${xMax|0}`,W-44,H-6);
+    for(const k in this.s){const s=this.s[k];if(s.pts.length<2)continue;ctx.strokeStyle=s.col;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<s.pts.length;i++){const [x,y]=s.pts[i],px=xPx(x),py=yPx(y);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
+    let lx=W-p.r-4,ly=p.t+12;ctx.textAlign='right';for(const k in this.s){ctx.fillStyle=this.s[k].col;ctx.fillText(k,lx,ly);ly+=14;}ctx.textAlign='left';
+  }
+}
+
+// ===== shared hidden complete graph on N nodes =====
+const N=7;
+function newGraph(seed){const r=rng(seed);const w=Array.from({length:N},()=>new Array(N).fill(0));for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const v=0.15+r()*0.85;w[i][j]=v;w[j][i]=v;}
+  // circle layout
+  const xy=[];for(let i=0;i<N;i++){const a=2*Math.PI*i/N - Math.PI/2;xy.push([0.5+0.4*Math.cos(a),0.5+0.4*Math.sin(a)]);}
+  return {w,xy,rng:r};
+}
+
+// ===== classical solvers, each takes an edge-weight matrix, returns a set of edges =====
+function dijkstra(w,s,t){const dist=new Array(N).fill(Infinity),prev=new Array(N).fill(-1),vis=new Array(N).fill(false);dist[s]=0;for(let it=0;it<N;it++){let u=-1,best=Infinity;for(let i=0;i<N;i++)if(!vis[i]&&dist[i]<best){best=dist[i];u=i;}if(u<0)break;vis[u]=true;for(let v=0;v<N;v++)if(v!==u&&dist[u]+w[u][v]<dist[v]){dist[v]=dist[u]+w[u][v];prev[v]=u;}}const edges=[];let cur=t;while(prev[cur]>=0){edges.push([Math.min(cur,prev[cur]),Math.max(cur,prev[cur])]);cur=prev[cur];}return edges;}
+function prim(w){const inT=new Array(N).fill(false);inT[0]=true;const edges=[];for(let it=0;it<N-1;it++){let be=null,bw=Infinity;for(let i=0;i<N;i++)if(inT[i])for(let j=0;j<N;j++)if(!inT[j]&&w[i][j]<bw){bw=w[i][j];be=[i,j];}if(!be)break;inT[be[1]]=true;edges.push([Math.min(be[0],be[1]),Math.max(be[0],be[1])]);}return edges;}
+function tourEdges(t){const e=[];for(let i=0;i<t.length;i++){const a=t[i],b=t[(i+1)%t.length];e.push([Math.min(a,b),Math.max(a,b)]);}return e;}
+function tourCost(t,w){let c=0;for(let i=0;i<t.length;i++)c+=w[t[i]][t[(i+1)%t.length]];return c;}
+function twoOpt(w,start){let t=start.slice(),imp=true,it=0;while(imp&&it<60){imp=false;it++;for(let i=0;i<N-1;i++)for(let j=i+2;j<N;j++){if(i===0&&j===N-1)continue;const a=t[i],b=t[i+1],c=t[j],d=t[(j+1)%N];if(w[a][c]+w[b][d]<w[a][b]+w[c][d]-1e-9){t=t.slice(0,i+1).concat(t.slice(i+1,j+1).reverse(),t.slice(j+1));imp=true;}}}return t;}
+function argmaxEdges(w){ // degenerate: pick the single cheapest edge from node 0 (one "arm")
+  let be=null,bw=Infinity;for(let j=1;j<N;j++)if(w[0][j]<bw){bw=w[0][j];be=[0,j];}return [[Math.min(be[0],be[1]),Math.max(be[0],be[1])]];}
+
+const SOLVERS={
+  argmax:{name:'argmax',label:'argmax (1 best arm)',
+    solve:w=>argmaxEdges(w),
+    optimal:w=>argmaxEdges(w),
+    cost:(edges,w)=>edges.reduce((s,[a,b])=>s+w[a][b],0)},
+  dijkstra:{name:'Dijkstra',label:'Dijkstra (shortest path 0→3)',
+    solve:w=>dijkstra(w,0,3),
+    optimal:w=>dijkstra(w,0,3),
+    cost:(edges,w)=>edges.reduce((s,[a,b])=>s+w[a][b],0)},
+  mst:{name:'Prim',label:'Prim (spanning tree)',
+    solve:w=>prim(w),
+    optimal:w=>prim(w),
+    cost:(edges,w)=>edges.reduce((s,[a,b])=>s+w[a][b],0)},
+  tsp:{name:'2-opt',label:'2-opt (TSP tour)',
+    solve:(w,prev)=>tourEdges(twoOpt(w,prev||[...Array(N).keys()])),
+    optimal:w=>{ // brute force N=7: 6! = 720
+      const perms=[];function rec(used,tr){if(tr.length===N){perms.push(tr.slice());return;}for(let k=0;k<N;k++)if(!used[k]){used[k]=true;tr.push(k);rec(used,tr);tr.pop();used[k]=false;}}rec({0:true},[0]);let best=Infinity,bt=null;for(const t of perms){const c=tourCost(t,w);if(c<best){best=c;bt=t;}}return tourEdges(bt);},
+    cost:(edges,w)=>edges.reduce((s,[a,b])=>s+w[a][b],0)},
+};
+
+let gr=newGraph(303),solver='dijkstra';
+let estMean=Array.from({length:N},()=>new Array(N).fill(0)),estN=Array.from({length:N},()=>new Array(N).fill(0));
+let trials=0,cumReg=0,lastEdges=null,curTour=null,optEdges=null,optCost=0,revealed=false;
+const ch=new Chart(document.getElementById('reg'),{xMin:0,yMin:0});ch.line('cum regret',COLORS.orange);
+
+function computeOpt(){optEdges=SOLVERS[solver].optimal(gr.w);optCost=SOLVERS[solver].cost(optEdges,gr.w);}
+function reset(){estMean=Array.from({length:N},()=>new Array(N).fill(0));estN=Array.from({length:N},()=>new Array(N).fill(0));trials=0;cumReg=0;lastEdges=null;curTour=null;revealed=false;document.getElementById('reveal').textContent='reveal optimum';computeOpt();ch.reset();ch.line('cum regret',COLORS.orange);document.getElementById('s-name').textContent=SOLVERS[solver].name;render();ch.render();updateStats();}
+function lcb(t){const m=Array.from({length:N},()=>new Array(N).fill(0));for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(i===j)continue;const n=estN[i][j];m[i][j]=n?Math.max(0.01,estMean[i][j]-Math.sqrt(2*Math.log(t+1)/n)):0;}return m;}
+function step(){
+  const opt=lcb(trials);
+  let edges;
+  if(solver==='tsp'){const tour=twoOpt(opt,curTour||[...Array(N).keys()]);curTour=tour;edges=tourEdges(tour);}
+  else edges=SOLVERS[solver].solve(opt);
+  // observe (semi-bandit): noisy weight of each used edge
+  for(const [a,b] of edges){const obs=Math.max(0.01,gr.w[a][b]+gauss(gr.rng)*0.08);estN[a][b]+=1;estN[b][a]+=1;estMean[a][b]+=(obs-estMean[a][b])/estN[a][b];estMean[b][a]=estMean[a][b];}
+  const trueCost=SOLVERS[solver].cost(edges,gr.w);
+  trials++;cumReg+=Math.max(0,trueCost-optCost);lastEdges=edges;
+  ch.push('cum regret',trials,cumReg);updateStats();
+}
+function updateStats(){document.getElementById('s-t').textContent=trials;document.getElementById('s-r').textContent=cumReg.toFixed(1);
+  if(lastEdges){const c=SOLVERS[solver].cost(lastEdges,gr.w);document.getElementById('s-gap').textContent=optCost>0?`+${((c/optCost-1)*100).toFixed(0)}%`:'—';}else document.getElementById('s-gap').textContent='—';}
+function render(){
+  const cv=document.getElementById('graph');const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||300;cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const pad=26,sz=Math.min(W,H)-2*pad,ox=(W-sz)/2,oy=pad;const px=p=>[ox+p[0]*sz,oy+p[1]*sz];
+  // all edges faint, brightness by confidence
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const n=estN[i][j];const a=px(gr.xy[i]),b=px(gr.xy[j]);const alpha=0.04+Math.min(0.25,n*0.02);ctx.strokeStyle=`rgba(140,150,170,${alpha})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();}
+  // optimum
+  if(revealed&&optEdges){ctx.strokeStyle=COLORS.green;ctx.lineWidth=4;for(const [i,j] of optEdges){const a=px(gr.xy[i]),b=px(gr.xy[j]);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();}}
+  // current solution
+  if(lastEdges){ctx.strokeStyle=COLORS.orange;ctx.lineWidth=2.5;ctx.setLineDash([5,3]);for(const [i,j] of lastEdges){const a=px(gr.xy[i]),b=px(gr.xy[j]);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();}ctx.setLineDash([]);}
+  // nodes
+  for(let i=0;i<N;i++){const p=px(gr.xy[i]);const special=(solver==='dijkstra'&&(i===0||i===3))||(solver==='argmax'&&i===0);ctx.fillStyle=special?COLORS.blue:COLORS.fg;ctx.beginPath();ctx.arc(p[0],p[1],5,0,Math.PI*2);ctx.fill();ctx.fillStyle=COLORS.dim;ctx.font='10px ui-monospace';ctx.fillText(i,p[0]+7,p[1]+3);}
+  if(solver==='dijkstra'){const s=px(gr.xy[0]),t=px(gr.xy[3]);ctx.fillStyle=COLORS.blue;ctx.font='10px ui-monospace';ctx.fillText('s',s[0]-12,s[1]);ctx.fillText('t',t[0]+9,t[1]+10);}
+}
+
+document.getElementById('step1').onclick=()=>{step();render();ch.render();};
+document.getElementById('step20').onclick=()=>{for(let i=0;i<20;i++)step();render();ch.render();};
+document.getElementById('step200').onclick=()=>{for(let i=0;i<200;i++)step();render();ch.render();};
+document.getElementById('reveal').onclick=()=>{revealed=!revealed;document.getElementById('reveal').textContent=revealed?'hide optimum':'reveal optimum';render();};
+document.getElementById('reset').onclick=()=>{gr=newGraph((Date.now()&0xffff)+5);reset();};
+document.querySelectorAll('.sbtn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.sbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');solver=b.dataset.s;reset();};});
+reset();
+window.addEventListener('resize',()=>{ch.render();render();});
+</script>
+</body>
+</html>

@@ -50,7 +50,7 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding-top:24px;color
 <a class="post" href="02-sort/">
 <div class="num">post 2</div>
 <div class="title">Sorting numbers you cannot read</div>
-<div class="desc">Eight hidden values, a noisy comparison oracle. Race uniform Borda, noisy mergesort, and active sampling — see how an "easy" pair burns budget when you don't yet know it's easy.</div>
+<div class="desc">Eight hidden values, a noisy <strong>Bradley-Terry</strong> comparison oracle. Race uniform Borda, noisy mergesort, and active sampling; watch the fitted BT skills recover the hidden order live.</div>
 </a>
 
 <a class="post" href="03-shortest-path/">
@@ -63,6 +63,12 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding-top:24px;color
 <div class="num">post 4</div>
 <div class="title">TSP when the distances are hidden</div>
 <div class="desc">Eight cities, 2,520 tours, 28 edges. Race random tours against per-edge + 2-opt and watch the action / information gap collapse the combinatorial explosion.</div>
+</a>
+
+<a class="post" href="4b-pattern/" style="border-style:dashed">
+<div class="num">interlude · after post 4</div>
+<div class="title">A combinatorial bandit is a wrapper, not an algorithm</div>
+<div class="desc">The unifying idea: one optimism wrapper, swap the base solver. Watch argmax, Dijkstra, Prim-MST, and 2-opt all learn their hidden parameters through the identical loop — and see where Bradley-Terry and the paper's GreedyLinTS fit in.</div>
 </a>
 
 <a class="post" href="05-edp/">
