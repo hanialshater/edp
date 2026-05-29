@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Post 1 · Picking the max when you don't know the numbers</title>
+<link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<div class="page">
+
+<div class="series-nav">
+  <span>SERIES · SOLVING WITH UNKNOWN PARAMETERS</span>
+  <span>POST 1 OF 6  ·  <a href="../">index</a>  ·  <a href="../02-sort/">next →</a></span>
+</div>
+
+<h1>Picking the max when you don't know the numbers</h1>
+<p class="subtitle">Step 1 of a series on classical problems whose parameters are unknown. The simplest one: <code>max(x₁, …, xₖ)</code>. With known numbers it's a one-liner. Without them, you've reinvented the multi-armed bandit.</p>
+
+<h3>The classical problem</h3>
+<p>You have <em>k</em> numbers and you want the largest one. Compare them; return the index of the max. <em>O(k)</em> comparisons, no surprises, done.</p>
+
+<p>The interesting version is the one where you don't get to read the numbers — only sample them, noisily, and pay for every sample. Every casino slot machine is this problem. Every A/B test is this problem. Every time a recommender decides which of <em>k</em> things to show, it is this problem.</p>
+
+<h3>The unknown-parameter twist</h3>
+<p>Reframed: there are <em>k</em> arms, each with a hidden reward distribution. You pull one arm per round and observe a noisy sample of its reward. You want the cumulative reward over <em>T</em> rounds to be as close as possible to <em>T</em> times the best arm's mean. The gap is your <strong>regret</strong>.</p>
+
+<p>You cannot just pull each arm a few times and then commit to the best — early samples are noisy, you'd often commit to the wrong one. You cannot just keep exploring — every round spent on a bad arm is regret you do not recover. Every policy is a way to spend your pulls along the <em>explore</em>↔<em>exploit</em> axis.</p>
+
+<p>Three policies the textbook gives you, all interesting:</p>
+<ul>
+  <li><strong>ε-greedy.</strong> With probability ε pull a random arm; otherwise pull the best-so-far. Dumb and effective.</li>
+  <li><strong>UCB1</strong> (Auer et al. 2002). Pull <code>argmax<sub>i</sub> [μ̂<sub>i</sub> + √(2 ln t / n<sub>i</sub>)]</code>. Optimism in the face of uncertainty: arms you've pulled little get a confidence bonus.</li>
+  <li><strong>Thompson sampling</strong> (Thompson 1933). Keep a posterior over each arm's mean, draw one sample from each, pull the arm whose draw was highest. Bayesian and remarkably hard to beat in practice.</li>
+</ul>
+
+<h3>The interactive question</h3>
+<p>The widget below lets you play this out. Five arms with hidden Bernoulli rewards. You can pull manually, or hand the controls to a policy. Watch the cumulative regret accumulate against the oracle.</p>
+
+<p>The thing worth discovering yourself: <em>at small budgets, the gap between the policies matters more than which "best" policy you pick.</em> At a budget of 100 pulls, ε-greedy ≈ UCB ≈ Thompson ≈ <strong>all far ahead of pure exploration or pure exploitation</strong>. At 10,000 pulls they converge to nearly the same regret. Bandits are not a hard problem; they are a problem where a small amount of cleverness wins by a lot, and more cleverness wins by very little.</p>
+
+<div class="widget" id="widget">
+  <h2>K-armed bandit playground</h2>
+  <p class="legend">5 arms · Bernoulli rewards (hidden) · click "reveal" to peek. Choose a policy and run pulls. <strong>Regret</strong> = best possible reward minus what you actually got.</p>
+
+  <div class="controls">
+    <span style="font-family:var(--mono);font-size:12px;color:var(--fg-dim);">policy:</span>
+    <select id="policy">
+      <option value="manual">manual (I pick)</option>
+      <option value="oracle">oracle (always best)</option>
+      <option value="exploit">pure exploit (greedy)</option>
+      <option value="random">pure explore (random)</option>
+      <option value="epsilon" selected>ε-greedy (ε=0.1)</option>
+      <option value="ucb">UCB1</option>
+      <option value="thompson">Thompson sampling</option>
+    </select>
+    <button id="pull1">+1 pull</button>
+    <button id="pull100">+100</button>
+    <button id="pull1000" class="primary">+1000 (fast)</button>
+    <button id="reveal">reveal true means</button>
+    <button id="reset">reset</button>
+  </div>
+
+  <div id="arms" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;"></div>
+
+  <div class="stats">
+    <div class="stat"><div class="label">pulls</div><div class="value" id="s_pulls">0</div></div>
+    <div class="stat"><div class="label">total reward</div><div class="value" id="s_reward">0.00</div></div>
+    <div class="stat"><div class="label">oracle would have</div><div class="value" id="s_oracle">0.00</div></div>
+    <div class="stat"><div class="label">cumulative regret</div><div class="value" id="s_regret">0.00</div></div>
+    <div class="stat"><div class="label">avg regret / pull</div><div class="value" id="s_avg_regret">0.000</div></div>
+  </div>
+
+  <canvas id="canvas" height="220"></canvas>
+  <p class="legend" style="margin-top:8px;">Cumulative regret over time. Lower = better. The dashed line is regret per pull averaged over a 50-pull window.</p>
+</div>
+
+<h3>What to take away</h3>
+
+<p>If you played long enough you'll have noticed two things. First, every smart policy beats both <em>always exploit</em> (which usually commits to a bad arm) and <em>pure explore</em> (which never commits to a good one). Smart-vs-smart differences are small at large <em>T</em>. Second, regret per pull always shrinks toward zero — given enough pulls, even ε-greedy finds the right arm.</p>
+
+<p>This is the situation a recommender is in when it has nothing else to go on. Every page view is a pull, every click is a noisy reward sample, and the question of "which widget to show" is "which arm to pull." The textbook answer is to use Thompson or UCB and accumulate data; it works, and it is what most production systems do.</p>
+
+<p>It is also the situation we'll spend the rest of the series complicating. <strong>Sorting</strong> is choose-the-max repeated and made consistent. <strong>Shortest path</strong> is choosing a max-reward sequence under a constraint. <strong>TSP</strong> is the same with combinatorial structure that defeats per-arm reasoning. And then <strong>EDP</strong> is what happens when you stop pretending you know nothing about the arms.</p>
+
+<p>If you have an LLM that knows that <em>fit_reassurance is a good widget for size-anxious shoppers</em>, you do not have to learn it from clicks. You can <em>write</em> the policy and let learning do the small calibrations on top. That is the bet the research project (<a href="../../paper/paper.md">WPO-Gym / EDP</a>) is making, and Posts 5 and 6 will let you play it against the bandit you just met.</p>
+
+<footer>
+  Part of the WPO-Gym / EDP research project. Source:
+  <a href="../">blog/</a> · <a href="../../paper/paper.md">paper.md</a> ·
+  <a href="../../README.md">repo</a>.
+  Next: <a href="../02-sort/">Post 2 — Sorting numbers you cannot read</a>.
+</footer>
+
+</div>
+
+<script>
+// ============================================================
+// K-armed bandit playground.
+// State machine, vanilla JS, single file, no dependencies.
+// ============================================================
+
+const K = 5;
+const COLORS = ['#4c8df6', '#5fd2a3', '#f0a058', '#c879f0', '#e16c6c'];
+
+const state = {
+  trueP: [],         // hidden true probabilities, drawn at reset
+  pulls: [],         // count per arm
+  successes: [],     // running sum of rewards per arm
+  history: [],       // cumulative regret per pull (running)
+  totalReward: 0,
+  totalPulls: 0,
+  bestMean: 0,       // for regret calc
+  bestArm: 0,
+};
+
+function rand() { return Math.random(); }
+function gauss() { let u=Math.random(), v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+function beta(alpha, beta_) {
+  // approximate beta via two gamma-ish samples; good enough for TS demo
+  let x = Math.pow(Math.random(), 1/alpha);
+  let y = Math.pow(Math.random(), 1/beta_);
+  return x/(x+y);
+}
+function argmax(arr) {
+  let i=0; for (let j=1;j<arr.length;j++) if (arr[j]>arr[i]) i=j; return i;
+}
+
+function reset() {
+  // draw fresh hidden probabilities; ensure one clear winner
+  state.trueP = [];
+  for (let i=0; i<K; i++) state.trueP.push(0.20 + 0.55*Math.random());
+  state.bestArm = argmax(state.trueP);
+  state.bestMean = state.trueP[state.bestArm];
+  state.pulls = new Array(K).fill(0);
+  state.successes = new Array(K).fill(0);
+  state.history = [];
+  state.totalReward = 0;
+  state.totalPulls = 0;
+  document.getElementById('reveal').textContent = 'reveal true means';
+  render();
+}
+
+function policyPick(name) {
+  const t = state.totalPulls + 1;
+  if (name === 'oracle')    return state.bestArm;
+  if (name === 'random')    return Math.floor(Math.random()*K);
+  if (name === 'exploit') {
+    // pull each once, then exploit best mean
+    for (let i=0;i<K;i++) if (state.pulls[i]===0) return i;
+    const means = state.pulls.map((n,i)=> n? state.successes[i]/n : 0);
+    return argmax(means);
+  }
+  if (name === 'epsilon') {
+    if (Math.random() < 0.10) return Math.floor(Math.random()*K);
+    for (let i=0;i<K;i++) if (state.pulls[i]===0) return i;
+    const means = state.pulls.map((n,i)=> n? state.successes[i]/n : 0);
+    return argmax(means);
+  }
+  if (name === 'ucb') {
+    for (let i=0;i<K;i++) if (state.pulls[i]===0) return i;
+    const ucb = state.pulls.map((n,i)=>{
+      const mean = state.successes[i]/n;
+      return mean + Math.sqrt(2*Math.log(t)/n);
+    });
+    return argmax(ucb);
+  }
+  if (name === 'thompson') {
+    const samples = state.pulls.map((n,i)=>{
+      const a = 1 + state.successes[i];
+      const b = 1 + (n - state.successes[i]);
+      return beta(a, b);
+    });
+    return argmax(samples);
+  }
+  return 0;
+}
+
+function doPull(arm) {
+  const r = (Math.random() < state.trueP[arm]) ? 1 : 0;
+  state.pulls[arm] += 1;
+  state.successes[arm] += r;
+  state.totalReward += r;
+  state.totalPulls += 1;
+  // cumulative regret = bestMean*T - totalReward (expected best vs realised)
+  const cumRegret = state.bestMean * state.totalPulls - state.totalReward;
+  state.history.push(cumRegret);
+}
+
+function pullN(n) {
+  const policy = document.getElementById('policy').value;
+  if (policy === 'manual') return; // ignore bulk pulls in manual mode
+  for (let i=0; i<n; i++) doPull(policyPick(policy));
+  render();
+}
+
+function renderArms() {
+  const showTrue = document.getElementById('reveal').dataset.shown === '1';
+  const armsDiv = document.getElementById('arms');
+  let html = '';
+  for (let i=0; i<K; i++) {
+    const n = state.pulls[i];
+    const mean = n ? state.successes[i]/n : 0;
+    const trueP = state.trueP[i];
+    const isBest = (i === state.bestArm);
+    const ringColor = COLORS[i];
+    html += `
+      <div style="background:var(--code-bg); padding:10px; border-radius:8px; border:1px solid var(--border); cursor:pointer;" data-arm="${i}">
+        <div style="font-family:var(--mono); font-size:11px; color:var(--fg-dim); display:flex; justify-content:space-between;">
+          <span>arm ${i}${showTrue && isBest ? ' ★' : ''}</span><span>${n} pulls</span>
+        </div>
+        <div style="height:6px; background:var(--bg); border-radius:3px; margin:8px 0 4px; overflow:hidden;">
+          <div style="height:100%; width:${(mean*100).toFixed(0)}%; background:${ringColor};"></div>
+        </div>
+        <div style="font-family:var(--mono); font-size:13px; color:var(--fg);">μ̂ = ${n ? mean.toFixed(3) : '—'}</div>
+        ${showTrue ? `<div style="font-family:var(--mono); font-size:11px; color:var(--fg-dim); margin-top:3px;">true = ${trueP.toFixed(3)}</div>` : ''}
+      </div>`;
+  }
+  armsDiv.innerHTML = html;
+  // wire manual clicks
+  armsDiv.querySelectorAll('[data-arm]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (document.getElementById('policy').value !== 'manual') return;
+      doPull(parseInt(el.dataset.arm));
+      render();
+    });
+  });
+}
+
+function renderStats() {
+  const regret = state.bestMean * state.totalPulls - state.totalReward;
+  document.getElementById('s_pulls').textContent = state.totalPulls;
+  document.getElementById('s_reward').textContent = state.totalReward.toFixed(2);
+  document.getElementById('s_oracle').textContent = (state.bestMean * state.totalPulls).toFixed(2);
+  document.getElementById('s_regret').textContent = regret.toFixed(2);
+  document.getElementById('s_avg_regret').textContent =
+    state.totalPulls ? (regret/state.totalPulls).toFixed(3) : '0.000';
+}
+
+function renderCanvas() {
+  const c = document.getElementById('canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth; const h = c.height;
+  c.width = w * dpr; c.height = h * dpr;
+  const ctx = c.getContext('2d'); ctx.scale(dpr, dpr);
+  ctx.clearRect(0,0,w,h);
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let y=0; y<=4; y++) {
+    const yy = (y/4) * (h-30) + 10;
+    ctx.beginPath(); ctx.moveTo(40, yy); ctx.lineTo(w-10, yy); ctx.stroke();
+  }
+  if (state.history.length < 2) {
+    ctx.fillStyle = '#5b6378'; ctx.font = '12px ui-monospace';
+    ctx.fillText('pull a few times to see regret accumulate', 50, h/2);
+    return;
+  }
+  const maxR = Math.max(...state.history, 1);
+  const N = state.history.length;
+  // axes labels
+  ctx.fillStyle = '#5b6378'; ctx.font = '11px ui-monospace';
+  ctx.fillText(maxR.toFixed(1), 6, 14);
+  ctx.fillText('0', 30, h-20);
+  ctx.fillText(`${N} pulls`, w-55, h-6);
+  ctx.fillText('regret', 6, h/2);
+  // cumulative regret curve
+  ctx.strokeStyle = '#e16c6c'; ctx.lineWidth = 1.8; ctx.beginPath();
+  for (let i=0; i<N; i++) {
+    const x = 40 + (i/(N-1)) * (w-50);
+    const y = 10 + (1 - state.history[i]/maxR) * (h-30);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  // sliding-window avg regret/pull (dashed)
+  ctx.strokeStyle = '#5fd2a3'; ctx.lineWidth = 1.3;
+  ctx.setLineDash([4,3]); ctx.beginPath();
+  const win = 50;
+  const maxAvg = maxR / Math.max(N/4, 1);  // visual scale
+  for (let i=win; i<N; i++) {
+    const avg = (state.history[i] - state.history[i-win]) / win;
+    const x = 40 + (i/(N-1)) * (w-50);
+    const y = 10 + (1 - Math.min(avg/maxAvg,1)) * (h-30);
+    if (i===win) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function render() { renderArms(); renderStats(); renderCanvas(); }
+
+// wiring
+document.getElementById('pull1').onclick    = () => pullN(1);
+document.getElementById('pull100').onclick  = () => pullN(100);
+document.getElementById('pull1000').onclick = () => pullN(1000);
+document.getElementById('reset').onclick    = () => reset();
+document.getElementById('reveal').onclick = (e) => {
+  const b = e.target;
+  b.dataset.shown = b.dataset.shown === '1' ? '0' : '1';
+  b.textContent = b.dataset.shown === '1' ? 'hide true means' : 'reveal true means';
+  renderArms();
+};
+window.addEventListener('resize', renderCanvas);
+reset();
+</script>
+</body>
+</html>

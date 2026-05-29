@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solving with unknown parameters — a series</title>
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+<div class="page">
+
+<div class="series-nav">
+  <span>SERIES · SOLVING WITH UNKNOWN PARAMETERS</span>
+  <span>6 POSTS · INTERACTIVE</span>
+</div>
+
+<h1>Solving classical problems when you don't know the numbers</h1>
+<p class="subtitle">A side project of the <a href="../paper/paper.md">WPO-Gym / EDP research</a>. Six posts on what happens to the textbook algorithms when their inputs are hidden — and what changes when you stop pretending you know nothing about the problem.</p>
+
+<h2>The posts</h2>
+
+<ol style="list-style:none; padding:0;">
+  <li style="margin-bottom:18px;">
+    <strong><a href="01-bandit/">1. Picking the max when you don't know the numbers.</a></strong><br>
+    <span style="color:var(--fg-dim);">The k-armed bandit. ε-greedy, UCB, Thompson sampling. Playable.</span>
+  </li>
+  <li style="margin-bottom:18px;">
+    <strong><a href="02-sort/">2. Sorting numbers you cannot read.</a></strong><br>
+    <span style="color:var(--fg-dim);">Noisy comparison sort, dueling bandits, Borda aggregation. <em>stub.</em></span>
+  </li>
+  <li style="margin-bottom:18px;">
+    <strong><a href="03-shortest-path/">3. Shortest path when the edge weights are hidden.</a></strong><br>
+    <span style="color:var(--fg-dim);">Online shortest path, semi-bandit feedback, CombLinUCB. <em>stub.</em></span>
+  </li>
+  <li style="margin-bottom:18px;">
+    <strong><a href="04-tsp/">4. TSP when the city distances are unknown.</a></strong><br>
+    <span style="color:var(--fg-dim);">Combinatorial bandit over tours; structure beats `n!`. <em>stub.</em></span>
+  </li>
+  <li style="margin-bottom:18px;">
+    <strong><a href="05-edp/">5. When world knowledge replaces exploration: EDP.</a></strong><br>
+    <span style="color:var(--fg-dim);">An LLM-authored, human-readable policy that ships with no data. <em>stub.</em></span>
+  </li>
+  <li style="margin-bottom:18px;">
+    <strong><a href="06-edp-adapts/">6. EDP that adapts and explores.</a></strong><br>
+    <span style="color:var(--fg-dim);">The research bet: can the written policy keep improving? <em>stub.</em></span>
+  </li>
+</ol>
+
+<h2>The arc, in one sentence</h2>
+<p>Bandits are great when you genuinely know nothing about the problem; they are an expensive way to learn things a domain expert already knows. The series walks from "I know nothing" (Post 1) to "I know quite a lot and I keep learning the rest" (Post 6), and the move that connects them — replacing exploration with authored, editable policy — is what the paper calls EDP.</p>
+
+<footer>
+  Side project of <a href="../paper/paper.md">WPO-Gym / EDP</a>.
+  Workflow: <a href="WORKFLOW.md">WORKFLOW.md</a>.
+  Source: <a href="../README.md">repo</a>.
+</footer>
+
+</div>
+</body>
+</html>
