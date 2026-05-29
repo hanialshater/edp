@@ -3,422 +3,348 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Post 1 · Picking the max when you don't know the numbers</title>
+<title>1 · Picking the max when you don't know the numbers</title>
 <style>
-/* Shared styling for the "Solving with unknown parameters" blog series.
-   Dark theme, matching demo/edp_orchestrator.html. */
-
-:root {
-  --bg: #0b1220;
-  --bg-card: #131c30;
-  --bg-card-hover: #1a2440;
-  --fg: #e6edf3;
-  --fg-dim: #8b95a8;
-  --fg-faint: #5b6378;
-  --accent: #4c8df6;
-  --accent-soft: #2a4a7a;
-  --good: #5fd2a3;
-  --warn: #f0a058;
-  --bad:  #e16c6c;
-  --grid: #1f2a44;
-  --code-bg: #0e1626;
-  --border: #1f2a44;
-  --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
-  --sans: system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
-}
-
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
-body {
-  font-family: var(--sans);
-  font-size: 16px;
-  line-height: 1.6;
-  padding: 32px 16px 96px;
-}
-
-.page { max-width: 760px; margin: 0 auto; }
-
-.series-nav {
-  display: flex; justify-content: space-between; align-items: center;
-  font-family: var(--mono); font-size: 12px; color: var(--fg-dim);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 12px; margin-bottom: 32px;
-}
-.series-nav a { color: var(--accent); text-decoration: none; }
-.series-nav a:hover { text-decoration: underline; }
-
-h1 { font-size: 28px; line-height: 1.25; margin: 0 0 8px; }
-h2 { font-size: 20px; margin: 40px 0 12px; }
-h3 { font-size: 16px; margin: 28px 0 8px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.06em; }
-p { margin: 12px 0; }
-.subtitle { color: var(--fg-dim); margin: 0 0 24px; font-size: 16px; }
-
-code, pre { font-family: var(--mono); }
-code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 14px; }
-pre {
-  background: var(--code-bg); padding: 12px 16px; border-radius: 8px;
-  overflow-x: auto; font-size: 13px; border: 1px solid var(--border);
-}
-
-a { color: var(--accent); }
-strong { color: var(--fg); }
-em { color: var(--fg-dim); font-style: normal; border-bottom: 1px dotted var(--fg-faint); }
-
-.widget {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  margin: 32px 0;
-}
-.widget h2 { margin-top: 0; font-size: 18px; }
-.widget .legend { font-size: 13px; color: var(--fg-dim); margin-bottom: 16px; }
-
-.controls {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  margin: 12px 0 20px;
-}
-button {
-  font-family: var(--mono); font-size: 13px;
-  background: var(--bg-card-hover); color: var(--fg);
-  border: 1px solid var(--border); border-radius: 6px;
-  padding: 7px 12px; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-button:hover { background: var(--accent-soft); border-color: var(--accent); }
-button.primary { background: var(--accent); color: #0b1220; border-color: var(--accent); font-weight: 600; }
-button.primary:hover { background: #6ba0ff; }
-button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-select {
-  font-family: var(--mono); font-size: 13px;
-  background: var(--bg-card-hover); color: var(--fg);
-  border: 1px solid var(--border); border-radius: 6px;
-  padding: 6px 10px;
-}
-
-.stats {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px; margin: 16px 0;
-  font-family: var(--mono); font-size: 13px;
-}
-.stat { background: var(--code-bg); padding: 10px 12px; border-radius: 6px; }
-.stat .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
-.stat .value { color: var(--fg); font-size: 18px; margin-top: 4px; }
-
-canvas { display: block; width: 100%; background: var(--code-bg); border-radius: 6px; }
-
-footer {
-  margin-top: 64px; border-top: 1px solid var(--border);
-  padding-top: 24px; color: var(--fg-dim); font-size: 13px;
-}
-footer a { color: var(--accent); }
-
-@media (max-width: 600px) {
-  body { padding: 20px 12px 64px; font-size: 15px; }
-  h1 { font-size: 24px; }
-}
-
-
-@media (max-width: 600px) {
-  #arms { grid-template-columns: repeat(2, 1fr) !important; }
-}
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,"SF Mono",Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;padding:24px 16px 96px}
+.page{max-width:760px;margin:0 auto}
+.nav{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:24px;letter-spacing:0.04em}
+.nav a{color:var(--accent);text-decoration:none}
+h1{font-size:30px;line-height:1.2;margin:8px 0 12px;font-weight:700;letter-spacing:-0.01em}
+.subtitle{color:var(--dim);font-size:17px;margin:0 0 24px;line-height:1.5}
+h2{font-size:22px;margin:48px 0 14px;font-weight:600}
+h3{font-size:13px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+p{margin:14px 0}
+a{color:var(--accent)}
+code{font-family:var(--mono);background:var(--code);padding:1px 6px;border-radius:4px;font-size:13.5px}
+em{color:var(--fg);font-style:italic}
+strong{color:#fff}
+hr.scene{border:0;text-align:center;margin:44px 0 24px;color:var(--faint)}
+hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);font-size:12px}
+.hero{background:linear-gradient(180deg,var(--card) 0%,var(--bg) 100%);border:1px solid var(--border);border-radius:14px;padding:18px;margin:0 0 32px;position:relative;overflow:hidden}
+.hero-title{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.hero canvas{display:block;width:100%;height:180px;background:transparent}
+.hero-caption{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:8px;display:flex;justify-content:space-between}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+.widget h2{margin-top:0;font-size:18px;border:0}
+.legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
+button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
+button:hover{background:var(--accent2);border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+button.primary:hover{background:#6ba0ff}
+button.toggle.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+button:disabled{opacity:0.35;cursor:not-allowed}
+select{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px 10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0;font-family:var(--mono);font-size:13px}
+.stat{background:var(--code);padding:9px 11px;border-radius:6px}
+.stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
+.stat .value{color:var(--fg);font-size:17px;margin-top:3px}
+canvas{display:block;width:100%;background:var(--code);border-radius:6px}
+.arms{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.arm{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:border-color 0.12s,transform 0.08s}
+.arm:hover{border-color:var(--accent)}
+.arm:active{transform:scale(0.98)}
+.arm .top{font-family:var(--mono);font-size:10.5px;color:var(--dim);display:flex;justify-content:space-between;margin-bottom:6px}
+.arm .bar{height:5px;background:var(--bg);border-radius:3px;margin:6px 0;overflow:hidden;position:relative}
+.arm .bar > div{height:100%;border-radius:3px;transition:width 0.2s}
+.arm .mu{font-family:var(--mono);font-size:13px;color:var(--fg);margin-top:2px}
+.arm .true{font-family:var(--mono);font-size:10.5px;color:var(--good);margin-top:2px}
+.arm.star{border-color:var(--good)}
+.policy-pills{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px}
+.policy-pills button{font-size:11.5px;padding:5px 9px}
+footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
+@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:25px}.arms{grid-template-columns:repeat(2,1fr)}.hero canvas{height:140px}}
 </style>
 </head>
 <body>
 <div class="page">
-
-<div class="series-nav">
-  <span>SERIES · SOLVING WITH UNKNOWN PARAMETERS</span>
-  <span>POST 1 OF 6  ·  <a href="../">index</a>  ·  <a href="../02-sort/">next →</a></span>
-</div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 1 / 6 · <a href="../">index</a> · <a href="../02-sort/">next →</a></span></div>
 
 <h1>Picking the max when you don't know the numbers</h1>
-<p class="subtitle">Step 1 of a series on classical problems whose parameters are unknown. The simplest one: <code>max(x₁, …, xₖ)</code>. With known numbers it's a one-liner. Without them, you've reinvented the multi-armed bandit.</p>
+<p class="subtitle">Five things in a row. One is best. You can sample them, noisily, one at a time, and every sample costs you. Pick well, or pay.</p>
 
-<h3>The classical problem</h3>
-<p>You have <em>k</em> numbers and you want the largest one. Compare them; return the index of the max. <em>O(k)</em> comparisons, no surprises, done.</p>
-
-<p>The interesting version is the one where you don't get to read the numbers — only sample them, noisily, and pay for every sample. Every casino slot machine is this problem. Every A/B test is this problem. Every time a recommender decides which of <em>k</em> things to show, it is this problem.</p>
-
-<h3>The unknown-parameter twist</h3>
-<p>Reframed: there are <em>k</em> arms, each with a hidden reward distribution. You pull one arm per round and observe a noisy sample of its reward. You want the cumulative reward over <em>T</em> rounds to be as close as possible to <em>T</em> times the best arm's mean. The gap is your <strong>regret</strong>.</p>
-
-<p>You cannot just pull each arm a few times and then commit to the best — early samples are noisy, you'd often commit to the wrong one. You cannot just keep exploring — every round spent on a bad arm is regret you do not recover. Every policy is a way to spend your pulls along the <em>explore</em>↔<em>exploit</em> axis.</p>
-
-<p>Three policies the textbook gives you, all interesting:</p>
-<ul>
-  <li><strong>ε-greedy.</strong> With probability ε pull a random arm; otherwise pull the best-so-far. Dumb and effective.</li>
-  <li><strong>UCB1</strong> (Auer et al. 2002). Pull <code>argmax<sub>i</sub> [μ̂<sub>i</sub> + √(2 ln t / n<sub>i</sub>)]</code>. Optimism in the face of uncertainty: arms you've pulled little get a confidence bonus.</li>
-  <li><strong>Thompson sampling</strong> (Thompson 1933). Keep a posterior over each arm's mean, draw one sample from each, pull the arm whose draw was highest. Bayesian and remarkably hard to beat in practice.</li>
-</ul>
-
-<h3>The interactive question</h3>
-<p>The widget below lets you play this out. Five arms with hidden Bernoulli rewards. You can pull manually, or hand the controls to a policy. Watch the cumulative regret accumulate against the oracle.</p>
-
-<p>The thing worth discovering yourself: <em>at small budgets, the gap between the policies matters more than which "best" policy you pick.</em> At a budget of 100 pulls, ε-greedy ≈ UCB ≈ Thompson ≈ <strong>all far ahead of pure exploration or pure exploitation</strong>. At 10,000 pulls they converge to nearly the same regret. Bandits are not a hard problem; they are a problem where a small amount of cleverness wins by a lot, and more cleverness wins by very little.</p>
-
-<div class="widget" id="widget">
-  <h2>K-armed bandit playground</h2>
-  <p class="legend">5 arms · Bernoulli rewards (hidden) · click "reveal" to peek. Choose a policy and run pulls. <strong>Regret</strong> = best possible reward minus what you actually got.</p>
-
-  <div class="controls">
-    <span style="font-family:var(--mono);font-size:12px;color:var(--fg-dim);">policy:</span>
-    <select id="policy">
-      <option value="manual">manual (I pick)</option>
-      <option value="oracle">oracle (always best)</option>
-      <option value="exploit">pure exploit (greedy)</option>
-      <option value="random">pure explore (random)</option>
-      <option value="epsilon" selected>ε-greedy (ε=0.1)</option>
-      <option value="ucb">UCB1</option>
-      <option value="thompson">Thompson sampling</option>
-    </select>
-    <button id="pull1">+1 pull</button>
-    <button id="pull100">+100</button>
-    <button id="pull1000" class="primary">+1000 (fast)</button>
-    <button id="reveal">reveal true means</button>
-    <button id="reset">reset</button>
-  </div>
-
-  <div id="arms" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;"></div>
-
-  <div class="stats">
-    <div class="stat"><div class="label">pulls</div><div class="value" id="s_pulls">0</div></div>
-    <div class="stat"><div class="label">total reward</div><div class="value" id="s_reward">0.00</div></div>
-    <div class="stat"><div class="label">oracle would have</div><div class="value" id="s_oracle">0.00</div></div>
-    <div class="stat"><div class="label">cumulative regret</div><div class="value" id="s_regret">0.00</div></div>
-    <div class="stat"><div class="label">avg regret / pull</div><div class="value" id="s_avg_regret">0.000</div></div>
-  </div>
-
-  <canvas id="canvas" height="220"></canvas>
-  <p class="legend" style="margin-top:8px;">Cumulative regret over time. Lower = better. The dashed line is regret per pull averaged over a 50-pull window.</p>
+<div class="hero">
+  <div class="hero-title">live demo · three policies racing for the same 1,000 pulls</div>
+  <canvas id="hero"></canvas>
+  <div class="hero-caption"><span id="hero-status">running…</span><span id="hero-best">—</span></div>
 </div>
 
-<h3>What to take away</h3>
+<p>Above: three algorithms are pulling slot machines you can't see, racing to accumulate reward. The y-axis is cumulative <strong>regret</strong> — the gap between what they got and what the perfect oracle would have gotten. Lower curve = better. None of them know which arm is best when they start.</p>
 
-<p>If you played long enough you'll have noticed two things. First, every smart policy beats both <em>always exploit</em> (which usually commits to a bad arm) and <em>pure explore</em> (which never commits to a good one). Smart-vs-smart differences are small at large <em>T</em>. Second, regret per pull always shrinks toward zero — given enough pulls, even ε-greedy finds the right arm.</p>
+<p>By the time you've finished this paragraph, all three have figured it out. That's <em>the multi-armed bandit problem</em>, and it is the foundation of every interesting question we'll meet in this series.</p>
 
-<p>This is the situation a recommender is in when it has nothing else to go on. Every page view is a pull, every click is a noisy reward sample, and the question of "which widget to show" is "which arm to pull." The textbook answer is to use Thompson or UCB and accumulate data; it works, and it is what most production systems do.</p>
+<hr class="scene">
 
-<p>It is also the situation we'll spend the rest of the series complicating. <strong>Sorting</strong> is choose-the-max repeated and made consistent. <strong>Shortest path</strong> is choosing a max-reward sequence under a constraint. <strong>TSP</strong> is the same with combinatorial structure that defeats per-arm reasoning. And then <strong>EDP</strong> is what happens when you stop pretending you know nothing about the arms.</p>
+<h3>Act 1 — The classical problem</h3>
 
-<p>If you have an LLM that knows that <em>fit_reassurance is a good widget for size-anxious shoppers</em>, you do not have to learn it from clicks. You can <em>write</em> the policy and let learning do the small calibrations on top. That is the bet the research project (<a href="../../paper/paper.md">WPO-Gym / EDP</a>) is making, and Posts 5 and 6 will let you play it against the bandit you just met.</p>
+<p>If I hand you five numbers — 0.3, 0.7, 0.5, 0.4, 0.6 — and ask for the max, you scan, you compare, you return 0.7 with index 1. Done in five steps. It's the most boring algorithm in your textbook.</p>
 
-<footer>
-  Part of the WPO-Gym / EDP research project. Source:
-  <a href="../">blog/</a> · <a href="../../paper/paper.md">paper.md</a> ·
-  <a href="../../README.md">repo</a>.
-  Next: <a href="../02-sort/">Post 2 — Sorting numbers you cannot read</a>.
-</footer>
+<p>The interesting version is the one where I don't show you the numbers. I show you five buttons. Each button, when pressed, gives you a noisy sample of a number you can't see. The samples are positive when the underlying number is high, negative when it's low, but they're noisy enough that one pull tells you very little. You have a hundred presses. Or a thousand. Or ten thousand. Pick the order.</p>
+
+<h3>Act 2 — The cost of not knowing</h3>
+
+<p>This is the situation of every A/B test (which of five email subject lines should I send?), every recommender (which of five widgets should I show?), every slot-machine floor (which of five machines pays best?). The textbook calls it the <strong>multi-armed bandit</strong>: <em>k</em> arms, each with a hidden reward distribution, one pull per round, noisy reward observed, maximize cumulative reward — equivalently, minimize <strong>regret</strong>, the gap to the oracle.</p>
+
+<p>You cannot just commit to the best arm after a handful of pulls — early estimates are noisy, you'll often commit to the wrong one. You cannot just keep exploring uniformly — every round spent on a bad arm is regret you don't recover. Every algorithm is a particular way of dividing your pulls between <em>finding out</em> and <em>cashing in</em>.</p>
+
+<h3>Act 3 — Three policies</h3>
+
+<p>Three policies cover most of the territory. Stupid-sounding ones work surprisingly well; clever ones win by less than you'd think.</p>
+
+<ul>
+<li><strong>ε-greedy.</strong> Pull the best-so-far 90% of the time; pull a random arm the other 10%. The randomness is your tax on stagnation.</li>
+<li><strong>UCB1</strong> (Auer et al., 2002). Pull the arm with the highest <code>μ̂ + √(2 ln t / n)</code>: optimism in the face of uncertainty. Arms you've pulled little get a bonus that decays as you sample them. Theoretically beautiful.</li>
+<li><strong>Thompson sampling</strong> (Thompson, 1933). Keep a posterior over each arm's mean (a Beta for Bernoulli rewards). Each round, sample once from each posterior; pull the arm whose sample was highest. Bayesian. Embarrassingly good in practice.</li>
+</ul>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>1 — Race them yourself</h2>
+<p class="legend">Five hidden Bernoulli arms. Pick which policies to race; press play; watch their regret diverge. The shaded band is the low-budget zone where most A/B tests actually live.</p>
+
+<div class="policy-pills">
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-right:6px;">in the race:</span>
+  <button class="toggle on" data-pol="random">random</button>
+  <button class="toggle" data-pol="exploit">pure exploit</button>
+  <button class="toggle on" data-pol="epsilon">ε-greedy</button>
+  <button class="toggle on" data-pol="ucb">UCB1</button>
+  <button class="toggle on" data-pol="thompson">Thompson</button>
+  <button class="toggle" data-pol="oracle">oracle</button>
+</div>
+<div class="controls">
+  <button id="raceplay" class="primary">▶ play 1,000 pulls</button>
+  <button id="racestep">+100</button>
+  <button id="racereset">reset (new arms)</button>
+  <button id="seedchg">scenario: <span id="seedname">balanced</span></button>
+</div>
+<canvas id="race" height="260"></canvas>
+<div class="stats">
+  <div class="stat"><div class="label">pull #</div><div class="value" id="rt">0</div></div>
+  <div class="stat"><div class="label">best mean</div><div class="value" id="rbm">—</div></div>
+  <div class="stat"><div class="label">leader regret</div><div class="value" id="rlr">—</div></div>
+  <div class="stat"><div class="label">leader</div><div class="value" id="rlead">—</div></div>
+</div>
+</div>
+
+<p>Try this: race ε-greedy, UCB, and Thompson at the "hard" scenario (top-two arms very close). Then race ε-greedy and pure-exploit at "balanced". The story tells itself:</p>
+
+<ul>
+<li>Pure-exploit commits to the wrong arm about as often as it commits to the right one. It is brittle.</li>
+<li>ε-greedy beats pure-exploit because the 10% random tax is cheaper than committing to the wrong arm.</li>
+<li>UCB and Thompson beat ε-greedy because their exploration is <em>directed</em> at the arms you're uncertain about, not uniform.</li>
+<li>UCB and Thompson beat each other by a noisy margin. Whoever wins will lose next time. Bandits are not where you find your edge.</li>
+</ul>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>2 — Pull manually, see what you'd do</h2>
+<p class="legend">Same arms. Click an arm to pull it. The estimates update; the regret line accumulates. Try a hundred pulls picking arms by hand — see how well your intuition does against the algorithms.</p>
+
+<div class="arms" id="arms"></div>
+<div class="controls">
+  <button id="reveal">reveal true means</button>
+  <button id="manreset">reset</button>
+  <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--dim);">pulls: <span id="mpulls">0</span> · your regret: <span id="mregret">0.00</span></span>
+</div>
+<canvas id="mancanvas" height="160"></canvas>
+</div>
+
+<hr class="scene">
+
+<h3>What you saw, in one sentence</h3>
+
+<p><em>A small amount of cleverness wins by a lot; more cleverness wins by very little.</em> That's the bandit lesson. ε-greedy, UCB, and Thompson are different points on a smooth curve, and any of them is dramatically better than committing too early or never committing at all. Real-world recommenders use Thompson and UCB because the constant-factor differences add up at scale, but the textbook problem is essentially solved.</p>
+
+<p>It's also a very specific kind of problem. <em>k</em> independent arms; one pull per round; reward observed immediately. Most of the things you'd want to do — sort a list, find a path, plan a tour — are bandit problems with structure: arms are not independent, an action consists of several elements, the reward you observe is the sum across them, not the part attributable to each. That structure is where the next four posts go.</p>
+
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> what happens when the "arm" you're pulling is a pair of items and the only thing you learn is which one is larger? <a href="../02-sort/">Post 2 — sorting numbers you cannot read</a>.</p>
+
+<footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. Source: <a href="https://github.com/hanialshater/edp/tree/claude/bandit-edp-comparison-SFB0F/blog/01-bandit">github</a> · <a href="../">series index</a>.</footer>
 
 </div>
 
 <script>
-// ============================================================
-// K-armed bandit playground.
-// State machine, vanilla JS, single file, no dependencies.
-// ============================================================
+// ============ shared lib (inlined) ============
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',faint:'#3a4358',fg:'#e6edf3',bg:'#0e1626'};
+function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function gauss(rand){let u=rand()||1e-12,v=rand();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function beta(a,b,rand){const x=Math.pow(rand(),1/Math.max(a,0.01));const y=Math.pow(rand(),1/Math.max(b,0.01));return x/(x+y);}
+function argmax(a){let i=0;for(let j=1;j<a.length;j++)if(a[j]>a[i])i=j;return i;}
+class Chart{
+  constructor(canvas,opts){this.canvas=canvas;this.opts=Object.assign({xlabel:'',ylabel:'',padding:{l:46,r:14,t:18,b:28},grid:4,yMin:null,yMax:null,xMin:0,xMax:null,shade:null},opts||{});this.series={};}
+  line(name,color){this.series[name]={color:color||COLORS.blue,points:[]};return this;}
+  push(name,x,y){if(!this.series[name])this.line(name);this.series[name].points.push([x,y]);}
+  reset(){for(const k in this.series)this.series[k].points=[];}
+  remove(name){delete this.series[name];}
+  _bounds(){let xM=this.opts.xMax,yM=this.opts.yMax,ym=this.opts.yMin,any=false;for(const k in this.series){const p=this.series[k].points;if(!p.length)continue;any=true;for(const [x,y] of p){if(xM===null||x>xM)xM=x;if(yM===null||y>yM)yM=y;if(ym===null||y<ym)ym=y;}}if(!any)return null;if(xM===null)xM=1;if(yM===null)yM=1;if(ym===null)ym=0;if(yM-ym<1e-6)yM=ym+1;return{xMin:this.opts.xMin,xMax:xM,yMin:ym,yMax:yM};}
+  render(){const c=this.canvas,dpr=window.devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight||c.height;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const p=this.opts.padding,pw=W-p.l-p.r,ph=H-p.t-p.b;
+    // shaded region (e.g. low-N zone)
+    if(this.opts.shade){const b=this._bounds();if(b){const xs=Math.max(b.xMin,this.opts.shade[0]),xe=Math.min(b.xMax,this.opts.shade[1]);if(xe>xs){const x1=p.l+((xs-b.xMin)/(b.xMax-b.xMin||1))*pw,x2=p.l+((xe-b.xMin)/(b.xMax-b.xMin||1))*pw;ctx.fillStyle='rgba(240,160,88,0.06)';ctx.fillRect(x1,p.t,x2-x1,ph);}}}
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.font='11px ui-monospace,Menlo,monospace';ctx.fillStyle=COLORS.dim;
+    for(let i=0;i<=this.opts.grid;i++){const y=p.t+(i/this.opts.grid)*ph;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.l+pw,y);ctx.stroke();}
+    const b=this._bounds();if(!b){ctx.fillText('— waiting —',p.l+8,p.t+ph/2);return;}
+    const xPx=x=>p.l+((x-b.xMin)/(b.xMax-b.xMin||1))*pw,yPx=y=>p.t+(1-(y-b.yMin)/(b.yMax-b.yMin||1))*ph;
+    ctx.fillText(b.yMax.toFixed(b.yMax>10?0:1),4,p.t+4);ctx.fillText(b.yMin.toFixed(b.yMin>10?0:1),4,p.t+ph+4);
+    ctx.fillText(this.opts.xlabel?`${this.opts.xlabel}: ${b.xMax|0}`:`${b.xMax|0}`,W-100,H-6);
+    for(const name in this.series){const s=this.series[name];if(s.points.length<2)continue;ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<s.points.length;i++){const [x,y]=s.points[i],px=xPx(x),py=yPx(y);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
+    // legend with current value
+    let lx=W-p.r-8,ly=p.t+12;ctx.textAlign='right';
+    for(const name in this.series){const s=this.series[name];ctx.fillStyle=s.color;const last=s.points[s.points.length-1];const lbl=last?`${name}  ${last[1].toFixed(1)}`:name;ctx.fillText(lbl,lx,ly);ly+=14;}ctx.textAlign='left';
+  }
+}
 
-const K = 5;
-const COLORS = ['#4c8df6', '#5fd2a3', '#f0a058', '#c879f0', '#e16c6c'];
-
-const state = {
-  trueP: [],         // hidden true probabilities, drawn at reset
-  pulls: [],         // count per arm
-  successes: [],     // running sum of rewards per arm
-  history: [],       // cumulative regret per pull (running)
-  totalReward: 0,
-  totalPulls: 0,
-  bestMean: 0,       // for regret calc
-  bestArm: 0,
+// ============ Bandit core ============
+const K=5;
+const SCENARIOS={
+  balanced:{name:'balanced',ps:[0.30,0.55,0.40,0.65,0.50]},
+  hard:    {name:'hard (top two close)',ps:[0.45,0.62,0.40,0.58,0.30]},
+  easy:    {name:'easy (one runaway)',ps:[0.20,0.78,0.35,0.30,0.25]},
+  flat:    {name:'flat (many similar)',ps:[0.48,0.52,0.50,0.47,0.51]},
 };
+const SC_KEYS=Object.keys(SCENARIOS);
 
-function rand() { return Math.random(); }
-function gauss() { let u=Math.random(), v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
-function beta(alpha, beta_) {
-  // approximate beta via two gamma-ish samples; good enough for TS demo
-  let x = Math.pow(Math.random(), 1/alpha);
-  let y = Math.pow(Math.random(), 1/beta_);
-  return x/(x+y);
+function newBandit(ps, randSeed){
+  const r=rng(randSeed);
+  return {
+    ps:ps.slice(),
+    pulls:new Array(K).fill(0),
+    successes:new Array(K).fill(0),
+    cumRegret:0,
+    bestArm:argmax(ps),
+    bestMean:Math.max(...ps),
+    history:[],   // cumulative regret over time
+    rng:r,
+    name:''
+  };
 }
-function argmax(arr) {
-  let i=0; for (let j=1;j<arr.length;j++) if (arr[j]>arr[i]) i=j; return i;
+function pull(b,arm){
+  const r=(b.rng()<b.ps[arm])?1:0;
+  b.pulls[arm]+=1; b.successes[arm]+=r;
+  b.cumRegret += (b.bestMean - b.ps[arm]);  // expected per-pull regret
+  b.history.push(b.cumRegret);
+  return r;
 }
-
-function reset() {
-  // draw fresh hidden probabilities; ensure one clear winner
-  state.trueP = [];
-  for (let i=0; i<K; i++) state.trueP.push(0.20 + 0.55*Math.random());
-  state.bestArm = argmax(state.trueP);
-  state.bestMean = state.trueP[state.bestArm];
-  state.pulls = new Array(K).fill(0);
-  state.successes = new Array(K).fill(0);
-  state.history = [];
-  state.totalReward = 0;
-  state.totalPulls = 0;
-  document.getElementById('reveal').textContent = 'reveal true means';
-  render();
-}
-
-function policyPick(name) {
-  const t = state.totalPulls + 1;
-  if (name === 'oracle')    return state.bestArm;
-  if (name === 'random')    return Math.floor(Math.random()*K);
-  if (name === 'exploit') {
-    // pull each once, then exploit best mean
-    for (let i=0;i<K;i++) if (state.pulls[i]===0) return i;
-    const means = state.pulls.map((n,i)=> n? state.successes[i]/n : 0);
-    return argmax(means);
-  }
-  if (name === 'epsilon') {
-    if (Math.random() < 0.10) return Math.floor(Math.random()*K);
-    for (let i=0;i<K;i++) if (state.pulls[i]===0) return i;
-    const means = state.pulls.map((n,i)=> n? state.successes[i]/n : 0);
-    return argmax(means);
-  }
-  if (name === 'ucb') {
-    for (let i=0;i<K;i++) if (state.pulls[i]===0) return i;
-    const ucb = state.pulls.map((n,i)=>{
-      const mean = state.successes[i]/n;
-      return mean + Math.sqrt(2*Math.log(t)/n);
-    });
-    return argmax(ucb);
-  }
-  if (name === 'thompson') {
-    const samples = state.pulls.map((n,i)=>{
-      const a = 1 + state.successes[i];
-      const b = 1 + (n - state.successes[i]);
-      return beta(a, b);
-    });
-    return argmax(samples);
-  }
+function policyPick(b,name,t){
+  if(name==='oracle') return b.bestArm;
+  if(name==='random') return Math.floor(b.rng()*K);
+  if(name==='exploit'){for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
+  if(name==='epsilon'){if(b.rng()<0.10)return Math.floor(b.rng()*K);for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
+  if(name==='ucb'){for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const u=b.pulls.map((n,i)=>{const mean=b.successes[i]/n;return mean+Math.sqrt(2*Math.log(t)/n);});return argmax(u);}
+  if(name==='thompson'){const s=b.pulls.map((n,i)=>{const a=1+b.successes[i],bb=1+(n-b.successes[i]);return beta(a,bb,b.rng);});return argmax(s);}
   return 0;
 }
 
-function doPull(arm) {
-  const r = (Math.random() < state.trueP[arm]) ? 1 : 0;
-  state.pulls[arm] += 1;
-  state.successes[arm] += r;
-  state.totalReward += r;
-  state.totalPulls += 1;
-  // cumulative regret = bestMean*T - totalReward (expected best vs realised)
-  const cumRegret = state.bestMean * state.totalPulls - state.totalReward;
-  state.history.push(cumRegret);
-}
-
-function pullN(n) {
-  const policy = document.getElementById('policy').value;
-  if (policy === 'manual') return; // ignore bulk pulls in manual mode
-  for (let i=0; i<n; i++) doPull(policyPick(policy));
-  render();
-}
-
-function renderArms() {
-  const showTrue = document.getElementById('reveal').dataset.shown === '1';
-  const armsDiv = document.getElementById('arms');
-  let html = '';
-  for (let i=0; i<K; i++) {
-    const n = state.pulls[i];
-    const mean = n ? state.successes[i]/n : 0;
-    const trueP = state.trueP[i];
-    const isBest = (i === state.bestArm);
-    const ringColor = COLORS[i];
-    html += `
-      <div style="background:var(--code-bg); padding:10px; border-radius:8px; border:1px solid var(--border); cursor:pointer;" data-arm="${i}">
-        <div style="font-family:var(--mono); font-size:11px; color:var(--fg-dim); display:flex; justify-content:space-between;">
-          <span>arm ${i}${showTrue && isBest ? ' ★' : ''}</span><span>${n} pulls</span>
-        </div>
-        <div style="height:6px; background:var(--bg); border-radius:3px; margin:8px 0 4px; overflow:hidden;">
-          <div style="height:100%; width:${(mean*100).toFixed(0)}%; background:${ringColor};"></div>
-        </div>
-        <div style="font-family:var(--mono); font-size:13px; color:var(--fg);">μ̂ = ${n ? mean.toFixed(3) : '—'}</div>
-        ${showTrue ? `<div style="font-family:var(--mono); font-size:11px; color:var(--fg-dim); margin-top:3px;">true = ${trueP.toFixed(3)}</div>` : ''}
-      </div>`;
-  }
-  armsDiv.innerHTML = html;
-  // wire manual clicks
-  armsDiv.querySelectorAll('[data-arm]').forEach(el => {
-    el.addEventListener('click', () => {
-      if (document.getElementById('policy').value !== 'manual') return;
-      doPull(parseInt(el.dataset.arm));
-      render();
-    });
-  });
-}
-
-function renderStats() {
-  const regret = state.bestMean * state.totalPulls - state.totalReward;
-  document.getElementById('s_pulls').textContent = state.totalPulls;
-  document.getElementById('s_reward').textContent = state.totalReward.toFixed(2);
-  document.getElementById('s_oracle').textContent = (state.bestMean * state.totalPulls).toFixed(2);
-  document.getElementById('s_regret').textContent = regret.toFixed(2);
-  document.getElementById('s_avg_regret').textContent =
-    state.totalPulls ? (regret/state.totalPulls).toFixed(3) : '0.000';
-}
-
-function renderCanvas() {
-  const c = document.getElementById('canvas');
-  const dpr = window.devicePixelRatio || 1;
-  const w = c.clientWidth; const h = c.height;
-  c.width = w * dpr; c.height = h * dpr;
-  const ctx = c.getContext('2d'); ctx.scale(dpr, dpr);
-  ctx.clearRect(0,0,w,h);
-  // grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
-  for (let y=0; y<=4; y++) {
-    const yy = (y/4) * (h-30) + 10;
-    ctx.beginPath(); ctx.moveTo(40, yy); ctx.lineTo(w-10, yy); ctx.stroke();
-  }
-  if (state.history.length < 2) {
-    ctx.fillStyle = '#5b6378'; ctx.font = '12px ui-monospace';
-    ctx.fillText('pull a few times to see regret accumulate', 50, h/2);
-    return;
-  }
-  const maxR = Math.max(...state.history, 1);
-  const N = state.history.length;
-  // axes labels
-  ctx.fillStyle = '#5b6378'; ctx.font = '11px ui-monospace';
-  ctx.fillText(maxR.toFixed(1), 6, 14);
-  ctx.fillText('0', 30, h-20);
-  ctx.fillText(`${N} pulls`, w-55, h-6);
-  ctx.fillText('regret', 6, h/2);
-  // cumulative regret curve
-  ctx.strokeStyle = '#e16c6c'; ctx.lineWidth = 1.8; ctx.beginPath();
-  for (let i=0; i<N; i++) {
-    const x = 40 + (i/(N-1)) * (w-50);
-    const y = 10 + (1 - state.history[i]/maxR) * (h-30);
-    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-  // sliding-window avg regret/pull (dashed)
-  ctx.strokeStyle = '#5fd2a3'; ctx.lineWidth = 1.3;
-  ctx.setLineDash([4,3]); ctx.beginPath();
-  const win = 50;
-  const maxAvg = maxR / Math.max(N/4, 1);  // visual scale
-  for (let i=win; i<N; i++) {
-    const avg = (state.history[i] - state.history[i-win]) / win;
-    const x = 40 + (i/(N-1)) * (w-50);
-    const y = 10 + (1 - Math.min(avg/maxAvg,1)) * (h-30);
-    if (i===win) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke(); ctx.setLineDash([]);
-}
-
-function render() { renderArms(); renderStats(); renderCanvas(); }
-
-// wiring
-document.getElementById('pull1').onclick    = () => pullN(1);
-document.getElementById('pull100').onclick  = () => pullN(100);
-document.getElementById('pull1000').onclick = () => pullN(1000);
-document.getElementById('reset').onclick    = () => reset();
-document.getElementById('reveal').onclick = (e) => {
-  const b = e.target;
-  b.dataset.shown = b.dataset.shown === '1' ? '0' : '1';
-  b.textContent = b.dataset.shown === '1' ? 'hide true means' : 'reveal true means';
-  renderArms();
+const POL_INFO={
+  random:{label:'random',color:COLORS.dim},
+  exploit:{label:'pure exploit',color:COLORS.red},
+  epsilon:{label:'ε-greedy',color:COLORS.orange},
+  ucb:{label:'UCB1',color:COLORS.blue},
+  thompson:{label:'Thompson',color:COLORS.green},
+  oracle:{label:'oracle (cheating)',color:COLORS.purple},
 };
-window.addEventListener('resize', renderCanvas);
-reset();
+
+// ============ Hero animation ============
+(function hero(){
+  const cv=document.getElementById('hero');
+  const ch=new Chart(cv,{xlabel:'pull',ylabel:'',xMin:0,yMin:0,padding:{l:32,r:12,t:12,b:20}});
+  const policies=['epsilon','ucb','thompson'];
+  let bandits=null,t=0,playing=true;
+  const status=document.getElementById('hero-status'),bestText=document.getElementById('hero-best');
+  function init(){
+    const ps=SCENARIOS.balanced.ps;
+    bandits={};
+    for(const p of policies){bandits[p]=newBandit(ps,1+policies.indexOf(p)*999+Date.now()%1000);ch.line(POL_INFO[p].label,POL_INFO[p].color);}
+    t=0; ch.reset(); for(const p of policies)ch.line(POL_INFO[p].label,POL_INFO[p].color);
+    bestText.textContent=`best arm pays ${(Math.max(...ps)*100|0)}%`;
+  }
+  function step(n){
+    for(let i=0;i<n;i++){t++;for(const p of policies){const arm=policyPick(bandits[p],p,t);pull(bandits[p],arm);ch.push(POL_INFO[p].label,t,bandits[p].cumRegret);}}
+    ch.render();
+    if(t>=1000){playing=false;status.textContent=`done · 1,000 pulls`;setTimeout(()=>{init();playing=true;tick();},2200);}else{status.textContent=`pull ${t} / 1,000`;}
+  }
+  function tick(){if(!playing)return;step(20);requestAnimationFrame(tick);}
+  init(); requestAnimationFrame(tick);
+  window.addEventListener('resize',()=>ch.render());
+})();
+
+// ============ Race widget ============
+(function race(){
+  const ch=new Chart(document.getElementById('race'),{xlabel:'pulls',ylabel:'regret',xMin:0,yMin:0,padding:{l:46,r:14,t:18,b:28},shade:[0,150]});
+  let scenario=0;
+  const seedname=document.getElementById('seedname');
+  let bandits={},t=0,active={random:true,exploit:false,epsilon:true,ucb:true,thompson:true,oracle:false},playing=false;
+  function refreshScenario(){const k=SC_KEYS[scenario];seedname.textContent=k;}
+  function init(){
+    const ps=SCENARIOS[SC_KEYS[scenario]].ps;
+    bandits={}; ch.reset(); t=0;
+    for(const p in active){if(active[p]){bandits[p]=newBandit(ps,2024+p.length+Date.now()%9999);ch.line(POL_INFO[p].label,POL_INFO[p].color);}}
+    document.getElementById('rbm').textContent=(Math.max(...ps)*100|0)+'%';
+    document.getElementById('rt').textContent='0';
+    document.getElementById('rlr').textContent='—';
+    document.getElementById('rlead').textContent='—';
+    ch.render();
+  }
+  function step(n){
+    for(let i=0;i<n;i++){t++;for(const p in bandits){const arm=policyPick(bandits[p],p,t);pull(bandits[p],arm);ch.push(POL_INFO[p].label,t,bandits[p].cumRegret);}}
+    let best=null,bestR=Infinity;
+    for(const p in bandits){if(bandits[p].cumRegret<bestR){bestR=bandits[p].cumRegret;best=p;}}
+    if(best){document.getElementById('rlead').textContent=POL_INFO[best].label;document.getElementById('rlr').textContent=bestR.toFixed(1);}
+    document.getElementById('rt').textContent=t;
+    ch.render();
+  }
+  function play1k(){
+    playing=true; const step_size=20,target=t+1000;
+    function tick(){if(!playing||t>=target)return;step(step_size);requestAnimationFrame(tick);}
+    tick();
+  }
+  document.querySelectorAll('.policy-pills .toggle').forEach(b=>{
+    b.onclick=()=>{const k=b.dataset.pol;active[k]=!active[k];b.classList.toggle('on',active[k]);init();};
+  });
+  document.getElementById('raceplay').onclick=()=>play1k();
+  document.getElementById('racestep').onclick=()=>step(100);
+  document.getElementById('racereset').onclick=()=>{playing=false;init();};
+  document.getElementById('seedchg').onclick=()=>{playing=false;scenario=(scenario+1)%SC_KEYS.length;refreshScenario();init();};
+  refreshScenario(); init();
+  window.addEventListener('resize',()=>ch.render());
+})();
+
+// ============ Manual playground ============
+(function manual(){
+  let ps=SCENARIOS.balanced.ps.slice();
+  let b=newBandit(ps,777);
+  let revealed=false;
+  const armsDiv=document.getElementById('arms');
+  const mancanvas=document.getElementById('mancanvas');
+  const ch=new Chart(mancanvas,{xlabel:'pull',ylabel:'regret',xMin:0,yMin:0,padding:{l:40,r:12,t:14,b:22}});
+  ch.line('your regret',COLORS.orange);
+  function render(){
+    armsDiv.innerHTML='';
+    for(let i=0;i<K;i++){
+      const n=b.pulls[i],mean=n?b.successes[i]/n:0,best=(i===b.bestArm)&&revealed;
+      const el=document.createElement('div');
+      el.className='arm'+(best?' star':'');
+      el.innerHTML=`<div class="top"><span>arm ${i}${best?' ★':''}</span><span>${n}</span></div>
+        <div class="bar"><div style="width:${(mean*100).toFixed(0)}%;background:${COLORS.cycle?COLORS.cycle[i]:COLORS.blue}"></div></div>
+        <div class="mu">μ̂ = ${n?mean.toFixed(3):'—'}</div>
+        ${revealed?`<div class="true">true = ${ps[i].toFixed(3)}</div>`:''}`;
+      el.style.borderColor=best?COLORS.green:'';
+      el.querySelector('.bar > div').style.background=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red][i];
+      el.onclick=()=>{pull(b,i);ch.push('your regret',b.history.length,b.cumRegret);render();ch.render();};
+      armsDiv.appendChild(el);
+    }
+    document.getElementById('mpulls').textContent=b.history.length;
+    document.getElementById('mregret').textContent=b.cumRegret.toFixed(2);
+  }
+  document.getElementById('reveal').onclick=()=>{revealed=!revealed;document.getElementById('reveal').textContent=revealed?'hide true means':'reveal true means';render();};
+  document.getElementById('manreset').onclick=()=>{b=newBandit(ps,Date.now()&0xffff);revealed=false;document.getElementById('reveal').textContent='reveal true means';ch.reset();ch.line('your regret',COLORS.orange);render();ch.render();};
+  COLORS.cycle=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red];
+  render(); ch.render();
+  window.addEventListener('resize',()=>ch.render());
+})();
 </script>
 </body>
 </html>
