@@ -85,7 +85,7 @@ function extractScript(html){
 
 function listComponents(){
   const out=[];
-  for(const sub of ['sort','path','tsp']){
+  for(const sub of ['sort','path','tsp','wpo']){
     const d=path.join(DIR,sub); if(!fs.existsSync(d)) continue;
     for(const f of fs.readdirSync(d)) if(f.endsWith('.html')) out.push(path.join(sub,f));
   }
