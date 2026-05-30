@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>component · pairing-policy race</title>
+<!--
+  COMPONENT SPEC
+  Shows: the SAME hidden league, four pairing policies (random / round-robin /
+         ladder / active) racing to a correct table (Kendall τ → 1) on ONE chart.
+  Feel:  "who you make play decides how fast you learn the order." Active/ladder
+         spend matches on the boundary pairs and converge far sooner.
+  Knob:  match noise β (close skills → coin-flip matches → more matches needed).
+-->
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+body{padding:24px 16px 80px}
+.harness{max-width:860px;margin:0 auto}
+.harness h1{font-size:18px;font-family:var(--mono);color:var(--dim);font-weight:600}
+.pr-root{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;color:var(--fg)}
+.pr-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:600px){.pr-cards{grid-template-columns:repeat(2,1fr)}}
+.pr-card{background:var(--code);border:1px solid var(--border);border-left-width:3px;border-radius:8px;padding:8px 10px}
+.pr-card .n{font-family:var(--mono);font-size:11px;font-weight:600}
+.pr-card .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:4px}
+.pr-card .row b{color:var(--fg)}
+.pr-canvas{display:block;width:100%;height:240px;background:var(--code);border:1px solid var(--border);border-radius:8px}
+.pr-controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:12px}
+.pr-controls button{font-family:var(--mono);font-size:12.5px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 12px;cursor:pointer}
+.pr-controls button:hover{background:var(--accent2);border-color:var(--accent)}
+.pr-controls button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.pr-controls label{font-family:var(--mono);font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.pr-note{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:10px}
+.pr-note b{color:var(--good)}
+</style>
+</head>
+<body>
+<div class="harness">
+  <h1>component · sort/pairing-race</h1>
+  <div id="stage"></div>
+</div>
+<script>
+// ---- pure logic (shared with pitch-match) ----
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',fg:'#e6edf3'};
+function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function sigmoid(x){return 1/(1+Math.exp(-x));}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+function kendallTau(rA,rB){const n=rA.length;let c=0,d=0;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=Math.sign(rA[i]-rA[j]),b=Math.sign(rB[i]-rB[j]);if(a*b>0)c++;else if(a*b<0)d++;}const t=n*(n-1)/2;return t?(c-d)/t:1;}
+function ranksFromScores(sc){const idx=[...sc.keys()].sort((a,b)=>sc[b]-sc[a]);const r=new Array(sc.length);idx.forEach((v,k)=>r[v]=k);return r;}
+function bradleyTerry(wins,iters=80){const n=wins.length,W=new Array(n).fill(0),G=Array.from({length:n},()=>new Array(n).fill(0));for(let i=0;i<n;i++)for(let j=0;j<n;j++){W[i]+=wins[i][j];const g=wins[i][j]+wins[j][i];G[i][j]=g;G[j][i]=g;}let p=new Array(n).fill(1);for(let it=0;it<iters;it++){const np=new Array(n);for(let i=0;i<n;i++){let den=0;for(let j=0;j<n;j++){if(j!==i&&G[i][j]>0)den+=G[i][j]/(p[i]+p[j]);}np[i]=den>0?(W[i]+0.5)/den:p[i];}let ls=0;for(let i=0;i<n;i++)ls+=Math.log(np[i]);const gm=Math.exp(ls/n);for(let i=0;i<n;i++)p[i]=np[i]/gm;}return p.map(v=>Math.log(v));}
+function playMatch(skill,i,j,beta,rand){return rand()<sigmoid(beta*(skill[i]-skill[j]))?i:j;}
+function pickPair(policy,st,rand){const{n,games,estRank}=st;const all=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)all.push([i,j]);
+  if(policy==='random')return all[(rand()*all.length)|0];
+  if(policy==='roundrobin'){let b=all[0],bn=Infinity;for(const[i,j]of all)if(games[i][j]<bn){bn=games[i][j];b=[i,j];}return b;}
+  if(policy==='ladder'){const adj=[];for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(estRank[j]-estRank[i]===1)adj.push([i,j]);if(!adj.length)return all[(rand()*all.length)|0];let b=adj[0],bn=Infinity;for(const[i,j]of adj)if(games[i][j]<bn){bn=games[i][j];b=[i,j];}return b;}
+  if(policy==='active'){let b=all[0],bs=-Infinity;for(const[i,j]of all){const gap=Math.abs(estRank[i]-estRank[j]),s=0.6/(1+gap)+0.4/(1+games[i][j]);if(s>bs){bs=s;b=[i,j];}}return b;}
+  return all[0];}
+
+// ---- mount ----
+function mountPairingRace(root,opts){
+  opts=opts||{};
+  const N=8, POLICIES=[
+    {key:'random',label:'random draw',color:COLORS.dim},
+    {key:'roundrobin',label:'round-robin',color:COLORS.orange},
+    {key:'ladder',label:'ladder (adjacent)',color:COLORS.blue},
+    {key:'active',label:'active (boundary)',color:COLORS.green},
+  ];
+  const MAXM=opts.maxMatches||420;
+  let beta=opts.beta||1.1, seed=opts.seed||7, trueSkill, trueRank, runs, playing=false, raf=null;
+
+  root.classList.add('pr-root');
+  root.innerHTML=`<div class="pr-cards">${POLICIES.map(p=>`<div class="pr-card" data-card="${p.key}" style="border-left-color:${p.color}">
+      <div class="n" style="color:${p.color}">${p.label}</div>
+      <div class="row"><span>matches→τ=1</span><b data-f="conv-${p.key}">—</b></div>
+      <div class="row"><span>current τ</span><b data-f="tau-${p.key}">0.00</b></div>
+    </div>`).join('')}</div>
+    <canvas class="pr-canvas"></canvas>
+    <div class="pr-controls">
+      <button class="primary" data-f="play">▶ race</button>
+      <button data-f="reset">reset (new league)</button>
+      <label>match noise β <input type="range" min="0.5" max="2.5" step="0.1" value="${beta}" data-f="beta" style="width:90px"></label>
+      <span data-f="betaval" style="font-family:var(--mono);font-size:11px;color:var(--dim)">${beta.toFixed(1)}</span>
+    </div>
+    <div class="pr-note" data-f="note">Same hidden league for all four. Lower curve = correct table sooner.</div>`;
+  const $=s=>root.querySelector(`[data-f="${s}"]`);
+  const cv=root.querySelector('.pr-canvas');
+
+  function init(s){
+    const R=rng(s);
+    const base=[];for(let i=0;i<N;i++)base.push(1.8-3.6*i/(N-1));
+    for(let i=N-1;i>0;i--){const k=(R()*(i+1))|0;[base[i],base[k]]=[base[k],base[i]];}
+    trueSkill=base; trueRank=ranksFromScores(base);
+    runs=POLICIES.map((p,pi)=>({key:p.key,color:p.color,rand:rng(s*131+pi*97+1),
+      wins:Array.from({length:N},()=>new Array(N).fill(0)),
+      games:Array.from({length:N},()=>new Array(N).fill(0)),
+      estRank:[...Array(N).keys()],hist:[],m:0,tau:0,conv:null}));
+  }
+  function stepRun(r){
+    const[i,j]=pickPair(r.key,{n:N,games:r.games,estRank:r.estRank},r.rand);
+    const w=playMatch(trueSkill,i,j,beta,r.rand),l=w===i?j:i;
+    r.wins[w][l]++;r.games[i][j]++;r.games[j][i]++;r.m++;
+    r.estRank=ranksFromScores(bradleyTerry(r.wins));
+    r.tau=kendallTau(r.estRank,trueRank);
+    r.hist.push(r.tau);
+    if(r.conv===null&&r.tau>=0.999)r.conv=r.m;
+  }
+  function stepAll(){runs.forEach(stepRun);}
+  function instant(n){for(let k=0;k<n;k++)stepAll();draw();}
+
+  function draw(){
+    const dpr=window.devicePixelRatio||1,W=cv.clientWidth||520,H=240;
+    if(cv.width!==W*dpr){cv.width=W*dpr;cv.height=H*dpr;}cv.style.height=H+'px';
+    const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+    const pl=36,pr=12,pt=14,pb=22,pw=W-pl-pr,ph=H-pt-pb;
+    c.strokeStyle='rgba(255,255,255,.06)';c.fillStyle=COLORS.dim;c.font='10px ui-monospace,monospace';
+    for(const v of [0,0.25,0.5,0.75,1]){const y=pt+(1-v)*ph;c.beginPath();c.moveTo(pl,y);c.lineTo(pl+pw,y);c.stroke();c.fillText(v.toFixed(2),6,y+3);}
+    const xmax=Math.max(...runs.map(r=>r.m),MAXM/4,1);
+    c.fillText('matches: '+(runs[0]?runs[0].m:0),pl+2,H-6);
+    for(const r of runs){if(r.hist.length<2)continue;c.strokeStyle=r.color;c.lineWidth=2;c.beginPath();
+      r.hist.forEach((v,i)=>{const x=pl+i/xmax*pw,y=pt+(1-clamp(v,0,1))*ph;i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();}
+    // labels
+    let ly=pt+10;c.textAlign='right';for(const r of runs){c.fillStyle=r.color;c.fillText(r.tau.toFixed(2),W-pr-2,ly);ly+=13;}c.textAlign='left';
+    for(const r of runs){$('tau-'+r.key).textContent=r.tau.toFixed(2);$('conv-'+r.key).textContent=r.conv?r.conv:(r.m>=MAXM?'>'+MAXM:'—');}
+  }
+  function loop(){if(!playing)return;const allDone=runs.every(r=>r.m>=MAXM);if(allDone){playing=false;$('play').textContent='▶ race';
+      const order=[...runs].sort((a,b)=>(a.conv||1e9)-(b.conv||1e9));$('note').innerHTML=`fastest to a correct table: <b>${POLICIES.find(p=>p.key===order[0].key).label}</b> (${order[0].conv||'>'+MAXM} matches) vs ${POLICIES.find(p=>p.key===order[order.length-1].key).label} (${order[order.length-1].conv||'>'+MAXM}).`;return;}
+    for(let k=0;k<3;k++)stepAll();draw();raf=requestAnimationFrame(loop);}
+
+  $('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'⏸ pause':'▶ race';if(playing)loop();};
+  $('reset').onclick=()=>{playing=false;$('play').textContent='▶ race';init((Date.now()&0xffff)+3);draw();$('note').textContent='Same hidden league for all four. Lower curve = correct table sooner.';};
+  $('beta').oninput=e=>{beta=parseFloat(e.target.value);$('betaval').textContent=beta.toFixed(1);};
+  window.addEventListener('resize',draw);
+  init(seed);draw();
+  return {api:{instant,reset:init,state:()=>({tau:runs.find(r=>r.key==='active').tau,conv:Object.fromEntries(runs.map(r=>[r.key,r.conv]))})}};
+}
+window.__component={name:'sort/pairing-race',mount:mountPairingRace};
+if(typeof document!=='undefined'){const st=document.getElementById('stage');if(st)mountPairingRace(st,{});}
+</script>
+</body>
+</html>
