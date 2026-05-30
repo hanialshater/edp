@@ -17,21 +17,25 @@ skill, 1v1 matches as noisy comparisons, a league table as the live estimate.
 - ☐ `sort/bt-vs-combucb.html` — keep the existing replayed BT-vs-CombUCB panel
   (top-k recovery) — port it into the components harness for consistency.
 
-## Post 3 · Shortest path = a real map
+## Decisions (locked)
 
-- ☐ map-source decision (see Open questions) → embed offline.
-- ☐ `path/city-map.html` — street graph with hidden travel times; trace a
-  route, observe per-edge times, race CombUCB-on-edges vs route-as-an-arm.
-- ☐ `path/edge-confidence.html` — per-edge mean + confidence overlay (edge
-  thickness = uncertainty, colour = mean) as a standalone visual.
+- **Map source:** berlin52 coords power BOTH post 3 and post 4 (real Berlin
+  locations, offline). Post 3 = k-NN street graph on the points; post 4 = tour.
+- **Compose mode:** approved components REPLACE the abstract widgets; keep the
+  article prose + the BT-vs-CombUCB replay panel.
+
+## Post 3 · Shortest path = berlin52 street graph
+
+- ◐ `path/berlin-path.html` *(building, parallel)* — k-NN graph on berlin52
+  points, hidden per-edge travel times; trace a route, observe per-edge times,
+  race CombUCB-on-edges (Dijkstra on LCB) vs route-as-an-arm. Regret vs optimal.
 
 ## Post 4 · TSP = berlin52
 
 - ☑ `tsp/berlin52.json` — real TSPLIB coords (52 pts), optimal = 7542.
-- ☐ `tsp/berlin52.html` — cities on the map; sketch tours, observe per-edge
-  distances, watch 2-opt-on-LCB converge toward the known optimum.
-- ☐ `tsp/tour-race.html` — random tours vs 2-opt-on-estimate vs CombUCB,
-  cost-vs-optimum on one chart.
+- ◐ `tsp/berlin52.html` *(building, parallel)* — cities on the map; sketch
+  tours, observe per-edge distances, race random / 2-opt-on-estimate /
+  CombUCB (2-opt on LCB), cost vs known optimum 7542.
 
 ## Shared
 

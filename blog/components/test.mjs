@@ -76,8 +76,14 @@ function listComponents(){
   return out;
 }
 
+// Optional argv: restrict to one component (e.g. `node test.mjs path/city.html`
+// or just `city.html`). Lets parallel builds validate in isolation.
+const only = process.argv[2];
+let comps = listComponents();
+if(only) comps = comps.filter(r => r===only || r.endsWith('/'+only) || path.basename(r)===path.basename(only));
+
 console.log('component smoke test\n');
-for(const rel of listComponents()){
+for(const rel of comps){
   const html=fs.readFileSync(path.join(DIR,rel),'utf8');
   console.log(rel);
   let sb;
@@ -91,13 +97,16 @@ for(const rel of listComponents()){
   const comp=sb.window.__component;
   if(comp&&typeof comp.mount==='function') ok(`exposes window.__component.mount (${comp.name})`);
   else { bad('missing window.__component.mount'); continue; }
-  // exercise mount + instant
+  // exercise mount + instant — metric-agnostic (tau / regret / gap / cost ...)
   try{
     const stage2=makeEl();
     const inst=comp.mount(stage2,{seed:7});
-    if(inst&&inst.api){ inst.api.instant(80); const s=inst.api.state();
-      (typeof s.tau==='number'?ok:bad)(`mount + 80 instant matches ok (τ=${s.tau.toFixed(2)})`);
-    } else ok('mount ran (no api surface to exercise)');
+    if(inst&&inst.api&&typeof inst.api.instant==='function'){
+      inst.api.instant(80);
+      const s=(inst.api.state&&inst.api.state())||{};
+      const nums=Object.entries(s).filter(([k,v])=>typeof v==='number'&&isFinite(v));
+      (nums.length?ok:bad)(`mount + 80 steps ok (${nums.map(([k,v])=>`${k}=${v.toFixed(2)}`).join(', ')||'no numeric metric in state()'})`);
+    } else ok('mount ran (no api.instant to exercise)');
   }catch(e){ bad('mount/instant threw: '+(e&&e.message)); }
 }
 
