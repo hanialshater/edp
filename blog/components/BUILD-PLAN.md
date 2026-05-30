@@ -26,16 +26,20 @@ skill, 1v1 matches as noisy comparisons, a league table as the live estimate.
 
 ## Post 3 · Shortest path = berlin52 street graph
 
-- ◐ `path/berlin-path.html` *(building, parallel)* — k-NN graph on berlin52
-  points, hidden per-edge travel times; trace a route, observe per-edge times,
-  race CombUCB-on-edges (Dijkstra on LCB) vs route-as-an-arm. Regret vs optimal.
+- ☑ `path/berlin-path.html` — k-NN (k=5) graph on berlin52 points, hidden
+  per-edge travel times (Euclidean × congestion + magnitude-scaled noise);
+  CombUCB-on-edges (Dijkstra on magnitude-scaled LCB) vs route-as-an-arm (UCB1
+  over 8 enumerated routes). CombUCB gap 7%→0.4% by round 150 (→0.2% @300),
+  cum-regret flattens; arm stalls ~4.5% with linear regret. Smoke: green.
 
 ## Post 4 · TSP = berlin52
 
 - ☑ `tsp/berlin52.json` — real TSPLIB coords (52 pts), optimal = 7542.
-- ◐ `tsp/berlin52.html` *(building, parallel)* — cities on the map; sketch
-  tours, observe per-edge distances, race random / 2-opt-on-estimate /
-  CombUCB (2-opt on LCB), cost vs known optimum 7542.
+- ☑ `tsp/berlin52.html` — cities on the Berlin layout (y-flipped); explore/
+  exploit split: explore traverses an LCB tour, exploit recommends 2-opt on
+  means (bounded 10 passes, NN restarts). Race random / 2-opt-on-estimate /
+  CombUCB. CombUCB +1–3% over optimal (7542) by ~300 rounds across seeds;
+  baselines stall (+34%, +233%). Smoke: green.
 
 ## Shared
 
