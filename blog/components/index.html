@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Component workshop · CombUCB blog rebuild</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--accent:#4c8df6;--good:#5fd2a3;--warn:#f0a058;--border:#1f2a44;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;padding:28px 16px 80px}
+.page{max-width:760px;margin:0 auto}
+h1{font-size:26px;margin:6px 0 8px}
+.sub{color:var(--dim);font-size:15px;margin:0 0 26px}
+.nav{font-family:var(--mono);font-size:11px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:22px}
+.nav a{color:var(--accent);text-decoration:none}
+h2{font-size:13px;font-family:var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin:30px 0 10px}
+.c{display:block;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;text-decoration:none;color:var(--fg);transition:.14s}
+.c:hover{border-color:var(--accent);background:var(--card2)}
+.c .t{font-weight:600;font-size:15px}
+.c .d{color:var(--dim);font-size:13px;margin-top:4px}
+.c .s{font-family:var(--mono);font-size:10.5px;margin-top:6px}
+.s.building{color:var(--warn)}.s.done{color:var(--good)}.s.planned{color:var(--dim)}
+.placeholder{opacity:.5;cursor:default}.placeholder:hover{border-color:var(--border);background:var(--card)}
+code{font-family:var(--mono);background:#0e1626;padding:1px 6px;border-radius:4px;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="nav">COMPONENT WORKSHOP · <a href="../">blog index</a> · <a href="README.md">workflow</a></div>
+<h1>Component workshop</h1>
+<p class="sub">Standalone building blocks for the CombUCB post rebuild (sort / shortest-path / TSP). Build each in isolation, iterate, then inline into the post. Smoke test: <code>node components/test.mjs</code>.</p>
+
+<h2>02 · Sort — sports skill estimation</h2>
+<a class="c" href="sort/pitch-match.html">
+  <div class="t">Pitch 1v1 match + Bradley-Terry leaderboard</div>
+  <div class="d">8 footballers with hidden skill play noisy 1v1 matches on an animated pitch; a live league table fits Bradley-Terry skills and sorts. Pairing-policy knob, reveal-truth, τ sparkline.</div>
+  <div class="s building">● building — first pass, awaiting review</div>
+</a>
+<div class="c placeholder">
+  <div class="t">Pairing-policy race</div>
+  <div class="d">Race random / round-robin / ladder / active pairing on the same league to Kendall τ = 1 on a single chart — the "where do you spend matches" aha.</div>
+  <div class="s planned">○ planned</div>
+</div>
+
+<h2>03 · Shortest path — real map</h2>
+<div class="c placeholder">
+  <div class="t">Street-map shortest path</div>
+  <div class="d">A real (embedded, offline) city street graph with hidden travel times; walk a route, observe per-edge times, watch CombUCB-on-edges converge vs treat-each-route-as-an-arm.</div>
+  <div class="s planned">○ planned — needs map-source decision</div>
+</div>
+
+<h2>04 · TSP — berlin52</h2>
+<div class="c placeholder">
+  <div class="t">berlin52 tour explorer</div>
+  <div class="d">The classic TSPLIB berlin52 instance drawn on a map; sketch tours, observe per-edge distances, watch 2-opt-on-LCB converge toward the known optimum (7542).</div>
+  <div class="s planned">○ planned</div>
+</div>
+
+</div>
+</body>
+</html>
