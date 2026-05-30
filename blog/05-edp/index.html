@@ -184,6 +184,35 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 </div>
 
+<hr class="scene">
+
+<h3>We ran the editing loop for real</h3>
+
+<p>The claim that a named GAM is "editable" only matters if an LLM can actually <em>improve</em> it. So we ran the paper's §5.4 ablation in miniature on the exact policy in the widget above. A hidden oracle scores each persona's ideal page; the policy starts at <strong>26.15% mean regret</strong>. Then two LLM agents each got 3–4 rounds to propose typed scalar edits (<code>modules.&lt;name&gt;.on_rem.&lt;problem&gt; ← value</code>) — the difference being <em>what each was allowed to see</em>:</p>
+
+<ul>
+<li><strong>EDP editor</strong> — a structured diagnostic: per-persona regret, which widgets were <em>under-served</em> vs <em>over-served</em>, and the addressable edit paths.</li>
+<li><strong>OPRO editor</strong> — score-only: just the aggregate regret and its own edit history. No per-persona breakdown.</li>
+</ul>
+
+<div class="widget" style="margin-top:14px">
+<h2>2 — EDP edits vs OPRO edits (live ablation)</h2>
+<p class="legend">Same policy, same edit grammar, same number of rounds. Lower regret is better. Reproduce: <code>python3 blog/components/edp_harness.py report</code> (or <code>opro</code>), then <code>… apply '&lt;edits&gt;'</code>.</p>
+<table class="restable">
+  <thead><tr><th>editor</th><th>feedback channel</th><th>final regret</th><th>vs baseline</th><th>outcome</th></tr></thead>
+  <tbody>
+    <tr><td>baseline</td><td>— (LLM-authored, zero data)</td><td>26.15%</td><td>—</td><td>starting policy</td></tr>
+    <tr><td><strong>EDP editor</strong></td><td>structured diagnostic report</td><td><strong>20.47%</strong></td><td class="good">−5.7 pp (−21.7%)</td><td class="good">6 surgical edits</td></tr>
+    <tr><td>OPRO editor</td><td>score-only (aggregate regret)</td><td>26.15%</td><td class="bad">±0</td><td class="bad">stuck — every batch tied or worse</td></tr>
+  </tbody>
+</table>
+<p class="tiny" style="margin-top:10px">The EDP editor's six edits, e.g. <code>low_return_alts.on_rem.F46 1.8→2.5</code> and <code>size_guide.on_rem.F32 2.0→2.6</code>, deterministically take 26.15% → 20.47%; size-anxious (32.8→20.8%) and returner-anxious (34.9→20.3%) improved most.</p>
+</div>
+
+<p>This is the whole EDP thesis made material. The OPRO editor wasn't dumber — it was the <em>same</em> kind of agent on the <em>same</em> knobs. It got stuck because the aggregate score is a flat, gradient-free signal: with 22 widgets × 7 problems entangled by shared weights, it could not tell <em>which</em> curve to nudge, so every blind batch evicted a correct widget somewhere and regret rose. The structured report turned the same edit grammar into a targeted instrument — the editor could see that the returns/size widgets were under-served on personas where those problems were isolated, and promote exactly those. <strong>Structured context, not raw model intelligence, carried the gain</strong> — the paper's finding, reproduced live on the policy you just played with.</p>
+
+<hr class="scene">
+
 <h3>Act 3 — What this skips, and what it doesn't</h3>
 
 <p>Bandits need exploration because their priors are weak. EDP needs less exploration <em>for the things the LLM or human already knows</em>: that fit reassurance addresses size anxiety, that a snowstorm changes travel time, that a noisy comparison near a decision boundary deserves more samples. These facts are learnable from trials, but expensive to learn from scratch.</p>
