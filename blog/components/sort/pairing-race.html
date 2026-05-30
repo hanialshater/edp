@@ -132,7 +132,8 @@ function mountPairingRace(root,opts){
   $('beta').oninput=e=>{beta=parseFloat(e.target.value);$('betaval').textContent=beta.toFixed(1);};
   window.addEventListener('resize',draw);
   init(seed);draw();
-  return {api:{instant,reset:init,state:()=>({tau:runs.find(r=>r.key==='active').tau,conv:Object.fromEntries(runs.map(r=>[r.key,r.conv]))})}};
+  if(opts.autoplay){playing=true;$('play').textContent='⏸ pause';loop();}
+  return {api:{instant,reset:init,play:()=>{if(!playing){playing=true;$('play').textContent='⏸ pause';loop();}},state:()=>({tau:runs.find(r=>r.key==='active').tau,conv:Object.fromEntries(runs.map(r=>[r.key,r.conv]))})}};
 }
 window.__component={name:'sort/pairing-race',mount:mountPairingRace};
 if(typeof document!=='undefined'){const st=document.getElementById('stage');if(st)mountPairingRace(st,{});}

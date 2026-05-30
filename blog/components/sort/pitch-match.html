@@ -356,7 +356,8 @@ function mountPitchMatch(root, opts){
 
   reset(seed0);
   raf=requestAnimationFrame(loop);
-  return {api:{reset,instant,state:()=>({nMatches,tau:curTau(),estRank,trueRank})}};
+  if(opts.autoplay){playing=true;$('play').textContent='⏸ pause';startMatch();}
+  return {api:{reset,instant,play:()=>{if(!playing){playing=true;$('play').textContent='⏸ pause';if(!anim)startMatch();}},state:()=>({nMatches,tau:curTau(),estRank,trueRank})}};
 }
 
 // ============================================================
