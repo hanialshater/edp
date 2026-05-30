@@ -277,7 +277,10 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
   <p><strong>Intuition:</strong> score each restaurant by "what we know" plus "how wrong we might be." Under-sampled arms get a big bonus; the bonus shrinks as evidence accumulates.</p>
   <div class="latex-line"><span class="eq">score<sub>i</sub>(t) = μ̂<sub>i</sub>(t) + sqrt(2 ln t / n<sub>i</sub>(t))</span></div>
   <div class="latex-line"><span class="eq">a<sub>t</sub> = argmax<sub>i</sub> score<sub>i</sub>(t)</span></div>
-  <p class="math-intuition">The square-root term is a confidence radius from concentration bounds. It is intentionally conservative, which is why UCB1 can feel statistically slow in short runs.</p>
+  <p class="math-intuition"><strong>Where √(2 ln t / n) actually comes from.</strong> It is not a magic constant. Hoeffding's inequality bounds how far the true mean can plausibly sit above your estimate:</p>
+  <div class="latex-line"><span class="eq">P[ μ<sub>i</sub> ≥ μ̂<sub>i</sub> + u ] ≤ e<sup>−2 n<sub>i</sub> u²</sup></div>
+  <div class="latex-line"><span class="eq">pick a shrinking tail t<sup>−4</sup>:  e<sup>−2 n u²</sup> = t<sup>−4</sup>  ⇒  u = sqrt(2 ln t / n<sub>i</sub>)</span></div>
+  <p class="math-intuition">So the bonus is the highest the mean could plausibly be at a confidence that tightens over time: <span class="eq">ln t</span> creeps the bar up slowly as the clock runs, while each pull drops the bonus by <span class="eq">1/√n</span>. Conservative by design — which is why UCB1 can feel statistically slow in short runs.</p>
   <ul>
     <li><strong>Good:</strong> directed exploration and strong regret guarantees.</li>
     <li><strong>Bad:</strong> generic bound can over-explore arms a tighter model would drop earlier.</li>
@@ -308,7 +311,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 </div>
 
-<p>So is UCB "slow"? Not in CPU terms: basic UCB is just one index per arm. The slowness you feel in the chart is <em>learning slowness</em>. UCB1 uses a Hoeffding-style confidence bound that is deliberately safe for any bounded reward distribution, so it can keep re-checking arms that a more model-aware method would already mostly abandon. In production people often use tighter UCB variants such as KL-UCB or UCB-Tuned, or Thompson sampling when a Bayesian reward model is natural.</p>
+<p>So is UCB "slow"? Not in CPU terms: basic UCB is just one index per arm. The slowness you feel in the chart is <em>learning slowness</em>. UCB1 uses a Hoeffding-style confidence bound that is deliberately safe for any bounded reward distribution, so it can keep re-checking arms that a more model-aware method would already mostly abandon. In production people often use tighter UCB variants such as KL-UCB or UCB-Tuned, or Thompson sampling when a Bayesian reward model is natural. In fact <strong>Bayesian UCB and Thompson are two reads of the <em>same</em> posterior</strong>: UCB takes an optimistic high quantile (the upper edge of the belief), Thompson takes a random draw from it. Same belief about each arm; different rule for turning that uncertainty into tonight's pull.</p>
 
 <hr class="scene">
 
@@ -321,6 +324,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
   <button class="toggle on" data-pol="random">random</button>
   <button class="toggle" data-pol="exploit">pure exploit</button>
   <button class="toggle on" data-pol="epsilon">ε-greedy</button>
+  <button class="toggle" data-pol="epsilon_decay">ε-decay</button>
   <button class="toggle on" data-pol="ucb">UCB1</button>
   <button class="toggle on" data-pol="thompson">Thompson</button>
   <button class="toggle" data-pol="oracle">oracle</button>
@@ -347,12 +351,35 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <li>ε-greedy beats pure-exploit because the 10% random tax is cheaper than committing to the wrong arm.</li>
 <li>UCB and Thompson beat ε-greedy because their exploration is <em>directed</em> at the arms you're uncertain about, not uniform.</li>
 <li>UCB and Thompson beat each other by a noisy margin. Whoever wins will lose next time. Bandits are not where you find your edge.</li>
+<li>Switch on <strong>ε-decay</strong> (ε<sub>t</sub> = min(1, 20/t)): it explores hard early, then anneals, so it stops paying ε-greedy's flat 10% tax once the winner is obvious — and catches the directed methods.</li>
 </ul>
+<p>Watch the <em>shape</em>, not just the order. <code>random</code> and <code>pure-exploit</code> climb in a roughly straight line — <strong>linear regret</strong>, a constant cost per round forever. UCB, Thompson, and ε-decay bend over and flatten — <strong>logarithmic regret</strong>: each new round costs less than the last because the policy is running out of arms it's still unsure about. Fixed-ε greedy sits in between, bending but never fully flattening because that 10% tax never goes away. That bend from straight to flat is the entire achievement of bandit theory.</p>
 
 <hr class="scene">
 
 <div class="widget">
-<h2>2 — Pull manually, see what you'd do</h2>
+<h2>2 — Watch Thompson update its beliefs</h2>
+<p class="legend">The race shows <em>who</em> wins. This shows <em>why</em>. Each restaurant carries a Beta belief over its "would I return?" rate. Every round, Thompson draws one sample per curve (the filled dots) and eats at the arm whose sample landed highest. A good night pushes that curve right and narrows it; a bad night pushes it left. Watch known-bad places collapse into thin low bumps while the real contender stays wide enough to keep occasionally drawing a winning sample. Ticks under the axis mark each restaurant's true rate.</p>
+<div class="controls">
+  <button id="ts1" class="primary">+1 round</button>
+  <button id="ts20">+20 rounds</button>
+  <button id="tsplay">▶ play 200</button>
+  <button id="tsreset">reset</button>
+</div>
+<canvas id="tscanvas" height="240"></canvas>
+<div class="stats">
+  <div class="stat"><div class="label">round</div><div class="value" id="tsT">0</div></div>
+  <div class="stat"><div class="label">ate at</div><div class="value" id="tsPick">—</div></div>
+  <div class="stat"><div class="label">current leader</div><div class="value" id="tsLead">—</div></div>
+</div>
+</div>
+
+<p>This is the engine behind "directed exploration." There is no explicit explore-vs-exploit switch anywhere in the code — the <em>width</em> of each belief does the job. Wide posteriors take chances; narrow ones stop. Exploration fades on its own as evidence accumulates, which is exactly the bend toward flat regret you saw in the race.</p>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>3 — Pull manually, see what you'd do</h2>
 <p class="legend">Same restaurants. Click a place to eat there tonight. The estimates update; the regret line accumulates. Try a hundred dinners by hand — see how well your intuition does against the algorithms.</p>
 
 <div class="arms" id="arms"></div>
@@ -387,7 +414,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 
 <div class="widget">
-<h2>3 — Contextual dinner bandit</h2>
+<h2>4 — Contextual dinner bandit</h2>
 <p class="legend">Each night has a situation. Plain Thompson sees only restaurant averages; LinUCB sees the context vector before choosing. Lower regret means fewer bad-context dinners.</p>
 
 <div class="context-card">
@@ -414,7 +441,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <h3>What you saw, in one sentence</h3>
 
-<p><em>A small amount of cleverness wins by a lot; more cleverness wins by very little.</em> That's the bandit lesson. ε-greedy, UCB, and Thompson are different points on a smooth curve, and any of them is dramatically better than committing too early or never committing at all. Real-world recommenders use Thompson and UCB because the constant-factor differences add up at scale, but the textbook problem is essentially solved.</p>
+<p><em>A small amount of cleverness wins by a lot; more cleverness wins by very little.</em> That's the bandit lesson — with one asterisk worth keeping. The jump from "commit too early / never commit" to <em>any</em> principled policy is enormous: it moves you from linear regret to logarithmic regret, a different growth class, not a different constant. Among the principled policies (ε-decay, UCB, Thompson) the differences really are small constant factors — whoever wins the race above will lose the next one. Fixed-ε greedy is the one honest exception: it's principled but still linear, because the tax never decays. Real-world recommenders reach for Thompson and UCB because those constants add up at scale, but the textbook problem is essentially solved.</p>
 
 <p>It's also a very specific kind of problem. <em>k</em> independent arms; one pull per round; reward observed immediately. Contextual bandits add state, but the action is still one arm. Most of the things you'd want to do — sort a list, find a path, plan a tour, compose a page — are algorithms running with missing inputs. That structure is where the next levels go.</p>
 
@@ -525,6 +552,7 @@ function policyPick(b,name,t){
   if(name==='random') return Math.floor(b.rng()*K);
   if(name==='exploit'){for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
   if(name==='epsilon'){if(b.rng()<0.10)return Math.floor(b.rng()*K);for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
+  if(name==='epsilon_decay'){const eps=Math.min(1,20/Math.max(1,t));if(b.rng()<eps)return Math.floor(b.rng()*K);for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
   if(name==='ucb'){for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const u=b.pulls.map((n,i)=>{const mean=b.successes[i]/n;return mean+Math.sqrt(2*Math.log(t)/n);});return argmax(u);}
   if(name==='thompson'){const s=b.pulls.map((n,i)=>{const a=1+b.successes[i],bb=1+(n-b.successes[i]);return beta(a,bb,b.rng);});return argmax(s);}
   return 0;
@@ -542,6 +570,7 @@ const POL_INFO={
   random:{label:'random',color:COLORS.dim},
   exploit:{label:'pure exploit',color:COLORS.red},
   epsilon:{label:'ε-greedy',color:COLORS.orange},
+  epsilon_decay:{label:'ε-decay',color:'#3fb6c4'},
   ucb:{label:'UCB1',color:COLORS.blue},
   thompson:{label:'Thompson',color:COLORS.green},
   oracle:{label:'oracle (cheating)',color:COLORS.purple},
@@ -552,7 +581,7 @@ const POL_INFO={
   const ch=new Chart(document.getElementById('race'),{xlabel:'pulls',ylabel:'regret',xMin:0,yMin:0,padding:{l:46,r:14,t:18,b:28},shade:[0,150]});
   let scenario=0;
   const seedname=document.getElementById('seedname');
-  let bandits={},t=0,active={random:true,exploit:false,epsilon:true,ucb:true,thompson:true,oracle:false},playing=false;
+  let bandits={},t=0,active={random:true,exploit:false,epsilon:true,epsilon_decay:false,ucb:true,thompson:true,oracle:false},playing=false;
   function refreshScenario(){const k=SC_KEYS[scenario];seedname.textContent=k;}
   function init(){
     const ps=SCENARIOS[SC_KEYS[scenario]].ps;
@@ -724,6 +753,68 @@ const POL_INFO={
   document.getElementById('ctxReset').onclick=reset;
   reset();
   window.addEventListener('resize',()=>ch.render());
+})();
+
+// ============ Thompson belief evolution ============
+(function tsbelief(){
+  const cv=document.getElementById('tscanvas');
+  if(!cv)return;
+  const ps=SCENARIOS.balanced.ps;                       // hidden true return rates
+  const cols=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red];
+  let a,b,t,rand,lastPick,lastSamples,playing=false;
+  function reset(){a=new Array(K).fill(1);b=new Array(K).fill(1);t=0;lastPick=-1;lastSamples=null;rand=rng((Date.now()&0xffff)||7);render();}
+  function round(){
+    const s=new Array(K);for(let i=0;i<K;i++)s[i]=beta(a[i],b[i],rand);
+    const pick=argmax(s);
+    if(rand()<ps[pick])a[pick]+=1;else b[pick]+=1;
+    t++;lastPick=pick;lastSamples=s;
+  }
+  function step(n){for(let i=0;i<n;i++)round();render();}
+  function play(target){playing=true;(function tick(){if(!playing)return;for(let k=0;k<3&&t<target;k++)round();render();if(t<target)requestAnimationFrame(tick);else playing=false;})();}
+  function render(){
+    const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||cv.height;
+    cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+    const pad={l:10,r:10,t:14,b:24},pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+    const xPx=x=>pad.l+x*pw;
+    ctx.font='11px ui-monospace,Menlo,monospace';
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.fillStyle=COLORS.dim;ctx.textAlign='center';
+    for(let g=0;g<=10;g+=2){const x=xPx(g/10);ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ph);ctx.stroke();ctx.fillText((g/10).toFixed(1),x,H-7);}
+    // normalized Beta densities in log-space (robust to sharp posteriors)
+    const N=160,curves=[];let gmax=1e-9;
+    for(let i=0;i<K;i++){
+      const al=a[i],be=b[i],lp=new Array(N+1).fill(-Infinity);let lm=-Infinity;
+      for(let j=1;j<N;j++){const x=j/N,v=(al-1)*Math.log(x)+(be-1)*Math.log(1-x);lp[j]=v;if(v>lm)lm=v;}
+      const dens=new Array(N+1).fill(0);let sum=0;
+      for(let j=1;j<N;j++){dens[j]=Math.exp(lp[j]-lm);sum+=dens[j];}
+      const area=sum/N;for(let j=0;j<=N;j++){dens[j]=area>0?dens[j]/area:0;if(dens[j]>gmax)gmax=dens[j];}
+      curves.push(dens);
+    }
+    const yPx=v=>pad.t+ph*(1-Math.min(1,v/gmax)*0.9);
+    // true-rate ticks
+    for(let i=0;i<K;i++){ctx.strokeStyle=cols[i];ctx.globalAlpha=0.5;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(xPx(ps[i]),pad.t+ph-7);ctx.lineTo(xPx(ps[i]),pad.t+ph+3);ctx.stroke();}
+    ctx.globalAlpha=1;
+    // belief curves
+    for(let i=0;i<K;i++){
+      ctx.strokeStyle=cols[i];ctx.lineWidth=(i===lastPick)?2.6:1.5;ctx.globalAlpha=(lastPick<0||i===lastPick)?0.95:0.62;
+      ctx.beginPath();for(let j=0;j<=N;j++){const px=xPx(j/N),py=yPx(curves[i][j]);if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    // this round's samples
+    if(lastSamples){for(let i=0;i<K;i++){const x=lastSamples[i],jj=Math.max(1,Math.min(N-1,Math.round(x*N)));ctx.fillStyle=cols[i];ctx.beginPath();ctx.arc(xPx(x),yPx(curves[i][jj]),i===lastPick?5:3,0,Math.PI*2);ctx.fill();if(i===lastPick){ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();}}}
+    // legend (wins/visits per arm)
+    ctx.textAlign='left';let ly=pad.t+11;
+    for(let i=0;i<K;i++){ctx.fillStyle=cols[i];const w=a[i]-1,v=(a[i]-1)+(b[i]-1);ctx.fillText(RESTAURANTS[i].name.split(' ')[0]+'  '+w+'/'+v,pad.l+4,ly);ly+=13;}
+    const means=a.map((al,i)=>al/(al+b[i])),lead=argmax(means);
+    document.getElementById('tsT').textContent=t;
+    document.getElementById('tsPick').textContent=lastPick<0?'—':RESTAURANTS[lastPick].name;
+    document.getElementById('tsLead').textContent=t?RESTAURANTS[lead].name:'—';
+  }
+  document.getElementById('ts1').onclick=()=>{playing=false;step(1);};
+  document.getElementById('ts20').onclick=()=>{playing=false;step(20);};
+  document.getElementById('tsplay').onclick=()=>{playing=false;play(t+200);};
+  document.getElementById('tsreset').onclick=()=>{playing=false;reset();};
+  reset();
+  window.addEventListener('resize',render);
 })();
 </script>
 </body>
