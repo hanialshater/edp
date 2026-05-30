@@ -439,6 +439,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <div class="context-card" id="manCtxCard" style="display:none">
   <div class="context-title" id="manCtxTitle">context: —</div>
   <div class="context-chips" id="manCtxChips"></div>
+  <div id="manResult" style="font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:10px;min-height:16px"></div>
 </div>
 <div class="arms" id="arms"></div>
 <div class="controls">
@@ -679,14 +680,14 @@ function linTsPick(lin,ctx,rand){return argmax(ctxLinScores(lin,ctx,sd=>CTX_VTS*
   const ctxCard=document.getElementById('manCtxCard');
   const ch=new Chart(mancanvas,{xlabel:'night',ylabel:'regret',xMin:0,yMin:0,padding:{l:40,r:12,t:14,b:22}});
   let ctxOn=false,revealed=false;
-  let b,bot,botLin,mrand,curCtx,nights,userReg,botReg,lastBot;
+  let b,bot,botLin,mrand,curCtx,nights,userReg,botReg,lastBot,lastResult;
   function botLabel(){return ctxOn?'LinTS bot':'Thompson bot';}
   function drawCtx(){curCtx=CONTEXTS[Math.floor(mrand()*CONTEXTS.length)];}
   function init(){
     const seed=(Date.now()&0xffff)||7;
     mrand=rng(seed);
     b=newBandit(ps,seed);bot=newBandit(ps,seed+1009);botLin=ctxInitLin();
-    nights=0;userReg=0;botReg=0;lastBot='—';revealed=false;
+    nights=0;userReg=0;botReg=0;lastBot='—';lastResult='';revealed=false;
     document.getElementById('reveal').textContent='reveal true means';
     ctxCard.style.display=ctxOn?'':'none';
     if(ctxOn)drawCtx();
@@ -697,16 +698,19 @@ function linTsPick(lin,ctx,rand){return argmax(ctxLinScores(lin,ctx,sd=>CTX_VTS*
     if(!ctxOn)return;
     document.getElementById('manCtxTitle').textContent=`tonight: ${curCtx.name} — ${curCtx.desc}`;
     document.getElementById('manCtxChips').innerHTML=FEATURE_LABELS.slice(1).map((f,i)=>`<span class="${curCtx.x[i+1]?'on':''}">${f}: ${curCtx.x[i+1]}</span>`).join('');
+    document.getElementById('manResult').textContent=lastResult;
   }
   function play(i){
     if(ctxOn){
       const best=ctxBestArm(curCtx),bestP=ctxProb(curCtx,best);
+      const ur=mrand()<ctxProb(curCtx,i)?1:0;
       userReg+=bestP-ctxProb(curCtx,i);
       const botArm=linTsPick(botLin,curCtx,mrand);
       const br=mrand()<ctxProb(curCtx,botArm)?1:0;
       ctxLinUpdate(botLin,botArm,curCtx.x,br);
       botReg+=bestP-ctxProb(curCtx,botArm);
       lastBot=RESTAURANTS[botArm].name;nights++;
+      lastResult=`you: ${RESTAURANTS[i].name} ${ur?'liked ✓':'meh ✗'}  ·  LinTS: ${RESTAURANTS[botArm].name} ${br?'✓':'✗'}`;
       ch.push('you',nights,userReg);ch.push(botLabel(),nights,botReg);
       drawCtx();
     }else{
