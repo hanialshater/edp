@@ -79,6 +79,213 @@ button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent)
 .stat .value{color:var(--fg);font-size:17px;margin-top:3px}
 footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
 @media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
+
+/* ── wpo/product-page component (inlined, all wpo-* prefixed) ──────── */
+.wpoPage-intro{margin:18px 0}
+
+/* ── component root (dark) ─────────────────────────────────────────── */
+.wpo-root{display:flex;flex-direction:column;align-items:center;gap:8px}
+.wpo-toolbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:4px}
+.wpo-toolbar button{font-family:var(--mono);font-size:11px;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px 11px;cursor:pointer}
+.wpo-toolbar button:hover{border-color:#4c8df6}
+.wpo-toolbar button.on{background:#4c8df6;color:#0b1220;border-color:#4c8df6;font-weight:600}
+
+/* phone screen — light retail surface on the dark page */
+.wpo-phone{width:390px;max-width:100%;flex:0 0 auto;background:#0f172a;border:1px solid #243043;border-radius:26px;padding:8px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.wpo-phone__notch{height:18px;display:flex;align-items:center;justify-content:center}
+.wpo-phone__notch::before{content:"";width:90px;height:5px;border-radius:3px;background:#243043}
+.wpo-screen{background:#f0eee9;border-radius:20px;overflow:hidden;color:#0c0c10;font-family:'Inter Tight',-apple-system,system-ui,sans-serif}
+.wpo-shell{padding:10px 10px 16px;display:flex;flex-direction:column;gap:10px}
+
+/* product header / hero */
+.wpo-hero{background:#fff;border:1px solid #ececea;border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.wpo-hero__img{aspect-ratio:21/12;background:#f1efe9;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.wpo-hero__img>div{width:24%;height:88%}
+.wpo-hero__crumbs{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:#9a9a9a;text-transform:uppercase}
+.wpo-hero__brand{font-size:10px;font-weight:700;letter-spacing:.18em;color:#55555f}
+.wpo-hero__name{font-size:18px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:2px 0 0}
+.wpo-hero__rating{font-size:11px;color:#55555f}
+.wpo-hero__rating b{color:#0c0c10}
+.wpo-hero__price{font-size:18px;font-weight:700}
+.wpo-hero__sizes{display:flex;gap:4px;flex-wrap:wrap}
+.wpo-hero__size{padding:5px 9px;font-size:11px;font-weight:600;border:1px solid #d8d8d3;border-radius:2px;background:#fff;color:#0c0c10;cursor:pointer}
+.wpo-hero__size--on{background:#0c0c10;color:#fff;border-color:#0c0c10}
+.wpo-hero__cta{display:flex;gap:6px}
+.wpo-hero__cta button{flex:1;padding:10px;font-size:12px;font-weight:700;background:#0c0c10;color:#fff;border:none;border-radius:2px;cursor:pointer;font-family:inherit}
+
+/* slot caption above each widget */
+.wpo-slot{position:relative;padding-top:9px}
+.wpo-slot__chip{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:#64748b;text-transform:uppercase;font-weight:600;margin-bottom:5px;display:flex;gap:6px;align-items:center}
+.wpo-slot__chip b{color:#0f766e}
+.wpo-slot__n{background:#0c0c10;color:#fff;border-radius:3px;padding:1px 5px;font-size:8px}
+
+/* ── card chrome (ported .lp-card → .wpo-card) ─────────────────────── */
+.wpo-card{background:#fff;border:1px solid #ececea;border-left-width:3px;border-radius:4px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;animation:wpoPop .35s cubic-bezier(.4,0,.2,1) backwards}
+@keyframes wpoPop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.wpo-card__head{display:flex;flex-direction:column;gap:4px}
+.wpo-card__tags{display:flex;gap:5px;align-items:center}
+.wpo-tag{padding:2px 6px;border-radius:2px;font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:.1em}
+.wpo-card__title{font-size:14px;font-weight:700;letter-spacing:-.01em;margin:0;color:#0c0c10}
+.wpo-card__body{display:flex;flex-direction:column;gap:7px}
+.wpo-card__footer{padding-top:9px;border-top:1px solid #ececea;display:flex;justify-content:space-between;align-items:center}
+.wpo-p{font-size:10.5px;line-height:1.4;color:#55555f;margin:0}
+.wpo-btn-primary{padding:7px 11px;font-size:10.5px;font-weight:700;background:#0c0c10;color:#fff;border:none;border-radius:2px;cursor:pointer;font-family:inherit}
+.wpo-btn-ghost{padding:6px 9px;font-size:10px;font-weight:600;background:#fafaf7;color:#0c0c10;border:1px solid #d8d8d3;border-radius:2px;cursor:pointer;font-family:inherit;align-self:flex-start}
+.wpo-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wpo-row--5,.wpo-row--6{grid-template-columns:repeat(3,1fr)}
+
+/* fit */
+.wpo-fit-row{display:grid;grid-template-columns:70px 1fr;gap:10px;align-items:center}
+.wpo-fit-stat__num{font-size:26px;font-weight:700;line-height:1;letter-spacing:-.02em;color:#0c5a66}
+.wpo-fit-stat__lab{font-size:9.5px;font-weight:600;color:#55555f;line-height:1.3;margin-top:4px}
+.wpo-fit-bar{display:flex;height:24px;border-radius:3px;overflow:hidden}
+.wpo-fit-bar__seg{position:relative}
+.wpo-fit-bar__pct{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:9.5px;font-weight:700;color:#fff;letter-spacing:.04em}
+
+/* size */
+.wpo-sz-tbl{border:1px solid #ececea;border-radius:3px;overflow:hidden}
+.wpo-sz-row{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;padding:6px 10px;font-size:11px;align-items:center}
+.wpo-sz-row+.wpo-sz-row{border-top:1px solid #f1f1ee}
+.wpo-sz-row--head{background:#fafaf7;font-size:9px;letter-spacing:.12em;font-weight:600;color:#9a9a9a}
+.wpo-sz-row--active{background:#e8f6f9;font-weight:600;color:#0c5a66}
+
+/* alt cards */
+.wpo-alt-card{background:#fafaf7;border-radius:3px;padding:7px}
+.wpo-alt-card__rate{font-size:9px;font-weight:700;color:#0c5a66;letter-spacing:.08em;margin-top:5px}
+.wpo-alt-card__name{font-size:11px;font-weight:600;color:#0c0c10;margin-top:2px}
+.wpo-alt-card__price{font-size:11px;color:#55555f;margin-top:2px}
+
+/* comparison */
+.wpo-cmp-tbl{border:1px solid #ececea;border-radius:3px;overflow:hidden}
+.wpo-cmp-row{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;padding:6px 8px;font-size:10.5px;align-items:center}
+.wpo-cmp-row+.wpo-cmp-row{border-top:1px solid #f1f1ee}
+.wpo-cmp-row--head{background:#fafaf7;align-items:flex-start;font-size:9.5px;padding:8px}
+.wpo-cmp-row--head b{font-weight:600}
+.wpo-cmp-row span:first-child{color:#9a9a9a;font-size:9.5px;letter-spacing:.04em}
+.wpo-cmp-pill{display:inline-block;margin-top:4px;padding:1px 4px;font-size:8px;font-weight:700;letter-spacing:.1em;border-radius:2px;background:#0c5234;color:#fff}
+
+/* vs */
+.wpo-vs-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.wpo-vs-card{display:flex;align-items:center;gap:6px;padding:6px;background:#fafaf7;border-radius:3px}
+.wpo-vs-card--this{background:#e3f3ea;border:1px solid #bcdfc8}
+.wpo-vs-card__name{font-size:11px;font-weight:600}
+.wpo-vs-card__price{font-size:11px;color:#55555f}
+.wpo-vs-card__pct{font-size:9px;font-weight:700;color:#0c5234;letter-spacing:.08em;margin-top:4px}
+.wpo-vs-card:not(.wpo-vs-card--this) .wpo-vs-card__pct{color:#9a9a9a}
+.wpo-vs-mid{font-size:11px;font-weight:600;color:#9a9a9a}
+
+/* value breakdown */
+.wpo-vb-stack{display:flex;flex-direction:column;gap:5px}
+.wpo-vb-row{display:grid;grid-template-columns:45% 1fr auto;gap:8px;align-items:center;padding:2px 0;font-size:10.5px}
+.wpo-vb-row__bar{height:10px;border-radius:2px}
+.wpo-vb-row__lab{color:#0c0c10}
+.wpo-vb-row__amt{font-weight:600}
+.wpo-vb-foot{padding-top:8px;margin-top:4px;border-top:1px solid #ececea;font-size:11px;color:#55555f}
+.wpo-vb-foot b{color:#0c5234;font-weight:700}
+
+/* outfit completion */
+.wpo-oc-lay{position:relative;aspect-ratio:16/9;background:#f4f1ea;border-radius:4px;overflow:hidden}
+.wpo-oc-item{position:absolute;transform-origin:center}
+.wpo-oc-item>div{width:100%!important;height:100%!important;box-shadow:0 6px 18px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05)}
+.wpo-oc-list{display:grid;grid-template-columns:1fr;gap:3px}
+.wpo-oc-row{display:flex;align-items:center;gap:6px;padding:4px 7px;background:#fafaf7;border-radius:2px;font-size:10.5px}
+.wpo-oc-num{width:14px;height:14px;background:#0c0c10;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;flex:0 0 auto}
+.wpo-oc-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#0c0c10}
+.wpo-oc-price{font-weight:600;flex:0 0 auto}
+.wpo-oc-foot{display:flex;justify-content:space-between;align-items:center;width:100%}
+.wpo-oc-foot>span{font-size:11px;color:#55555f}
+
+/* style bridge */
+.wpo-sb-tabs{display:flex;gap:3px;flex-wrap:wrap}
+.wpo-sb-tab{padding:5px 10px;font-size:10.5px;font-weight:500;background:#fafaf7;color:#55555f;border:none;border-radius:100px;cursor:pointer;font-family:inherit}
+.wpo-sb-tab--on{background:#0c0c10;color:#fff;font-weight:600}
+.wpo-sb-row{display:grid;grid-template-columns:100px 1fr;gap:10px}
+.wpo-sb-hero{aspect-ratio:4/5}
+.wpo-sb-items{display:flex;flex-direction:column}
+.wpo-sb-item{display:grid;grid-template-columns:18px 30px 1fr auto;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #ececea;font-size:10.5px}
+.wpo-sb-item__num{font-size:9.5px;font-weight:700;color:#c9764a}
+.wpo-sb-item__name{font-weight:600}
+.wpo-sb-item__why{font-size:9.5px;color:#9a9a9a;margin-top:2px}
+.wpo-sb-item__price{font-weight:600}
+
+/* occasion lookbook */
+.wpo-ob-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.wpo-ob-card{position:relative;aspect-ratio:3/4;border-radius:4px;overflow:hidden;padding:8px;color:#fff;cursor:pointer}
+.wpo-ob-card__num{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.6)}
+.wpo-ob-card__man{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:70%;height:72%;opacity:.85}
+.wpo-ob-card__lab{position:absolute;bottom:8px;left:8px;right:8px;font-size:11px;font-weight:600}
+
+/* return explainer */
+.wpo-re-steps{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.wpo-re-step{position:relative;background:#fafaf7;padding:10px;border-radius:3px}
+.wpo-re-step__num{width:22px;height:22px;border-radius:50%;background:#7a1c2a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;margin-bottom:7px}
+.wpo-re-step__t{font-size:11px;font-weight:600;color:#0c0c10}
+.wpo-re-step__d{font-size:10px;color:#55555f;margin-top:3px}
+.wpo-re-step__line{display:none}
+
+/* easy returns */
+.wpo-erp-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wpo-erp-stat{padding:10px;background:#fbe3e6;border-radius:3px;text-align:center}
+.wpo-erp-stat__big{font-size:22px;font-weight:700;color:#7a1c2a;letter-spacing:-.02em;line-height:1}
+.wpo-erp-stat__lab{font-size:8.5px;letter-spacing:.16em;font-weight:600;color:#55555f;margin-top:5px}
+
+/* brand story */
+.wpo-bs-row{display:grid;grid-template-columns:90px 1fr;gap:10px}
+.wpo-bs-img{aspect-ratio:3/4}
+.wpo-bs-marks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.wpo-bs-mark{padding:6px;background:#fbf2dd;border-radius:3px}
+.wpo-bs-mark__year{display:block;font-size:14px;font-weight:700;color:#7a4e0a;letter-spacing:-.01em}
+.wpo-bs-mark__lab{display:block;font-size:8.5px;letter-spacing:.14em;font-weight:600;color:#55555f;margin-top:3px}
+
+/* material deep dive */
+.wpo-md-row{display:grid;grid-template-columns:80px 1fr;gap:10px}
+.wpo-md-fabric{aspect-ratio:1}
+.wpo-md-meta{display:flex;flex-direction:column}
+.wpo-md-prop{display:grid;grid-template-columns:60px 1fr;padding:5px 0;border-bottom:1px solid #ececea;font-size:11px}
+.wpo-md-prop__lab{font-size:9px;letter-spacing:.12em;font-weight:600;color:#9a9a9a;text-transform:uppercase;align-self:center}
+.wpo-md-prop__val{color:#0c0c10;font-weight:500}
+
+/* price history */
+.wpo-ph-chart{background:#fbeadc;padding:10px;border-radius:3px}
+.wpo-ph-axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:#7a3c0d;margin-top:4px;padding:0 4px}
+.wpo-ph-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wpo-ph-stats>div{padding:7px;background:#fafaf7;border-radius:3px;display:flex;flex-direction:column;gap:3px}
+.wpo-ph-stat__lab{font-size:8.5px;letter-spacing:.14em;font-weight:600;color:#9a9a9a}
+.wpo-ph-stat__val{font-size:14px;font-weight:700;color:#0c0c10}
+
+/* price drop */
+.wpo-pd-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wpo-pd-target{flex:1 1 auto}
+.wpo-pd-target__lab{display:block;font-size:9px;letter-spacing:.12em;font-weight:600;color:#9a9a9a;text-transform:uppercase;margin-bottom:6px}
+.wpo-pd-target__pill{display:inline-flex;align-items:baseline;gap:4px;padding:7px 11px;background:#fbeadc;border-radius:100px;font-size:13px;font-weight:700;color:#7a3c0d}
+.wpo-pd-target__amt{font-size:17px}
+.wpo-pd-target__edit{font-size:10px;font-weight:500;color:#c9764a;text-decoration:underline;cursor:pointer;margin-left:6px}
+
+/* recently viewed */
+.wpo-rv-card{background:#fafaf7;padding:6px;border-radius:3px}
+.wpo-rv-card__name{font-size:11px;font-weight:600;margin-top:5px}
+.wpo-rv-card__row{display:flex;justify-content:space-between;font-size:10px;margin-top:2px;color:#55555f}
+.wpo-rv-card__when{font-family:var(--mono);font-size:8.5px}
+
+/* wishlist */
+.wpo-ws-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;padding:4px 0}
+.wpo-ws-row .wpo-btn-ghost{grid-column:1/-1;align-self:stretch;text-align:center}
+.wpo-ws-heart{width:36px;height:36px;background:#e8e9f7;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.wpo-ws-title{font-size:12px;font-weight:600;color:#0c0c10}
+.wpo-ws-sub{font-size:10.5px;color:#55555f;margin-top:3px}
+
+/* expert pick */
+.wpo-ep-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:flex-start}
+.wpo-ep-portrait{width:42px;height:42px;border-radius:50%;background:#e8e9f7;display:flex;align-items:center;justify-content:center}
+.wpo-ep-portrait__inner{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#26307a,#5a64a8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.wpo-ep-quote{font-size:11.5px;line-height:1.5;color:#0c0c10;font-style:italic}
+.wpo-ep-author{font-size:10px;color:#9a9a9a;margin-top:6px}
+
+/* similar / also / trending / personal */
+.wpo-si-card{padding:4px}
+.wpo-si-card__name{font-size:10.5px;font-weight:600;margin-top:5px}
+.wpo-si-card__price{font-size:10.5px;color:#55555f;margin-top:2px}
+.wpo-si-card__trend{font-family:var(--mono);font-size:8.5px;font-weight:700;color:#7a4e0a;letter-spacing:.04em;margin-top:4px}
 </style>
 </head>
 <body>
@@ -144,6 +351,10 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
   <div class="stat"><div class="label">training sessions used</div><div class="value">0</div></div>
   <div class="stat"><div class="label">LLM calls per render</div><div class="value">0</div></div>
 </div>
+
+<h3 style="margin-top:28px">The page the policy serves</h3>
+<p class="wpoPage-intro">The three columns above are the <em>policy trace</em> — signals in, problem fingerprint, ranked slots out. Below is what that same decision actually <strong>renders</strong>: the six modules the trace just chose, drawn as the real styled product page a shopper would see on their phone. Move a persona pill or any slider above and watch the live widgets reorder and swap in lockstep with the trace — fit reassurance and size guides surface for the size-anxious shopper, side-by-side comparisons for the comparison shopper, complete-the-look modules for the outfit-seeker.</p>
+<div id="wpoPage"></div>
 </div>
 
 <p>Notice what just happened. You moved signals; the policy estimated hidden intent; the solver responded with sensible widget choices. <strong>It had never seen a click.</strong> The LLM that authored it just <em>knew</em> things about shopping psychology — size-anxious shoppers benefit from fit reassurance and return policy clarity; comparison shoppers benefit from side-by-side cards; outfit-seekers benefit from complete-the-look modules — and encoded those things as numbers in a typed grammar.</p>
@@ -227,6 +438,430 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 
 <script>
+// ─── wpo/product-page component (inlined pure definitions, all wpo-* scoped) ──
+// ─── PRODUCT FIXTURE ───────────────────────────────────────────────────────
+const PRODUCT={brand:'BOSS',name:'Slim-Fit Black Wool Tuxedo',price:895,
+  sizes:['38','40','42','44','46','48'],selectedSize:'42',rating:4.7,reviews:284,
+  returnRate:4,category:'Suits & Tuxedos'};
+
+// ─── SVG GARMENT ATOMS ─────────────────────────────────────────────────────
+const SVG={
+  tuxedo:()=>`<svg viewBox="0 0 200 280" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M70 165 L65 268 L92 268 L100 175 L108 268 L135 268 L130 165Z" fill="#15151a"/>
+    <path d="M55 80 Q55 70 75 65 L125 65 Q145 70 145 80 L148 170 L130 175 L100 165 L70 175 L52 170Z" fill="#1a1a1f"/>
+    <path d="M75 65 L95 75 L90 150 L100 165 L100 90Z" fill="#0c0c10"/>
+    <path d="M125 65 L105 75 L110 150 L100 165 L100 90Z" fill="#0c0c10"/>
+    <path d="M92 70 L108 70 L108 165 L100 170 L92 165Z" fill="#fafaf7"/>
+    <path d="M88 80 L100 86 L100 92 L88 98Z M112 80 L100 86 L100 92 L112 98Z" fill="#0a0a0d"/>
+    <rect x="98" y="84" width="4" height="10" fill="#0a0a0d"/></svg>`,
+  bow:()=>`<svg viewBox="0 0 200 130" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M30 50 Q35 45 45 47 L90 70 L90 90 L45 113 Q35 115 30 110Z" fill="#1a1a1f"/>
+    <path d="M170 50 Q165 45 155 47 L110 70 L110 90 L155 113 Q165 115 170 110Z" fill="#1a1a1f"/>
+    <rect x="88" y="67" width="24" height="26" rx="2" fill="#0a0a0d"/></svg>`,
+  shoe:()=>`<svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M30 120 Q25 130 35 132 L210 132 Q225 130 215 118Z" fill="#0a0a0d"/>
+    <path d="M35 118 Q30 90 50 78 Q90 60 140 65 Q200 72 215 100 Q218 115 210 122 L40 122 Q32 122 35 118Z" fill="#1a1a1f"/>
+    <path d="M50 85 Q90 72 150 75 Q195 80 205 95" stroke="#3a3a45" stroke-width="2" fill="none" opacity=".7"/>
+    <path d="M95 95 L95 118 L140 118 L145 95Z" fill="#0a0a0d"/></svg>`,
+  shirt:()=>`<svg viewBox="0 0 200 260" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M50 60 L30 90 L35 200 L65 195 L70 75Z" fill="#fafaf7" stroke="#e0e0d8" stroke-width=".6"/>
+    <path d="M150 60 L170 90 L165 200 L135 195 L130 75Z" fill="#fafaf7" stroke="#e0e0d8" stroke-width=".6"/>
+    <path d="M65 55 Q65 50 75 50 L125 50 Q135 50 135 55 L138 240 L62 240Z" fill="#fff" stroke="#e0e0d8" stroke-width=".6"/>
+    <path d="M75 50 L95 40 L100 55 L105 40 L125 50 L122 65 L100 58 L78 65Z" fill="#fff" stroke="#d0d0c8" stroke-width=".6"/>
+    <line x1="100" y1="58" x2="100" y2="240" stroke="#e0e0d8" stroke-width=".8"/></svg>`,
+  cufflinks:()=>`<svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <circle cx="65" cy="95" r="22" fill="#1a1a1f"/><circle cx="65" cy="95" r="17" fill="#0a0a0d"/>
+    <circle cx="60" cy="90" r="4" fill="#3a3a3f" opacity=".6"/>
+    <circle cx="135" cy="105" r="22" fill="#1a1a1f"/><circle cx="135" cy="105" r="17" fill="#0a0a0d"/>
+    <circle cx="130" cy="100" r="4" fill="#3a3a3f" opacity=".6"/></svg>`,
+  cummerbund:()=>`<svg viewBox="0 0 240 140" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M30 50 Q25 45 35 42 L205 42 Q215 45 210 50 L215 95 Q215 105 200 108 L40 108 Q25 105 25 95Z" fill="#1a1a1f"/>
+    <g stroke="#0a0a0d" stroke-width="2" opacity=".5">
+    <line x1="50" y1="50" x2="50" y2="100"/><line x1="80" y1="50" x2="80" y2="100"/>
+    <line x1="110" y1="50" x2="110" y2="100"/><line x1="140" y1="50" x2="140" y2="100"/>
+    <line x1="170" y1="50" x2="170" y2="100"/></g></svg>`,
+  watch:()=>`<svg viewBox="0 0 200 220" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M80 30 L120 30 L122 80 L78 80Z" fill="#1a1a1f"/>
+    <path d="M78 140 L122 140 L120 190 L80 190Z" fill="#1a1a1f"/>
+    <circle cx="100" cy="110" r="42" fill="#2a2a35"/><circle cx="100" cy="110" r="36" fill="#0c0c10"/>
+    <circle cx="100" cy="110" r="32" fill="#0a0a0d"/>
+    <line x1="100" y1="110" x2="100" y2="90" stroke="#fafaf7" stroke-width="1.8"/>
+    <line x1="100" y1="110" x2="115" y2="115" stroke="#fafaf7" stroke-width="1.2"/>
+    <circle cx="100" cy="110" r="1.5" fill="#c9764a"/></svg>`,
+  pocket:()=>`<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M50 80 L100 50 L150 80 L150 145 L50 145Z" fill="#fff" stroke="#d0d0c8" stroke-width=".6"/>
+    <path d="M50 80 L100 110 L150 80" stroke="#e0e0d8" stroke-width=".8" fill="none"/>
+    <path d="M50 80 L100 110 L100 145 L50 145Z" fill="#000" opacity=".03"/></svg>`,
+  studs:()=>`<svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <circle cx="50" cy="85" r="10" fill="#0a0a0d"/><circle cx="50" cy="85" r="6" fill="#3a3a3f"/>
+    <circle cx="90" cy="95" r="10" fill="#0a0a0d"/><circle cx="90" cy="95" r="6" fill="#3a3a3f"/>
+    <circle cx="130" cy="85" r="10" fill="#0a0a0d"/><circle cx="130" cy="85" r="6" fill="#3a3a3f"/>
+    <circle cx="170" cy="95" r="10" fill="#0a0a0d"/><circle cx="170" cy="95" r="6" fill="#3a3a3f"/></svg>`,
+  suspenders:()=>`<svg viewBox="0 0 200 240" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <path d="M55 30 L60 130 L95 160 L95 210 L105 210 L105 160 L140 130 L145 30" stroke="#1a1a1f" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <rect x="48" y="20" width="14" height="18" rx="2" fill="#c9c2b3"/>
+    <rect x="138" y="20" width="14" height="18" rx="2" fill="#c9c2b3"/></svg>`,
+  belt:()=>`<svg viewBox="0 0 240 140" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <rect x="30" y="55" width="180" height="20" fill="#1a1a1f"/>
+    <rect x="135" y="48" width="30" height="34" rx="2" fill="#c9c2b3"/>
+    <rect x="140" y="53" width="20" height="24" rx="1" fill="#1a1a1f"/></svg>`,
+  mannequin:()=>`<svg viewBox="0 0 260 400" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <ellipse cx="130" cy="50" rx="22" ry="26" fill="#d8c4ad"/>
+    <path d="M110 36 Q130 22 152 36 Q152 28 145 25 Q130 18 115 25 Q108 30 110 36" fill="#2a221a"/>
+    <rect x="120" y="72" width="20" height="14" fill="#c9b59b"/>
+    <path d="M105 86 L130 92 L155 86 L158 100 L130 96 L102 100Z" fill="#fafaf7"/>
+    <path d="M75 95 Q75 88 95 85 L165 85 Q185 88 185 95 L195 240 L165 250 L130 235 L95 250 L65 240Z" fill="#1a1a1f"/>
+    <path d="M95 85 L122 100 L118 215 L130 230 L130 110Z" fill="#0a0a0d"/>
+    <path d="M165 85 L138 100 L142 215 L130 230 L130 110Z" fill="#0a0a0d"/>
+    <path d="M122 95 L138 95 L138 230 L130 235 L122 230Z" fill="#fafaf7"/>
+    <path d="M116 102 L130 110 L130 118 L116 124Z M144 102 L130 110 L130 118 L144 124Z" fill="#0a0a0d"/>
+    <rect x="127" y="106" width="6" height="14" fill="#0a0a0d"/>
+    <path d="M95 245 L88 388 L122 388 L130 255 L138 388 L172 388 L165 245Z" fill="#15151a"/>
+    <path d="M75 100 L60 220 L80 225 L92 110Z" fill="#1a1a1f"/>
+    <path d="M185 100 L200 220 L180 225 L168 110Z" fill="#1a1a1f"/>
+    <ellipse cx="100" cy="390" rx="18" ry="5" fill="#0a0a0d"/>
+    <ellipse cx="160" cy="390" rx="18" ry="5" fill="#0a0a0d"/></svg>`,
+  fabric:()=>`<svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <rect x="20" y="20" width="160" height="160" rx="4" fill="#1a1a1f"/>
+    <g stroke="#2a2a35" stroke-width="1">
+    <line x1="20" y1="40" x2="180" y2="40"/><line x1="20" y1="60" x2="180" y2="60"/>
+    <line x1="20" y1="80" x2="180" y2="80"/><line x1="20" y1="100" x2="180" y2="100"/>
+    <line x1="20" y1="120" x2="180" y2="120"/><line x1="20" y1="140" x2="180" y2="140"/>
+    <line x1="20" y1="160" x2="180" y2="160"/>
+    <line x1="40" y1="20" x2="40" y2="180"/><line x1="60" y1="20" x2="60" y2="180"/>
+    <line x1="80" y1="20" x2="80" y2="180"/><line x1="100" y1="20" x2="100" y2="180"/>
+    <line x1="120" y1="20" x2="120" y2="180"/><line x1="140" y1="20" x2="140" y2="180"/>
+    <line x1="160" y1="20" x2="160" y2="180"/></g></svg>`,
+};
+
+// tile: a tinted product cell with a tiny image
+const tile=(svgKey,w=44,h=56,bg='#f1efe9')=>`
+  <div style="width:${typeof w==='number'?w+'px':w};height:${typeof h==='number'?h+'px':h};background:${bg};border-radius:2px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+    <div style="width:78%;height:78%;">${SVG[svgKey]?SVG[svgKey]():''}</div>
+  </div>`;
+
+// ─── ACCENT PALETTE ────────────────────────────────────────────────────────
+const COL={
+  cyan:{tint:'#e8f6f9',border:'#c5e4ea',text:'#0c5a66'},
+  amber:{tint:'#fbf2dd',border:'#ead9a8',text:'#7a4e0a'},
+  emerald:{tint:'#e3f3ea',border:'#bcdfc8',text:'#0c5234'},
+  fuchsia:{tint:'#f7e7f4',border:'#e3c2dc',text:'#7a1f6a'},
+  orange:{tint:'#fbeadc',border:'#eaceab',text:'#7a3c0d'},
+  rose:{tint:'#fbe3e6',border:'#ecbfc5',text:'#7a1c2a'},
+  indigo:{tint:'#e8e9f7',border:'#c5c8e6',text:'#26307a'},
+  slate:{tint:'#f1f2f4',border:'#dcdee2',text:'#3a3f4a'},
+};
+
+// ─── COMMON CARD CHROME ────────────────────────────────────────────────────
+const widgetChrome=(color,title,badge,body,footer)=>`
+  <div class="wpo-card" style="border-color:${COL[color]?.border||'#ececea'};">
+    <div class="wpo-card__head">
+      <div class="wpo-card__tags">
+        <span class="wpo-tag" style="background:${COL[color]?.tint||'#fafaf7'};color:${COL[color]?.text||'#55555f'};">${badge}</span>
+      </div>
+      <h3 class="wpo-card__title">${title}</h3>
+    </div>
+    <div class="wpo-card__body">${body}</div>
+    ${footer?`<div class="wpo-card__footer">${footer}</div>`:''}
+  </div>`;
+
+// ─── 22 RENDERERS ──────────────────────────────────────────────────────────
+const R={
+  fit_reassurance:()=>widgetChrome('cyan','Confident in your size','FIT REASSURANCE · F32',
+    `<div class="wpo-fit-row">
+       <div class="wpo-fit-stat">
+         <div class="wpo-fit-stat__num">87%</div>
+         <div class="wpo-fit-stat__lab">kept their<br/>regular size</div>
+       </div>
+       <div class="wpo-fit-bar">
+         <div class="wpo-fit-bar__seg" style="flex:1.0;background:#0c5a66;" title="True to size"><span class="wpo-fit-bar__pct">87% TRUE TO SIZE</span></div>
+         <div class="wpo-fit-bar__seg" style="flex:.10;background:#7eb5bf;" title="Runs large"></div>
+         <div class="wpo-fit-bar__seg" style="flex:.03;background:#cfe6ec;" title="Runs small"></div>
+       </div>
+     </div>
+     <p class="wpo-p">Based on 284 reviews from owners who tried this tuxedo on. Slim cut, true shoulders.</p>`),
+
+  size_guide:()=>widgetChrome('cyan','Your size, in measurements','SIZE GUIDE · F32',
+    `<div class="wpo-sz-tbl">
+       <div class="wpo-sz-row wpo-sz-row--head"><span>SIZE</span><span>CHEST</span><span>WAIST</span><span>SLEEVE</span></div>
+       ${['38','40','42','44'].map((sz,i)=>{const active=sz==='42';return `<div class="wpo-sz-row ${active?'wpo-sz-row--active':''}">
+         <span>${sz}${active?' · YOURS':''}</span><span>${36+i*2}in</span><span>${31+i*2}in</span><span>${33+Math.floor(i*0.5)}in</span></div>`;}).join('')}
+     </div>
+     <button class="wpo-btn-ghost">Find your size →</button>`),
+
+  low_return_alts:()=>widgetChrome('cyan','Lowest return rate in this category','LOW-RETURN ALTERNATIVES · F32 · F46',
+    `<div class="wpo-row">
+       ${[{tile:'tuxedo',name:'Sandro Peak-Lapel',rate:'2%',price:720},
+          {tile:'tuxedo',name:'Reiss Mercer Tux',rate:'3%',price:595},
+          {tile:'tuxedo',name:'Tiger of Sweden',rate:'4%',price:825}].map(it=>`
+         <div class="wpo-alt-card">${tile(it.tile,'100%',80,'#f1efe9')}
+           <div class="wpo-alt-card__meta">
+             <div class="wpo-alt-card__rate">↓ ${it.rate} return</div>
+             <div class="wpo-alt-card__name">${it.name}</div>
+             <div class="wpo-alt-card__price">€${it.price}</div>
+           </div></div>`).join('')}
+     </div>`),
+
+  comparison_card:()=>widgetChrome('emerald','Compare what you\'ve been viewing','SIDE-BY-SIDE · F41',
+    `<div class="wpo-cmp-tbl">
+       <div class="wpo-cmp-row wpo-cmp-row--head">
+         <span></span>
+         <span><b>BOSS Tuxedo</b><br/><span class="wpo-cmp-pill">VIEWING</span></span>
+         <span><b>Sandro Peak</b></span><span><b>Reiss Mercer</b></span>
+       </div>
+       <div class="wpo-cmp-row"><span>Price</span><span><b>€895</b></span><span>€720</span><span>€595</span></div>
+       <div class="wpo-cmp-row"><span>Fabric</span><span><b>100% wool</b></span><span>70% wool</span><span>poly blend</span></div>
+       <div class="wpo-cmp-row"><span>Return rate</span><span><b>4%</b></span><span>2%</span><span>6%</span></div>
+       <div class="wpo-cmp-row"><span>Made in</span><span><b>Italy</b></span><span>Portugal</span><span>Turkey</span></div>
+     </div>`),
+
+  customers_chose:()=>widgetChrome('emerald','92% chose this over the alternative','CUSTOMERS CHOSE · F41 · F51',
+    `<div class="wpo-vs-row">
+       <div class="wpo-vs-card wpo-vs-card--this">${tile('tuxedo',46,60)}
+         <div><div class="wpo-vs-card__name">BOSS Slim-Fit</div><div class="wpo-vs-card__price">€895</div><div class="wpo-vs-card__pct">CHOSEN BY <b>92%</b></div></div></div>
+       <span class="wpo-vs-mid">vs</span>
+       <div class="wpo-vs-card">${tile('tuxedo',46,60,'#ececea')}
+         <div><div class="wpo-vs-card__name">Tiger of Sweden</div><div class="wpo-vs-card__price">€825</div><div class="wpo-vs-card__pct">8%</div></div></div>
+     </div>
+     <p class="wpo-p">When customers compared similar items, the BOSS won on fit (89%) and fabric (94%).</p>`),
+
+  value_breakdown:()=>widgetChrome('emerald','Why this costs €895','VALUE BREAKDOWN · F45 · F33',
+    `<div class="wpo-vb-stack">
+       <div class="wpo-vb-row"><span class="wpo-vb-row__bar" style="width:48%;background:#0c5234;"></span><span class="wpo-vb-row__lab">Italian wool fabric</span><span class="wpo-vb-row__amt">€430</span></div>
+       <div class="wpo-vb-row"><span class="wpo-vb-row__bar" style="width:22%;background:#0c5234;"></span><span class="wpo-vb-row__lab">Handfinished tailoring</span><span class="wpo-vb-row__amt">€195</span></div>
+       <div class="wpo-vb-row"><span class="wpo-vb-row__bar" style="width:18%;background:#3e8060;"></span><span class="wpo-vb-row__lab">Half-canvas construction</span><span class="wpo-vb-row__amt">€160</span></div>
+       <div class="wpo-vb-row"><span class="wpo-vb-row__bar" style="width:12%;background:#7cb59c;"></span><span class="wpo-vb-row__lab">Brand · packaging</span><span class="wpo-vb-row__amt">€110</span></div>
+     </div>
+     <div class="wpo-vb-foot">Cost-per-wear at 30 events: <b>€29.83</b></div>`),
+
+  outfit_completion:()=>widgetChrome('fuchsia','Complete the look','OUTFIT COMPLETION · F43',
+    `<div class="wpo-oc-lay">
+       <div class="wpo-oc-item" style="left:8%;top:6%;width:34%;height:58%;transform:rotate(-4deg);">${tile('shirt','100%','100%','#f4f4f1')}</div>
+       <div class="wpo-oc-item" style="left:54%;top:8%;width:30%;height:22%;transform:rotate(7deg);">${tile('bow','100%','100%','#f1efe9')}</div>
+       <div class="wpo-oc-item" style="left:48%;top:36%;width:44%;height:18%;transform:rotate(-3deg);">${tile('cummerbund','100%','100%','#f0eee8')}</div>
+       <div class="wpo-oc-item" style="left:62%;top:58%;width:24%;height:22%;transform:rotate(5deg);">${tile('cufflinks','100%','100%','#f3f1eb')}</div>
+       <div class="wpo-oc-item" style="left:10%;top:68%;width:46%;height:28%;transform:rotate(-2deg);">${tile('shoe','100%','100%','#efede7')}</div>
+     </div>
+     <div class="wpo-oc-list">
+       ${[{num:1,name:'Albini Poplin Shirt',price:89},{num:2,name:'Drake\'s Silk Bow',price:65},{num:3,name:'Eton Cummerbund',price:95},{num:4,name:'Onyx Cufflinks',price:145},{num:5,name:'Crockett & Jones Oxford',price:285}].map(it=>`
+         <div class="wpo-oc-row"><span class="wpo-oc-num">${it.num}</span><span class="wpo-oc-name">${it.name}</span><span class="wpo-oc-price">€${it.price}</span></div>`).join('')}
+     </div>`,
+    `<div class="wpo-oc-foot"><span>5 pieces · €679</span><button class="wpo-btn-primary">Add full look</button></div>`),
+
+  style_bridge:()=>widgetChrome('fuchsia','One tuxedo, three ways','STYLE BRIDGE · F43',
+    `<div class="wpo-sb-tabs"><button class="wpo-sb-tab wpo-sb-tab--on">Black-Tie</button><button class="wpo-sb-tab">Cocktail</button><button class="wpo-sb-tab">Wedding</button></div>
+     <div class="wpo-sb-row">
+       <div class="wpo-sb-hero">${tile('mannequin','100%','100%','#f1efe9')}</div>
+       <div class="wpo-sb-items">
+         ${[{svg:'shirt',name:'Crisp poplin shirt',why:'Sharp base under the suit',price:89},
+            {svg:'bow',name:'Silk self-tie bow',why:'Classic black-tie protocol',price:65},
+            {svg:'shoe',name:'Polished oxfords',why:'Mirrors the suit\'s shine',price:285},
+            {svg:'cufflinks',name:'Onyx cufflinks',why:'Subtle, evening-appropriate',price:145}].map((it,i)=>`
+           <div class="wpo-sb-item"><span class="wpo-sb-item__num">0${i+1}</span>${tile(it.svg,30,30,'#fafaf7')}
+             <div class="wpo-sb-item__meta"><div class="wpo-sb-item__name">${it.name}</div><div class="wpo-sb-item__why">${it.why}</div></div>
+             <span class="wpo-sb-item__price">€${it.price}</span></div>`).join('')}
+       </div>
+     </div>`),
+
+  occasion_lookbook:()=>widgetChrome('fuchsia','Where you\'ll wear it','OCCASION LOOKBOOK · F43',
+    `<div class="wpo-ob-grid">
+       ${[{lab:'Black-Tie Gala',n:'01',mood:'#1a1a1f'},{lab:'Wedding Reception',n:'02',mood:'#3a2a2a'},{lab:'Awards Dinner',n:'03',mood:'#1a2a3a'},{lab:'New Year\'s Eve',n:'04',mood:'#2a1a3a'}].map(o=>`
+         <div class="wpo-ob-card" style="background:${o.mood};"><span class="wpo-ob-card__num">${o.n}</span><div class="wpo-ob-card__man">${SVG.mannequin()}</div><div class="wpo-ob-card__lab">${o.lab}</div></div>`).join('')}
+     </div>`),
+
+  return_explainer:()=>widgetChrome('rose','How returns work','RETURN EXPLAINER · F46',
+    `<div class="wpo-re-steps">
+       ${[{n:'1',t:'Try on at home',d:'You\'ve got 30 days to decide.'},{n:'2',t:'Print the label',d:'Pre-paid label in your account.'},{n:'3',t:'Drop it anywhere',d:'8,000+ partner pickup points.'},{n:'4',t:'Money back in 3 days',d:'Refunded to original payment.'}].map(s=>`
+         <div class="wpo-re-step"><div class="wpo-re-step__num">${s.n}</div><div><div class="wpo-re-step__t">${s.t}</div><div class="wpo-re-step__d">${s.d}</div></div></div>`).join('')}
+     </div>`),
+
+  easy_returns_promise:()=>widgetChrome('rose','30 days, free, no questions','EASY RETURNS · F46',
+    `<div class="wpo-erp-row">
+       <div class="wpo-erp-stat"><div class="wpo-erp-stat__big">30</div><div class="wpo-erp-stat__lab">DAYS</div></div>
+       <div class="wpo-erp-stat"><div class="wpo-erp-stat__big">€0</div><div class="wpo-erp-stat__lab">FREE LABEL</div></div>
+       <div class="wpo-erp-stat"><div class="wpo-erp-stat__big">3d</div><div class="wpo-erp-stat__lab">REFUND</div></div>
+     </div>
+     <p class="wpo-p">No reason needed. Original tags only. Same card refund.</p>`),
+
+  brand_story:()=>widgetChrome('amber','From BOSS · Metzingen, since 1924','BRAND STORY · F33',
+    `<div class="wpo-bs-row">
+       <div class="wpo-bs-img">${tile('mannequin','100%','100%','#fbf2dd')}</div>
+       <div class="wpo-bs-body">
+         <p class="wpo-p">A century of tailoring out of southern Germany. Cut on the Mercer pattern — slim through the waist, soft at the shoulder, hand-finished buttonholes.</p>
+         <div class="wpo-bs-marks">
+           <div class="wpo-bs-mark"><span class="wpo-bs-mark__year">1924</span><span class="wpo-bs-mark__lab">FOUNDED</span></div>
+           <div class="wpo-bs-mark"><span class="wpo-bs-mark__year">102</span><span class="wpo-bs-mark__lab">YEARS</span></div>
+           <div class="wpo-bs-mark"><span class="wpo-bs-mark__year">DE</span><span class="wpo-bs-mark__lab">CUT</span></div>
+         </div>
+       </div>
+     </div>`),
+
+  material_deep_dive:()=>widgetChrome('amber','100% Vitale Barberis wool · S110','MATERIAL DEEP DIVE · F33',
+    `<div class="wpo-md-row">
+       <div class="wpo-md-fabric">${SVG.fabric()}</div>
+       <div class="wpo-md-meta">
+         <div class="wpo-md-prop"><span class="wpo-md-prop__lab">Yarn</span><span class="wpo-md-prop__val">S110, 18.2 micron</span></div>
+         <div class="wpo-md-prop"><span class="wpo-md-prop__lab">Weight</span><span class="wpo-md-prop__val">280 g/m²</span></div>
+         <div class="wpo-md-prop"><span class="wpo-md-prop__lab">Mill</span><span class="wpo-md-prop__val">Vitale Barberis, IT</span></div>
+         <div class="wpo-md-prop"><span class="wpo-md-prop__lab">Lining</span><span class="wpo-md-prop__val">Bemberg cupro</span></div>
+         <div class="wpo-md-prop"><span class="wpo-md-prop__lab">Canvas</span><span class="wpo-md-prop__val">Half · horsehair</span></div>
+       </div>
+     </div>`),
+
+  price_history:()=>widgetChrome('orange','Lowest price in 90 days','PRICE HISTORY · F45',
+    `<div class="wpo-ph-chart">
+       <svg viewBox="0 0 320 100" preserveAspectRatio="none" style="width:100%;height:70px;">
+         <defs><linearGradient id="wpophg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a3c0d" stop-opacity=".25"/><stop offset="100%" stop-color="#7a3c0d" stop-opacity="0"/></linearGradient></defs>
+         <path d="M0 30 L40 28 L70 35 L110 28 L150 22 L190 24 L230 60 L270 65 L300 72 L320 70 L320 100 L0 100 Z" fill="url(#wpophg)"/>
+         <path d="M0 30 L40 28 L70 35 L110 28 L150 22 L190 24 L230 60 L270 65 L300 72 L320 70" fill="none" stroke="#7a3c0d" stroke-width="2"/>
+         <circle cx="270" cy="65" r="4" fill="#7a3c0d"/>
+         <text x="270" y="56" fill="#7a3c0d" font-size="10" font-weight="700" text-anchor="middle">€895 now</text>
+       </svg>
+       <div class="wpo-ph-axis"><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span></div>
+     </div>
+     <div class="wpo-ph-stats">
+       <div><span class="wpo-ph-stat__lab">90-DAY LOW</span><span class="wpo-ph-stat__val">€895</span></div>
+       <div><span class="wpo-ph-stat__lab">AVG</span><span class="wpo-ph-stat__val">€1,020</span></div>
+       <div><span class="wpo-ph-stat__lab">HIGH</span><span class="wpo-ph-stat__val">€1,120</span></div>
+     </div>`),
+
+  price_drop_notify:()=>widgetChrome('orange','Tell me if it drops','PRICE DROP · F51 · F45',
+    `<div class="wpo-pd-row">
+       <div class="wpo-pd-target"><span class="wpo-pd-target__lab">Notify me when below</span>
+         <div class="wpo-pd-target__pill">€<span class="wpo-pd-target__amt">795</span><span class="wpo-pd-target__edit">edit</span></div></div>
+       <button class="wpo-btn-primary">Watch this price</button>
+     </div>
+     <p class="wpo-p">2,431 shoppers tracking. Average drop within 60 days: 11%.</p>`),
+
+  recently_viewed:()=>widgetChrome('indigo','Pick up where you left off','RECENTLY VIEWED · F51',
+    `<div class="wpo-row">
+       ${[{svg:'tuxedo',name:'Sandro Tuxedo',price:720,when:'8 min ago'},{svg:'tuxedo',name:'Reiss Mercer',price:595,when:'12 min ago'},{svg:'tuxedo',name:'Tiger Tux',price:825,when:'Yesterday'}].map(it=>`
+         <div class="wpo-rv-card">${tile(it.svg,'100%',70,'#e8e9f7')}<div class="wpo-rv-card__name">${it.name}</div><div class="wpo-rv-card__row"><span>€${it.price}</span><span class="wpo-rv-card__when">${it.when}</span></div></div>`).join('')}
+     </div>`),
+
+  wishlist_save:()=>widgetChrome('indigo','Not sure yet? Save it','WISHLIST · F51',
+    `<div class="wpo-ws-row">
+       <div class="wpo-ws-heart"><svg width="24" height="24" viewBox="0 0 24 24" fill="#26307a" stroke="#26307a" stroke-width="1.5"><path d="M12 21s-7-4.5-9.5-9C0.8 8.7 2.5 5 6 5c2 0 3.5 1.2 4.5 2.6C11.5 6.2 13 5 15 5c3.5 0 5.2 3.7 3.5 7-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
+       <div class="wpo-ws-body"><div class="wpo-ws-title">Sleep on it — we'll remember the size.</div><div class="wpo-ws-sub">Wishlist items average 4 days to purchase. 71% come back.</div></div>
+       <button class="wpo-btn-ghost">Save to wishlist</button>
+     </div>`),
+
+  expert_pick:()=>widgetChrome('indigo','Editor\'s pick','EXPERT PICK · F51 · F33',
+    `<div class="wpo-ep-row">
+       <div class="wpo-ep-portrait"><div class="wpo-ep-portrait__inner">RC</div></div>
+       <div class="wpo-ep-body"><div class="wpo-ep-quote">"This is the tuxedo I send guys to when they need one suit that does black-tie, weddings, and corporate galas. The fit is forgiving without being baggy."</div>
+         <div class="wpo-ep-author">Rohan C. · Menswear editor, 12 yrs at Mr Porter</div></div>
+     </div>`),
+
+  similar_items:()=>widgetChrome('slate','Similar tuxedos','SIMILAR ITEMS',
+    `<div class="wpo-row wpo-row--6">
+       ${[{name:'Reiss Mercer',price:595},{name:'Sandro Peak',price:720},{name:'Tiger Stockholm',price:825},{name:'Sandro Bordeaux',price:645},{name:'Reiss Halton',price:540},{name:'COS Velvet',price:380}].map(it=>`
+         <div class="wpo-si-card">${tile('tuxedo','100%',70,'#f1f2f4')}<div class="wpo-si-card__name">${it.name}</div><div class="wpo-si-card__price">€${it.price}</div></div>`).join('')}
+     </div>`),
+
+  also_bought:()=>widgetChrome('slate','Customers also bought','ALSO BOUGHT',
+    `<div class="wpo-row wpo-row--5">
+       ${[{svg:'shirt',name:'Albini Poplin',price:89},{svg:'bow',name:'Drake\'s Bow',price:65},{svg:'shoe',name:'C&J Oxford',price:285},{svg:'cufflinks',name:'Onyx Cufflinks',price:145},{svg:'belt',name:'Anderson\'s Belt',price:75}].map(it=>`
+         <div class="wpo-si-card">${tile(it.svg,'100%',70,'#f1f2f4')}<div class="wpo-si-card__name">${it.name}</div><div class="wpo-si-card__price">€${it.price}</div></div>`).join('')}
+     </div>`),
+
+  trending_now:()=>widgetChrome('slate','Trending in formalwear','TRENDING NOW',
+    `<div class="wpo-row wpo-row--5">
+       ${[{svg:'tuxedo',name:'Velvet Jacket',price:695,lab:'↑ 4.2x'},{svg:'tuxedo',name:'Cream Tuxedo',price:950,lab:'↑ 2.8x'},{svg:'shoe',name:'Patent Loafers',price:320,lab:'↑ 2.5x'},{svg:'shirt',name:'Wing Collar',price:110,lab:'↑ 2.1x'},{svg:'watch',name:'Max Bill',price:1190,lab:'↑ 1.9x'}].map(it=>`
+         <div class="wpo-si-card">${tile(it.svg,'100%',70,'#f1f2f4')}<div class="wpo-si-card__trend">${it.lab}</div><div class="wpo-si-card__name">${it.name}</div><div class="wpo-si-card__price">€${it.price}</div></div>`).join('')}
+     </div>`),
+
+  personal_recs:()=>widgetChrome('slate','For you','PERSONAL RECS',
+    `<div class="wpo-row wpo-row--5">
+       ${[{svg:'shoe',name:'Suede Derby',price:245},{svg:'watch',name:'Dress Watch',price:540},{svg:'pocket',name:'Silk Square',price:55},{svg:'studs',name:'Shirt Studs',price:110},{svg:'suspenders',name:'Silk Braces',price:95}].map(it=>`
+         <div class="wpo-si-card">${tile(it.svg,'100%',70,'#f1f2f4')}<div class="wpo-si-card__name">${it.name}</div><div class="wpo-si-card__price">€${it.price}</div></div>`).join('')}
+     </div>`),
+};
+
+// fallback for unknown/unmapped module names
+const fallback=(name)=>widgetChrome('slate',
+  name.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),'MODULE',
+  `<p class="wpo-p">No renderer mapped for <b>${name}</b>. This is a defensive placeholder in the product-page component.</p>`);
+
+const ALL_MODULES=Object.keys(R);
+const DEFAULT_PAGE=['fit_reassurance','size_guide','comparison_card','value_breakdown','return_explainer','similar_items'];
+
+// ─── HEADER / HERO ─────────────────────────────────────────────────────────
+function heroHTML(){
+  return `<div class="wpo-hero">
+    <div class="wpo-hero__crumbs">${PRODUCT.category}</div>
+    <div class="wpo-hero__img"><div>${SVG.tuxedo()}</div></div>
+    <div class="wpo-hero__brand">${PRODUCT.brand}</div>
+    <h2 class="wpo-hero__name">${PRODUCT.name}</h2>
+    <div class="wpo-hero__rating">★ <b>${PRODUCT.rating}</b> · ${PRODUCT.reviews} reviews · ${PRODUCT.returnRate}% return rate</div>
+    <div class="wpo-hero__price">€${PRODUCT.price}</div>
+    <div class="wpo-hero__sizes">${PRODUCT.sizes.map(s=>`<span class="wpo-hero__size ${s===PRODUCT.selectedSize?'wpo-hero__size--on':''}">${s}</span>`).join('')}</div>
+    <div class="wpo-hero__cta"><button>Add to bag — €${PRODUCT.price}</button></div>
+  </div>`;
+}
+
+// ─── MOUNT ─────────────────────────────────────────────────────────────────
+function mountWpoPage(root,opts){
+  opts=opts||{};
+  let page=Array.isArray(opts.page)&&opts.page.length?opts.page.slice():DEFAULT_PAGE.slice();
+  let rendered=[];
+
+  root.classList.add('wpo-root');
+
+  function render(){
+    rendered=[];
+    const slots=page.map((name,i)=>{
+      const fn=R[name];
+      rendered.push(name);
+      const cardHTML=fn?fn():fallback(name);
+      const known=!!fn;
+      return `<div class="wpo-slot">
+        <div class="wpo-slot__chip"><span class="wpo-slot__n">${i+1}</span><b>${name}</b>${known?'':' · unmapped'}</div>
+        ${cardHTML}
+      </div>`;
+    }).join('');
+    root.innerHTML=`
+      <div class="wpo-toolbar">
+        <button data-f="essentials">essentials</button>
+        <button data-f="premium">premium</button>
+        <button data-f="discovery">discovery</button>
+        <button data-f="all">all 22</button>
+      </div>
+      <div class="wpo-phone">
+        <div class="wpo-phone__notch"></div>
+        <div class="wpo-screen">
+          <div class="wpo-shell">
+            ${heroHTML()}
+            ${slots}
+          </div>
+        </div>
+      </div>`;
+    const presets={
+      essentials:DEFAULT_PAGE,
+      premium:['brand_story','material_deep_dive','value_breakdown','expert_pick','price_history','occasion_lookbook'],
+      discovery:['recently_viewed','similar_items','also_bought','trending_now','personal_recs','wishlist_save'],
+      all:ALL_MODULES,
+    };
+    Object.keys(presets).forEach(k=>{
+      const b=root.querySelector(`[data-f="${k}"]`);
+      if(b)b.onclick=()=>setPage(presets[k]);
+    });
+  }
+
+  function setPage(names){
+    page=Array.isArray(names)&&names.length?names.slice():DEFAULT_PAGE.slice();
+    render();
+  }
+
+  render();
+
+  return {api:{
+    setPage,
+    instant(){/* no-op: this component has no time-stepped sim */},
+    state:()=>({count:rendered.length,rendered:rendered.slice()}),
+  }};
+}
+
 const POLICY = {"shapes":{"F32":{"size_chart":{"bps":[0,0.2,0.5,0.8,1],"vals":[0,0.1,0.45,0.75,0.95],"weight":0.45},"size_conf_inv":{"bps":[0,0.3,0.6,1],"vals":[0.95,0.6,0.25,0.05],"weight":0.3},"return_hist":{"bps":[0,0.2,0.5,1],"vals":[0,0.1,0.4,0.7],"weight":0.25}},"F33":{"zoom":{"bps":[0,0.3,0.6,1],"vals":[0,0.15,0.5,0.85],"weight":0.55},"price_norm":{"bps":[0,0.3,0.6,1],"vals":[0,0.2,0.5,0.8],"weight":0.45}},"F41":{"tab_switch":{"bps":[0,0.2,0.5,0.8,1],"vals":[0,0.1,0.5,0.85,0.95],"weight":0.55},"revisit":{"bps":[0,0.3,0.6,1],"vals":[0,0.2,0.55,0.8],"weight":0.25},"price_dwell":{"bps":[0,0.3,0.6,1],"vals":[0,0.1,0.35,0.55],"weight":0.2}},"F43":{"style_stretch":{"bps":[0,0.3,0.6,1],"vals":[0,0.2,0.6,0.95],"weight":0.65},"mobile":{"bps":[0,0.5,1],"vals":[0,0.3,0.55],"weight":0.35}},"F45":{"price_dwell":{"bps":[0,0.3,0.6,0.9,1],"vals":[0,0.15,0.5,0.8,0.95],"weight":0.5},"price_sens":{"bps":[0,0.4,0.7,1],"vals":[0,0.2,0.55,0.85],"weight":0.5}},"F46":{"return_view":{"bps":[0,0.2,0.5,1],"vals":[0,0.15,0.55,0.9],"weight":0.55},"return_hist":{"bps":[0,0.2,0.5,1],"vals":[0,0.15,0.5,0.8],"weight":0.45}},"F51":{"cart_osc":{"bps":[0,0.2,0.5,1],"vals":[0,0.15,0.55,0.9],"weight":0.45},"wishlist":{"bps":[0,0.3,0.6,1],"vals":[0,0.1,0.4,0.7],"weight":0.3},"revisit":{"bps":[0,0.3,0.6,1],"vals":[0,0.1,0.4,0.65],"weight":0.25}}},"modules":{"fit_reassurance":{"addr":{"F32":0.55,"F46":0.2},"base":0.1,"on_rem":{"F32":2.2,"F46":0.6},"on_cov":{"F32":-1.2},"slot_decay":0.05,"type":"reassurance"},"size_guide":{"addr":{"F32":0.5},"base":0.05,"on_rem":{"F32":2.0},"on_cov":{"F32":-1.4},"slot_decay":0.1,"type":"guide"},"low_return_alts":{"addr":{"F32":0.3,"F46":0.45},"base":0.05,"on_rem":{"F32":1.0,"F46":1.8},"on_cov":{"F46":-1.0},"slot_decay":0.06,"type":"alternatives"},"comparison_card":{"addr":{"F41":0.6,"F45":0.2},"base":0.05,"on_rem":{"F41":2.3,"F45":0.7},"on_cov":{"F41":-1.3},"slot_decay":0.04,"type":"comparison"},"customers_chose":{"addr":{"F41":0.3,"F51":0.25},"base":0.1,"on_rem":{"F41":0.8,"F51":1.2},"on_cov":{"F41":0.5,"F51":-0.6},"slot_decay":0.05,"type":"social"},"value_breakdown":{"addr":{"F45":0.55,"F33":0.2},"base":0.05,"on_rem":{"F45":2.1,"F33":0.5},"on_cov":{"F45":-1.2},"slot_decay":0.06,"type":"value"},"outfit_completion":{"addr":{"F43":0.55},"base":0.2,"on_rem":{"F43":1.8},"on_cov":{"F43":-0.8},"slot_decay":0.04,"type":"outfit"},"style_bridge":{"addr":{"F43":0.4},"base":0.05,"on_rem":{"F43":2.0},"on_cov":{"F43":-1.0},"slot_decay":0.06,"type":"outfit"},"occasion_lookbook":{"addr":{"F43":0.3},"base":0.08,"on_rem":{"F43":1.4},"on_cov":{"F43":-0.5},"slot_decay":0.05,"type":"outfit"},"return_explainer":{"addr":{"F46":0.5},"base":0.05,"on_rem":{"F46":2.0},"on_cov":{"F46":-1.3},"slot_decay":0.07,"type":"returns"},"easy_returns_promise":{"addr":{"F46":0.3},"base":0.1,"on_rem":{"F46":1.2},"on_cov":{"F46":-0.5},"slot_decay":0.05,"type":"returns"},"brand_story":{"addr":{"F33":0.5},"base":0.1,"on_rem":{"F33":1.9},"on_cov":{"F33":-1.0},"slot_decay":0.05,"type":"premium"},"material_deep_dive":{"addr":{"F33":0.45},"base":0.05,"on_rem":{"F33":1.7},"on_cov":{"F33":-0.9},"slot_decay":0.07,"type":"premium"},"price_history":{"addr":{"F45":0.45},"base":0.05,"on_rem":{"F45":1.7},"on_cov":{"F45":-0.8},"slot_decay":0.06,"type":"price"},"price_drop_notify":{"addr":{"F51":0.35,"F45":0.2},"base":0.08,"on_rem":{"F51":1.3,"F45":0.6},"on_cov":{"F51":-0.5},"slot_decay":0.05,"type":"price"},"recently_viewed":{"addr":{"F51":0.2},"base":0.1,"on_rem":{"F51":0.7},"on_cov":{"F51":-0.3},"slot_decay":0.05,"type":"context"},"wishlist_save":{"addr":{"F51":0.3},"base":0.05,"on_rem":{"F51":1.2},"on_cov":{"F51":-0.6},"slot_decay":0.06,"type":"action"},"expert_pick":{"addr":{"F51":0.3,"F33":0.15},"base":0.05,"on_rem":{"F51":1.4,"F33":0.4},"on_cov":{"F51":-0.7},"slot_decay":0.07,"type":"guidance"},"similar_items":{"addr":{"F41":0.1,"F43":0.05,"F51":0.05},"base":0.45,"on_rem":{},"on_cov":{},"slot_decay":0.03,"type":"default"},"also_bought":{"addr":{"F41":0.1,"F51":0.1},"base":0.4,"on_rem":{},"on_cov":{},"slot_decay":0.03,"type":"default"},"trending_now":{"addr":{},"base":0.3,"on_rem":{},"on_cov":{},"slot_decay":0.04,"type":"default"},"personal_recs":{"addr":{"F43":0.1,"F51":0.1},"base":0.35,"on_rem":{},"on_cov":{},"slot_decay":0.04,"type":"default"}}};
 const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',fg:'#e6edf3'};
 const SIGNALS=['size_chart','size_conf','return_hist','tab_switch','revisit','price_dwell','zoom','style_stretch','mobile','price_sens','cart_osc','wishlist','return_view','new','price_norm'];
@@ -275,7 +910,11 @@ function render(){
   const {page,problems}=compose(feat);
   const pd=document.getElementById('problems');pd.innerHTML='';for(const p in problems){const v=problems[p];const row=document.createElement('div');row.className='problem-bar';row.innerHTML=`<div class="lbl"><span>${p} · ${PROB_LABELS[p]||''}</span><span>${v.toFixed(2)}</span></div><div class="bar"><div style="width:${(v*100).toFixed(0)}%;background:${v>0.5?COLORS.red:COLORS.blue}"></div></div>`;pd.appendChild(row);}
   const pg=document.getElementById('page');pg.innerHTML='';page.forEach((it,i)=>{const div=document.createElement('div');div.className='slot';div.innerHTML=`<div><div class="pos">slot ${i+1}</div><div class="w">${it.widget}</div></div><div class="s">${it.score.toFixed(2)}</div>`;pg.appendChild(div);});
+  if(wpo)wpo.api.setPage(page.map(it=>it.widget));
 }
+
+// mount the real product page (recomposes from the same compose() output)
+const wpo=mountWpoPage(document.getElementById('wpoPage'),{page:compose(feat).page.map(it=>it.widget)});
 
 const pdiv=document.getElementById('personas');for(const k of Object.keys(PERSONAS)){const b=document.createElement('button');b.textContent=k;b.onclick=()=>setPersona(k);pdiv.appendChild(b);}
 setPersona('size-anxious');
