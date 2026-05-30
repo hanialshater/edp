@@ -55,7 +55,8 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <p class="subtitle">Bandits explore by choosing an action, observing a reward, and updating a posterior. OPRO asks a stranger question: can a language model read only candidate-score history and propose the next thing to try?</p>
 
 <div class="hero">
-<p><strong>This is the missing step before EDP.</strong> EDP is not just "ask an LLM for a policy." It works because the policy has a representation the LLM can edit. OPRO is the simpler foundation: give the model prior attempts and scores, ask it to propose a better candidate, then evaluate that candidate in a black-box environment.</p>
+<p><strong>Two ways to learn an unknown.</strong> Posts <a href="../01-bandit/">1</a>–<a href="../04-tsp/">4</a> all learned <em>by exploring from scratch</em>: pull an arm, run a match, drive a route, sample an edge — assume nothing, pay regret, let the data accumulate. That assumption — <em>that you can afford to explore</em> — is the engine of every bandit and combinatorial-bandit on the ladder so far. OPRO trades it for a different engine: <em>reasoning over world knowledge</em>. Show a language model the attempts so far and their scores, and ask it to propose the next candidate. No posterior, no bonus — just a model that already "knows" what a plausible answer looks like.</p>
+<p><strong>This is the bridge to EDP.</strong> EDP is not just "ask an LLM for a policy." It works because the policy has a representation the LLM can edit — and because it <em>fuses</em> the two engines: the LLM's world-knowledge prior <em>plus</em> the explore-and-update loop from Posts 1–4. OPRO is the simpler half of that fusion, isolated: give the model prior attempts and scores, ask for a better candidate, evaluate it in a black-box environment.</p>
 <p class="warn">Live calls are optional. Paste an OpenAI-compatible API key if you want the page to call your provider. Without a key, the widget uses deterministic recorded suggestions so the post remains offline and static.</p>
 </div>
 
@@ -80,6 +81,32 @@ history.append((next, score))</pre>
 <p class="math-intuition"><strong>Intuition:</strong> a bandit keeps an explicit estimate <span class="eq">μ̂</span> and bonus per arm; OPRO keeps <em>nothing</em> but the text of past attempts and their scores, and asks the LLM to be the optimizer. The model's pattern-matching over <span class="eq">H<sub>t</sub></span> stands in for the posterior and the acquisition function at once.</p>
 <p class="math-intuition"><strong>The catch:</strong> score-only feedback gives no local gradient <span class="eq">∇F</span>, no calibrated uncertainty, and no validity guarantee — the next <span class="eq">x<sub>t</sub></span> can be malformed JSON or an infeasible point. This is exactly why Post 6 hands the LLM a <em>structured</em> artifact to edit instead of a free string.</p>
 </div>
+
+<h3>Two engines for the same job</h3>
+<p>Every post in this series solves one shape of problem: <em>act under an unknown, observe a noisy signal, do better next time.</em> What changes is the <strong>engine</strong> that turns observations into the next action. The series has shown one engine in four costumes; OPRO is the second engine; EDP is the fusion.</p>
+
+<div class="algo-grid">
+  <div class="algo-card">
+    <h4>Explore from scratch</h4>
+    <p><strong>Posts <a href="../01-bandit/">1</a>–<a href="../04-tsp/">4</a>.</strong> Assume nothing. Keep a per-element estimate + uncertainty, act optimistically, observe, update.</p>
+    <div class="formula">restaurant arms → <a href="../02-sort/">player matches</a> → <a href="../03-shortest-path/">route edges</a> → <a href="../04-tsp/">tour legs</a></div>
+    <p><strong>Needs:</strong> a budget you can afford to spend exploring. <strong>Brings:</strong> guarantees, no prior knowledge required.</p>
+  </div>
+  <div class="algo-card">
+    <h4>Reason from world knowledge</h4>
+    <p><strong>This post.</strong> Don't model the objective — show the attempts and scores to an LLM and let its prior over "plausible answers" propose the next one.</p>
+    <div class="formula">x<sub>t+1</sub> ~ π<sub>LLM</sub>(x | sorted history)</div>
+    <p><strong>Needs:</strong> a model that knows the domain. <strong>Brings:</strong> warm starts, native strings/JSON — but no gradient, no calibrated uncertainty.</p>
+  </div>
+  <div class="algo-card">
+    <h4>Fuse the two → EDP</h4>
+    <p><strong><a href="../05-edp/">Post 6</a>.</strong> Let the LLM author a <em>structured, editable</em> policy from world knowledge, then keep the explore-and-update loop running on its parameters.</p>
+    <div class="formula">action = solver(problem, LLM_prior + SGD_correction)</div>
+    <p><strong>Needs:</strong> a representation closed under both LLM edits and gradient updates. <strong>Brings:</strong> cold-start <em>and</em> continued learning.</p>
+  </div>
+</div>
+
+<p>So the question in this post's title — <em>can an LLM explore?</em> — is really "is reasoning-from-knowledge a viable engine on its own?" The widget lets you feel the answer: sometimes a single proposal lands in a great region a from-scratch search would take dozens of samples to find; sometimes the model stalls or proposes nonsense, because unlike the bandits of Posts 1–4 it has no scored model of the objective to correct itself against.</p>
 
 <div class="algo-box">
 <div class="title">What kind of optimizer is the LLM imitating?</div>
@@ -196,9 +223,9 @@ history.append((next, score))</pre>
 <hr class="scene">
 
 <h3>Act 2 — What this teaches</h3>
-<p>OPRO can be surprisingly competent when candidates are short and scores are informative. It can also get stuck, hallucinate invalid JSON, or make locally plausible moves that do not improve the hidden objective. That fragility is the point: score-only search is a weak feedback channel.</p>
+<p>OPRO can be surprisingly competent when candidates are short and scores are informative. It can also get stuck, hallucinate invalid JSON, or make locally plausible moves that do not improve the hidden objective. That fragility is the point: score-only search is a weak feedback channel — weaker, often, than the directed exploration a <a href="../01-bandit/">UCB or Thompson</a> agent gets almost for free, because those at least carry a calibrated estimate of what they don't yet know.</p>
 
-<p>This is why EDP comes next. Instead of asking the model to optimize arbitrary strings from score history, give it a representation whose fields mean something: curves, weights, signals, slots, constraints. Then the LLM can use human-like reasoning to produce a structured prior or edit, while the Gym environment still supplies the empirical score.</p>
+<p>So neither engine wins outright. Explore-from-scratch (Posts 1–4) is principled but cold — it must pay for every bit of knowledge in regret. Reason-from-knowledge (OPRO) starts warm but flies blind — no posterior to keep it honest. <strong>EDP is the move that takes both:</strong> instead of asking the model to optimize arbitrary strings from score history, give it a representation whose fields mean something — curves, weights, signals, slots, constraints. The LLM uses human-like reasoning to author a structured prior (the warm start OPRO gives you), and the Gym environment keeps supplying empirical scores that update those same readable parameters (the explore-and-correct loop the bandits gave you). World knowledge for the cold-start; data for the rest.</p>
 
 <p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> turn the LLM's guess into executable, auditable policy. <a href="../05-edp/">Post 6 — human-like priors as executable policy</a>.</p>
 
