@@ -414,9 +414,15 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 
 <div class="widget">
-<h2>4 — Contextual dinner bandit</h2>
-<p class="legend">Each night has a situation. Plain Thompson sees only restaurant averages; LinUCB sees the context vector before choosing. Lower regret means fewer bad-context dinners.</p>
+<h2>4 — Contextual dinner bandit: UCB vs TS, now with context</h2>
+<p class="legend">Each night has a situation. <strong>Plain Thompson</strong> ignores it and learns one global average per restaurant. <strong>LinUCB</strong> and <strong>LinTS</strong> both read the context vector before choosing — they are the contextual cousins of the two policies you just raced: LinUCB adds an optimism bonus <code>α√(xᵀA⁻¹x)</code>, LinTS replaces that fixed bonus with a random draw <code>z·√(xᵀA⁻¹x)</code>, <code>z∼N(0,1)</code>. Same machinery, optimism vs sampling. Toggle who's in the race; lower regret means fewer bad-context dinners.</p>
 
+<div class="policy-pills">
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-right:6px;">in the race:</span>
+  <button class="toggle on" data-ctxpol="plain">plain Thompson</button>
+  <button class="toggle on" data-ctxpol="linucb">LinUCB</button>
+  <button class="toggle on" data-ctxpol="lints">LinTS</button>
+</div>
 <div class="context-card">
   <div class="context-title" id="ctxTitle">context: —</div>
   <div class="context-chips" id="ctxChips"></div>
@@ -429,13 +435,14 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <canvas id="ctxcanvas" height="230"></canvas>
 <div class="stats">
   <div class="stat"><div class="label">night</div><div class="value" id="ctxT">0</div></div>
-  <div class="stat"><div class="label">plain Thompson</div><div class="value" id="ctxPlain">0.0</div><div class="sub" id="ctxPlainPick">—</div></div>
-  <div class="stat"><div class="label">contextual LinUCB</div><div class="value" id="ctxLin">0.0</div><div class="sub" id="ctxLinPick">—</div></div>
+  <div class="stat" data-statpol="plain"><div class="label">plain Thompson</div><div class="value" id="ctxR_plain">0.0</div><div class="sub" id="ctxP_plain">—</div></div>
+  <div class="stat" data-statpol="linucb"><div class="label">contextual LinUCB</div><div class="value" id="ctxR_linucb">0.0</div><div class="sub" id="ctxP_linucb">—</div></div>
+  <div class="stat" data-statpol="lints"><div class="label">contextual LinTS</div><div class="value" id="ctxR_lints">0.0</div><div class="sub" id="ctxP_lints">—</div></div>
   <div class="stat"><div class="label">oracle tonight</div><div class="value" id="ctxBest">—</div></div>
 </div>
 </div>
 
-<p>That widget is the first step from "which arm is best?" to "which arm is best <em>given what I know right now?</em>" The later posts keep stretching that question: paths, tours, page slates, and finally policies whose inputs are rich signals rather than one tiny context vector.</p>
+<p>That widget is the first step from "which arm is best?" to "which arm is best <em>given what I know right now?</em>" Notice the two contextual policies both pull away from plain Thompson — and that LinUCB and LinTS trade the lead by the same noisy margin UCB and Thompson did. The optimism-vs-sampling choice barely matters; <em>reading the context at all</em> is what matters. The later posts keep stretching that question: paths, tours, page slates, and finally policies whose inputs are rich signals rather than one tiny context vector.</p>
 
 <hr class="scene">
 
@@ -689,65 +696,86 @@ const POL_INFO={
     [0.36,-0.08,0.25,-0.15,-0.20],
     [0.42,0.08,0.02,-0.22,0.12]
   ];
-  const d=featureLabels.length,alpha=0.75;
+  const d=featureLabels.length,alpha=0.75,vTS=0.3;     // UCB bonus scale / TS sampling scale
   const rand=rng(4242);
+  const POLS={
+    plain: {label:'plain Thompson',    color:COLORS.dim,   ctx:false},
+    linucb:{label:'contextual LinUCB',  color:COLORS.blue,  ctx:true},
+    lints: {label:'contextual LinTS',   color:COLORS.green, ctx:true},
+  };
   const ch=new Chart(cv,{xlabel:'night',ylabel:'regret',xMin:0,yMin:0,padding:{l:46,r:14,t:18,b:28},shade:[0,80]});
-  let plain,lin,t=0,current=contexts[0],plainReg=0,linReg=0,lastPlain='—',lastLin='—';
+  let active={plain:true,linucb:true,lints:true};
+  let st={},t=0,current=contexts[0];
   function eye(){return Array.from({length:d},(_,i)=>Array.from({length:d},(_,j)=>i===j?1:0));}
   function initLin(){return {A:Array.from({length:K},()=>eye()),b:Array.from({length:K},()=>Array(d).fill(0))};}
   function prob(ctx,arm){return Math.max(0.05,Math.min(0.92,dot(ctx.x,theta[arm])));}
   function bestArmFor(ctx){return argmax(RESTAURANTS.map((_,i)=>prob(ctx,i)));}
-  function linPick(st,ctx){
-    const scores=RESTAURANTS.map((_,a)=>{
-      const invb=solveLinear(st.A[a],st.b[a]);
-      const invx=solveLinear(st.A[a],ctx.x);
-      return dot(ctx.x,invb)+alpha*Math.sqrt(Math.max(0,dot(ctx.x,invx)));
+  // ridge mean xᵀθ̂ plus an exploration term applied to the posterior sd √(xᵀA⁻¹x)
+  function linScores(lin,ctx,bonus){
+    return RESTAURANTS.map((_,a)=>{
+      const invb=solveLinear(lin.A[a],lin.b[a]);
+      const invx=solveLinear(lin.A[a],ctx.x);
+      const sd=Math.sqrt(Math.max(0,dot(ctx.x,invx)));
+      return dot(ctx.x,invb)+bonus(sd);
     });
-    return argmax(scores);
   }
-  function linUpdate(st,arm,x,r){
-    for(let i=0;i<d;i++){st.b[arm][i]+=r*x[i];for(let j=0;j<d;j++)st.A[arm][i][j]+=x[i]*x[j];}
+  function linUpdate(lin,arm,x,r){
+    for(let i=0;i<d;i++){lin.b[arm][i]+=r*x[i];for(let j=0;j<d;j++)lin.A[arm][i][j]+=x[i]*x[j];}
+  }
+  function pick(key,ctx){
+    if(key==='plain')  return policyPick(st.plain.bandit,'thompson',t+1);
+    if(key==='linucb') return argmax(linScores(st.linucb.lin,ctx,sd=>alpha*sd));            // optimism: fixed bonus
+    return argmax(linScores(st.lints.lin,ctx,sd=>vTS*gauss(rand)*sd));                       // sampling: random bonus
+  }
+  function learn(key,arm,ctx,r){
+    if(key==='plain'){st.plain.bandit.pulls[arm]++;st.plain.bandit.successes[arm]+=r;}
+    else linUpdate(st[key].lin,arm,ctx.x,r);
   }
   function updateContextUi(){
     document.getElementById('ctxTitle').textContent=`context: ${current.name} — ${current.desc}`;
     document.getElementById('ctxChips').innerHTML=featureLabels.slice(1).map((f,i)=>`<span class="${current.x[i+1]?'on':''}">${f}: ${current.x[i+1]}</span>`).join('');
-    const best=bestArmFor(current);
-    document.getElementById('ctxBest').textContent=RESTAURANTS[best].name;
+    document.getElementById('ctxBest').textContent=RESTAURANTS[bestArmFor(current)].name;
   }
   function reset(){
-    plain=newBandit([0.5,0.5,0.5,0.5,0.5],991);
-    lin=initLin();t=0;plainReg=0;linReg=0;lastPlain='—';lastLin='—';
-    ch.reset();ch.line('plain Thompson',COLORS.dim).line('contextual LinUCB',COLORS.blue);
-    current=contexts[0];render();
+    ch.reset();st={};t=0;current=contexts[0];
+    for(const k in active){if(active[k]){
+      st[k]={reg:0,last:'—'};
+      if(k==='plain') st[k].bandit=newBandit([0.5,0.5,0.5,0.5,0.5],991);
+      else st[k].lin=initLin();
+      ch.line(POLS[k].label,POLS[k].color);
+    }}
+    render();
   }
   function one(){
     current=contexts[Math.floor(rand()*contexts.length)];
-    const best=bestArmFor(current),bestP=prob(current,best);
-    const plainArm=policyPick(plain,'thompson',t+1);
-    const plainReward=rand()<prob(current,plainArm)?1:0;
-    plain.pulls[plainArm]++;plain.successes[plainArm]+=plainReward;
-    plainReg+=bestP-prob(current,plainArm);
-    const linArm=linPick(lin,current);
-    const linReward=rand()<prob(current,linArm)?1:0;
-    linUpdate(lin,linArm,current.x,linReward);
-    linReg+=bestP-prob(current,linArm);
+    const bestP=prob(current,bestArmFor(current));
     t++;
-    lastPlain=RESTAURANTS[plainArm].name;
-    lastLin=RESTAURANTS[linArm].name;
-    ch.push('plain Thompson',t,plainReg);
-    ch.push('contextual LinUCB',t,linReg);
+    for(const k in st){
+      const arm=pick(k,current);
+      const r=rand()<prob(current,arm)?1:0;
+      learn(k,arm,current,r);
+      st[k].reg+=bestP-prob(current,arm);
+      st[k].last=RESTAURANTS[arm].name;
+      ch.push(POLS[k].label,t,st[k].reg);
+    }
     render();
   }
   function step(n){for(let i=0;i<n;i++)one();}
   function render(){
     updateContextUi();
     document.getElementById('ctxT').textContent=t;
-    document.getElementById('ctxPlain').textContent=plainReg.toFixed(1);
-    document.getElementById('ctxLin').textContent=linReg.toFixed(1);
-    document.getElementById('ctxPlainPick').textContent=lastPlain;
-    document.getElementById('ctxLinPick').textContent=lastLin;
+    for(const k in POLS){
+      const box=document.querySelector(`[data-statpol="${k}"]`);
+      if(active[k]){box.style.display='';
+        document.getElementById('ctxR_'+k).textContent=(st[k]?st[k].reg:0).toFixed(1);
+        document.getElementById('ctxP_'+k).textContent=st[k]?st[k].last:'—';
+      } else box.style.display='none';
+    }
     ch.render();
   }
+  document.querySelectorAll('[data-ctxpol]').forEach(btn=>{
+    btn.onclick=()=>{const k=btn.dataset.ctxpol;active[k]=!active[k];btn.classList.toggle('on',active[k]);reset();};
+  });
   document.getElementById('ctx1').onclick=()=>step(1);
   document.getElementById('ctx50').onclick=()=>step(50);
   document.getElementById('ctxReset').onclick=reset;
