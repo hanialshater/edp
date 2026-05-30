@@ -17,6 +17,14 @@ skill, 1v1 matches as noisy comparisons, a league table as the live estimate.
 
 - ☑ `sort/pitch-match.html` — animated 1v1 pitch + Bradley-Terry leaderboard,
   pairing-policy knob, reveal-truth, τ sparkline. *(flagship hero+widget)*
+  **+ goalkeepers** (track ball, dive on goal) **+ scout mode** (`you scout`:
+  click 2 to stage a match; pick target #1 or top-3; `lock my pick` reveals
+  whether you got it and at what match cost).
+- ☑ `sort/topk-at-scale.html` — **10,000 players → find the best 100.** Elo
+  (≈ online Bradley-Terry, O(1)/match); adaptive matchmaking (focus the top-100
+  cutline) vs random race on recall@100 + est-vs-true scatter. All-pairs = 50M
+  matches; adaptive ~70% recall@100 by ~60k vs random ~21% (3 seeds). Smoke +
+  scale invariant: green.
 - ◐ `sort/pairing-race.html` — race random / round-robin / ladder / active on
   the SAME league to τ=1 on one chart. The "where do you spend matches" aha.
 - ☐ `sort/bt-vs-combucb.html` — keep the existing replayed BT-vs-CombUCB panel

@@ -134,6 +134,8 @@ function mountPitchMatch(root, opts){
   let nMatches=0, tauHist=[], revealed=false, playing=false, policy=opts.policy||'ladder';
   let anim=null;            // {i,j,winner, t0, dur, committed}
   let speed=1.4, raf=null, lastWhy='';
+  let selected=[];          // scout mode: clicked players awaiting a match
+  let lockTarget=1, lockedPick=null;  // your nominated top-k at lock time
 
   function reset(seed){
     R=rng(seed);
@@ -150,6 +152,7 @@ function mountPitchMatch(root, opts){
     estRank=[...Array(N).keys()];   // arbitrary start
     lastRank=estRank.slice();
     nMatches=0; tauHist=[]; anim=null; revealed=false; lastWhy='';
+    selected=[]; lockedPick=null;
     recompute(); buildBoard(); drawTau();
   }
 
@@ -199,14 +202,17 @@ function mountPitchMatch(root, opts){
      <button data-c="fifty">+50 (instant)</button>
      <button data-c="reveal">reveal true skill</button>
      <button data-c="reset">reset (new league)</button>
-     <label>pairing
+     <label>scheduler
        <select data-c="policy">
+         <option value="manual">you scout (click 2)</option>
          <option value="random">random draw</option>
          <option value="roundrobin">round-robin</option>
          <option value="ladder" selected>ladder (adjacent)</option>
          <option value="active">active (boundary)</option>
        </select>
      </label>
+     <label>find <select data-c="target"><option value="1">the #1</option><option value="3">top 3</option></select></label>
+     <button data-c="lock">lock my pick</button>
      <label>speed <input type="range" min="0.5" max="4" step="0.1" value="1.4" data-c="speed" style="width:80px"></label>
    </div>
    <div class="pm-why" data-c="why"></div>
@@ -227,16 +233,21 @@ function mountPitchMatch(root, opts){
       const arrow=moved>0?'<span class="pm-rank up">▲</span>':moved<0?'<span class="pm-rank down">▼</span>':'';
       let truth='';
       if(revealed){const ok=rank===trueRank[idx];truth=`<div class="true">true #${trueRank[idx]+1} <span class="${ok?'ok':'no'}">${ok?'✓':'✗'}</span></div>`;}
-      return `<div class="pm-row" data-row="${idx}">
+      const sel=selected.includes(idx)?' playing':'';
+      const pick=(lockedPick&&lockedPick.includes(idx))?'<span style="color:var(--accent)"> ◆ your pick</span>':'';
+      return `<div class="pm-row${sel}" data-row="${idx}"${policy==='manual'?' style="cursor:pointer"':''}>
         <div class="pm-rank">${rank+1}${arrow}</div>
         <div class="pm-who">
-          <div class="pm-name"><span class="pm-dot" style="background:${p.color}"></span>${p.name}</div>
+          <div class="pm-name"><span class="pm-dot" style="background:${p.color}"></span>${p.name}${pick}</div>
           <div class="pm-bar"><i style="width:${(w*100).toFixed(1)}%;background:${p.color}"></i></div>
         </div>
         <div class="pm-meta">${wl} gp${totGames[idx]}${truth}</div>
       </div>`;
     }).join('');
     $('rows').innerHTML=rows;
+    if(policy==='manual'){
+      root.querySelectorAll('.pm-row').forEach(r=>{r.onclick=()=>onScoutClick(+r.dataset.row);});
+    }
     // counters
     $('m').textContent=nMatches;
     $('tau').textContent=curTau().toFixed(2);
@@ -283,6 +294,16 @@ function mountPitchMatch(root, opts){
     if(anim){c.strokeStyle='rgba(255,255,255,.25)';c.lineWidth=2;c.beginPath();c.moveTo(W/2,H/2);c.lineTo(bx,by);c.stroke();}
     // goal flash
     if(flash>0){c.fillStyle=`rgba(245,196,81,${0.4*flash})`;c.fillRect(W-44,H/2-40,40,80);}
+    // goalkeepers: track the ball's y, the right keeper dives the wrong way on a goal
+    function keeper(gx,attacked){
+      let ky=H/2 + clamp((by-H/2)*0.55,-26,26);
+      if(attacked&&flash>0){ky=H/2 - Math.sign(by-H/2||1)*26*flash;} // dives wrong way
+      c.beginPath();c.arc(gx,ky,8,0,7);c.fillStyle='#21314f';c.fill();
+      c.lineWidth=2;c.strokeStyle='rgba(230,245,235,.85)';c.stroke();
+      c.beginPath();c.moveTo(gx-7,ky-1);c.lineTo(gx+7,ky-1);c.stroke(); // arms
+    }
+    keeper(W-26,true);   // right goal (the one being attacked)
+    keeper(26,false);    // left goal
     // tokens
     function token(x,y,idx,big){if(idx==null)return;const p=players[idx];c.beginPath();c.arc(x,y,big?15:13,0,7);c.fillStyle=p.color;c.fill();c.lineWidth=2.5;c.strokeStyle=big&&flash>0?'#fff':'rgba(8,14,24,.8)';c.stroke();c.fillStyle='#0b1220';c.font='bold 11px '+'ui-monospace,monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(p.short,x,y+0.5);}
     token(lx,ly,lIdx,false);
@@ -339,25 +360,57 @@ function mountPitchMatch(root, opts){
     if(anim){
       const t=(now-anim.t0)/anim.dur;
       drawPitch(now);
-      if(t>=1 && !anim.committed){anim.committed=true;finishMatch();if(playing){setTimeout(()=>{if(playing){startMatch();}},180/speed);}}
+      if(t>=1 && !anim.committed){anim.committed=true;finishMatch();if(playing&&policy!=='manual'){setTimeout(()=>{if(playing){startMatch();}},180/speed);}}
     }else{drawPitch(now);}
     raf=requestAnimationFrame(loop);
   }
 
+  // ---- scout (manual) mode ----
+  function startSpecificMatch(i,j){
+    const winner=playMatch(trueSkill,i,j,BETA,R);
+    anim={i,j,winner,t0:performance.now(),dur:1000/speed,curve:R()<.5?18:-18,committed:false};
+    highlightPlaying(i,j);
+    $('banner').innerHTML=`${players[i].name} <span style="color:var(--dim)">vs</span> ${players[j].name}`;
+  }
+  function onScoutClick(idx){
+    if(policy!=='manual')return;
+    if(anim)finishMatch();
+    const at=selected.indexOf(idx);
+    if(at>=0){selected.splice(at,1);}            // click again to deselect
+    else if(selected.length<2){selected.push(idx);}
+    if(selected.length===2){const[i,j]=selected;selected=[];playing=false;$('play').textContent='▶ play';buildBoard();startSpecificMatch(i,j);}
+    else{buildBoard();$('why').innerHTML=selected.length?`pick an opponent for <b>${players[selected[0]].name}</b>`:'you are the scout — click two players to stage a match';}
+  }
+  function scoutVerdict(){
+    const k=lockTarget;
+    const estTopK=[...Array(N).keys()].filter(i=>estRank[i]<k);
+    const trueTopK=new Set([...Array(N).keys()].filter(i=>trueRank[i]<k));
+    lockedPick=estTopK.slice();
+    const hits=estTopK.filter(i=>trueTopK.has(i)).length;
+    revealed=true;$('reveal').textContent='hide true skill';
+    const ok=hits===k;
+    $('why').innerHTML=`you locked the ${k===1?'#1':'top '+k} after <b>${nMatches}</b> matches — <span style="color:${ok?'var(--good)':'var(--bad)'}">${hits}/${k} correct${ok?' ✓':''}</span>. Reveal shows the truth.`;
+    buildBoard();
+  }
+
   // ---- controls ----
-  $('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'⏸ pause':'▶ play';if(playing&&!anim)startMatch();};
-  $('one').onclick=()=>{playing=false;$('play').textContent='▶ play';if(anim)finishMatch();startMatch();/*let loop finish it*/setTimeout(()=>{if(anim&&!anim.committed){anim.t0=performance.now()-anim.dur;}},0);};
+  function manualHint(){$('why').innerHTML='you are the scout — click two players to stage a match';}
+  $('play').onclick=()=>{if(policy==='manual'){manualHint();return;}playing=!playing;$('play').textContent=playing?'⏸ pause':'▶ play';if(playing&&!anim)startMatch();};
+  $('one').onclick=()=>{if(policy==='manual'){manualHint();return;}playing=false;$('play').textContent='▶ play';if(anim)finishMatch();startMatch();/*let loop finish it*/setTimeout(()=>{if(anim&&!anim.committed){anim.t0=performance.now()-anim.dur;}},0);};
   $('fifty').onclick=()=>{playing=false;$('play').textContent='▶ play';instant(50);};
   $('reveal').onclick=()=>{revealed=!revealed;$('reveal').textContent=revealed?'hide true skill':'reveal true skill';buildBoard();};
-  $('reset').onclick=()=>{playing=false;$('play').textContent='▶ play';reset((Date.now()&0xffff)+1);};
-  $('policy').onchange=e=>{policy=e.target.value;};
+  $('reset').onclick=()=>{playing=false;$('play').textContent='▶ play';reset((Date.now()&0xffff)+1);if(policy==='manual')manualHint();};
+  $('policy').onchange=e=>{policy=e.target.value;playing=false;$('play').textContent='▶ play';selected=[];lockedPick=null;if(anim)finishMatch();buildBoard();if(policy==='manual')manualHint();else $('why').innerHTML='';};
+  $('target').onchange=e=>{lockTarget=parseInt(e.target.value);};
+  $('lock').onclick=()=>{if(anim)finishMatch();scoutVerdict();};
   $('speed').oninput=e=>{speed=parseFloat(e.target.value);};
   window.addEventListener('resize',()=>{buildBoard&&drawTau();});
 
   reset(seed0);
   raf=requestAnimationFrame(loop);
-  if(opts.autoplay){playing=true;$('play').textContent='⏸ pause';startMatch();}
-  return {api:{reset,instant,play:()=>{if(!playing){playing=true;$('play').textContent='⏸ pause';if(!anim)startMatch();}},state:()=>({nMatches,tau:curTau(),estRank,trueRank})}};
+  if(policy==='manual')manualHint();
+  if(opts.autoplay&&policy!=='manual'){playing=true;$('play').textContent='⏸ pause';startMatch();}
+  return {api:{reset,instant,scout:onScoutClick,lock:scoutVerdict,play:()=>{if(policy!=='manual'&&!playing){playing=true;$('play').textContent='⏸ pause';if(!anim)startMatch();}},state:()=>({nMatches,tau:curTau(),estRank,trueRank,lockedPick})}};
 }
 
 // ============================================================

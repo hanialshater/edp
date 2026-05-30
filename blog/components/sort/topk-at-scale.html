@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>component · 10,000 players, find the best 100</title>
+<!--
+  COMPONENT SPEC
+  Shows: 10,000 players with HIDDEN skill. You can't play everyone (all-pairs ≈
+         50 million matches). An Elo rating (≈ online Bradley-Terry, O(1)/match)
+         is updated per noisy match; two matchmakers race to recover the true
+         top-100 — recall@100 vs matches played.
+  Feel:  "at scale the question stops being 'sort everyone' and becomes 'spend
+         matches near the cutline'." Adaptive matchmaking finds the top-100 in
+         tens of thousands of matches; random needs far more.
+  Knob:  target K (top-100 default) + matches-per-tick.
+-->
+<style>
+:root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--gold:#f5c451;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+body{padding:24px 16px 80px}
+.harness{max-width:860px;margin:0 auto}
+.harness h1{font-size:18px;font-family:var(--mono);color:var(--dim);font-weight:600}
+.tk-root{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;color:var(--fg)}
+.tk-counters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;font-family:var(--mono)}
+@media(max-width:600px){.tk-counters{grid-template-columns:repeat(2,1fr)}}
+.tk-counter{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.tk-counter .k{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.tk-counter .v{font-size:18px;color:var(--fg);margin-top:2px}
+.tk-counter .v small{font-size:11px;color:var(--dim)}
+.tk-main{display:grid;grid-template-columns:1.3fr 1fr;gap:12px}
+@media(max-width:640px){.tk-main{grid-template-columns:1fr}}
+.tk-canvas{display:block;width:100%;height:240px;background:var(--code);border:1px solid var(--border);border-radius:8px}
+.tk-scatter{display:block;width:100%;height:240px;background:var(--code);border:1px solid var(--border);border-radius:8px}
+.tk-controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:12px}
+.tk-controls button{font-family:var(--mono);font-size:12.5px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 12px;cursor:pointer}
+.tk-controls button:hover{background:var(--accent2);border-color:var(--accent)}
+.tk-controls button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+.tk-controls label{font-family:var(--mono);font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.tk-controls select{font-family:var(--mono);font-size:12px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:5px 8px}
+.tk-note{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:10px;line-height:1.5}
+.tk-note b{color:var(--good)}.tk-note .big{color:var(--gold)}
+.tk-cap{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:center;margin-top:3px}
+</style>
+</head>
+<body>
+<div class="harness">
+  <h1>component · sort/topk-at-scale</h1>
+  <div id="stage"></div>
+</div>
+<script>
+// ============================================================
+// 1. PURE LOGIC (no DOM) — Elo ≈ online Bradley-Terry, O(1)/match
+// ============================================================
+const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',gold:'#f5c451',dim:'#8b95a8',fg:'#e6edf3'};
+function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function gauss(rand){const u=rand()||1e-12,v=rand();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+function sigmoid(x){return 1/(1+Math.exp(-x));}
+
+// A scalable top-k recovery world: n hidden skills, Elo estimate, two matchmakers.
+// Elo with logistic scale s=400/ln(10) so expected score = sigmoid((Ri-Rj)/s).
+function makeScaleWorld(n, K, seed){
+  const R=rng(seed);
+  // hidden true skills ~ N(0,1) (these ARE the Bradley-Terry latent skills, scaled to Elo)
+  const SCALE=200;                       // maps unit-skill gap to Elo points
+  const trueSkill=new Float64Array(n);
+  for(let i=0;i<n;i++) trueSkill[i]=gauss(R);
+  // true top-K set (indices of the K highest skills)
+  const order=[...Array(n).keys()].sort((a,b)=>trueSkill[b]-trueSkill[a]);
+  const trueTopK=new Set(order.slice(0,K));
+  const trueTopKArr=order.slice(0,K);
+  const cut=trueSkill[order[K-1]];        // K-th best skill (the cutline)
+
+  function freshState(){return {rating:new Float64Array(n), games:new Int32Array(n), m:0, rand:rng(seed*7+1)};}
+  const ELO_S=400/Math.log(10);           // logistic scale in Elo points
+
+  function playOne(st, i, j){
+    const pi=sigmoid((trueSkill[i]-trueSkill[j])*1.0);        // BT win prob (unit skills)
+    const iWon = st.rand()<pi ? 1 : 0;
+    const exp = sigMatch(st.rating[i]-st.rating[j]);
+    const k = kFactor(st.games[i]) ;                          // adaptive K-factor (cools as games grow)
+    const kj= kFactor(st.games[j]);
+    st.rating[i]+= k *( iWon - exp );
+    st.rating[j]+= kj*( (1-iWon) - (1-exp) );
+    st.games[i]++; st.games[j]++; st.m++;
+  }
+  function sigMatch(dr){return 1/(1+Math.pow(10,-dr/400));}   // Elo expected score
+  function kFactor(g){return g<20?40: g<60?24: 12;}
+
+  // --- matchmakers ---
+  // random: any two distinct players.
+  function pairRandom(st){const i=(st.rand()*n)|0;let j=(st.rand()*n)|0;if(j===i)j=(j+1)%n;return [i,j];}
+  // adaptive: focus near the current top-K cutline. Sort-light: keep a cheap estimate of
+  // the K-th rating via sampling, pair players whose rating is close to it (the boundary),
+  // and pair close-rated players to extract information. Implemented O(1)/match with a
+  // rolling cutline estimate refreshed periodically.
+  let cutEst=0, refreshAt=0;
+  function refreshCut(st){
+    // estimate the K-th largest rating from the full array (cheap: partial via sample+select).
+    // n=10k is fine to scan occasionally.
+    const arr=Array.from(st.rating); arr.sort((a,b)=>b-a); cutEst=arr[Math.min(K-1,arr.length-1)];
+  }
+  function pairAdaptive(st){
+    if(st.m>=refreshAt){refreshCut(st);refreshAt=st.m+Math.max(200,(n/8)|0);}
+    // sample a handful of candidates near the cutline by rejection; pick the two closest to cutEst
+    let bi=-1,bj=-1,bdi=Infinity,bdj=Infinity;
+    for(let t=0;t<24;t++){
+      const c=(st.rand()*n)|0; const d=Math.abs(st.rating[c]-cutEst);
+      if(d<bdi){bdj=bdi;bj=bi;bdi=d;bi=c;}
+      else if(d<bdj){bdj=d;bj=c;}
+    }
+    if(bi<0)return pairRandom(st);
+    if(bj<0||bj===bi)bj=(bi+1)%n;
+    return [bi,bj];
+  }
+
+  function recallAtK(st){
+    // fraction of true top-K currently inside the estimated top-K
+    // get estimated top-K by selecting K largest ratings (occasional full sort is fine)
+    const idx=[...Array(n).keys()].sort((a,b)=>st.rating[b]-st.rating[a]);
+    let hit=0; for(let r=0;r<K;r++) if(trueTopK.has(idx[r])) hit++;
+    return hit/K;
+  }
+
+  return {n,K,trueSkill,trueTopK,trueTopKArr,cut,SCALE,freshState,playOne,pairRandom,pairAdaptive,recallAtK};
+}
+
+// ============================================================
+// 2. MOUNT
+// ============================================================
+function mountTopKScale(root, opts){
+  opts=opts||{};
+  const N=opts.n||10000;
+  let K=opts.K||100, seed=opts.seed||7;
+  let world, rndSt, adpSt, histR=[], histA=[], playing=false, raf=null, perTick=opts.perTick||1500;
+
+  root.classList.add('tk-root');
+  root.innerHTML=`
+    <div class="tk-counters">
+      <div class="tk-counter"><div class="k">players</div><div class="v" data-c="n">${N.toLocaleString()}</div></div>
+      <div class="tk-counter"><div class="k">target</div><div class="v" data-c="K">top ${K}</div></div>
+      <div class="tk-counter"><div class="k">matches played</div><div class="v" data-c="m">0</div></div>
+      <div class="tk-counter"><div class="k">recall@${K} (adaptive)</div><div class="v" data-c="rec">0%</div></div>
+    </div>
+    <div class="tk-main">
+      <div><canvas class="tk-canvas" data-c="race"></canvas><div class="tk-cap">recall@${K} vs matches played</div></div>
+      <div><canvas class="tk-scatter" data-c="scat"></canvas><div class="tk-cap">est. rating vs true skill (2k sample)</div></div>
+    </div>
+    <div class="tk-controls">
+      <button class="primary" data-c="play">▶ run matches</button>
+      <button data-c="step">+${(perTick*5).toLocaleString()}</button>
+      <button data-c="reset">reset</button>
+      <label>find <select data-c="Ksel">
+        <option value="10">top 10</option>
+        <option value="100" selected>top 100</option>
+        <option value="500">top 500</option>
+      </select></label>
+      <label>matches / tick <input type="range" min="500" max="4000" step="250" value="${perTick}" data-c="rate" style="width:90px"></label>
+    </div>
+    <div class="tk-note" data-c="note"></div>`;
+  const $=s=>root.querySelector(`[data-c="${s}"]`);
+  const raceC=$('race'), scatC=$('scat');
+
+  function allPairs(n){return n*(n-1)/2;}
+  function fmtBig(x){return x>=1e6?(x/1e6).toFixed(1)+' million':x>=1e3?(x/1e3).toFixed(0)+'k':(''+x);}
+
+  function reset(s){
+    world=makeScaleWorld(N,K,s);
+    rndSt=world.freshState(); adpSt=world.freshState();
+    histR=[]; histA=[]; playing=false; $('play').textContent='▶ run matches';
+    $('K').textContent='top '+K;
+    $('note').innerHTML=`Round-robin would need <span class="big">${fmtBig(allPairs(N))}</span> matches to compare everyone. The question isn't "sort all ${N.toLocaleString()}" — it's "spend matches near the top-${K} cutline." Press run.`;
+    sample(); draw();
+  }
+
+  // pick a fixed 2000-index sample for the scatter (deterministic)
+  let sampleIdx=null;
+  function sample(){const R=rng(seed*3+5);sampleIdx=[];const step=Math.max(1,(N/2000)|0);for(let i=0;i<N;i+=step)sampleIdx.push(i);}
+
+  function advance(nMatches){
+    for(let t=0;t<nMatches;t++){const[a,b]=world.pairRandom(rndSt);world.playOne(rndSt,a,b);}
+    for(let t=0;t<nMatches;t++){const[a,b]=world.pairAdaptive(adpSt);world.playOne(adpSt,a,b);}
+    histR.push([rndSt.m, world.recallAtK(rndSt)]);
+    histA.push([adpSt.m, world.recallAtK(adpSt)]);
+  }
+  function instant(ticks){for(let t=0;t<ticks;t++)advance(perTick);draw();}
+
+  function draw(){drawRace();drawScatter();updateCounters();}
+  function updateCounters(){
+    $('m').textContent=adpSt.m.toLocaleString();
+    const rec=histA.length?histA[histA.length-1][1]:0;
+    $('rec').textContent=(rec*100|0)+'%';
+    if(histA.length){
+      const recA=histA[histA.length-1][1], recR=histR[histR.length-1][1];
+      $('note').innerHTML=`After <b>${adpSt.m.toLocaleString()}</b> matches each: adaptive recall@${K} = <b>${(recA*100).toFixed(0)}%</b>, random = <b>${(recR*100).toFixed(0)}%</b>. All-pairs round-robin would be <span class="big">${fmtBig(allPairs(N))}</span> — adaptive matchmaking gets most of the top-${K} for a tiny fraction of that, by spending matches at the cutline.`;
+    }
+  }
+  function drawRace(){
+    const dpr=window.devicePixelRatio||1,W=raceC.clientWidth||500,H=240;
+    if(raceC.width!==W*dpr){raceC.width=W*dpr;raceC.height=H*dpr;}raceC.style.height=H+'px';
+    const c=raceC.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+    const pl=34,pr=12,pt=14,pb=22,pw=W-pl-pr,ph=H-pt-pb;
+    c.strokeStyle='rgba(255,255,255,.06)';c.fillStyle=COLORS.dim;c.font='10px ui-monospace,monospace';
+    for(const v of [0,0.25,0.5,0.75,1]){const y=pt+(1-v)*ph;c.beginPath();c.moveTo(pl,y);c.lineTo(pl+pw,y);c.stroke();c.fillText((v*100|0)+'%',6,y+3);}
+    const xmax=Math.max(adpSt.m,perTick*10,1);
+    c.fillText('matches: '+adpSt.m.toLocaleString(),pl+2,H-6);
+    function line(h,col){if(h.length<2)return;c.strokeStyle=col;c.lineWidth=2;c.beginPath();h.forEach(([x,y],i)=>{const px=pl+x/xmax*pw,py=pt+(1-clamp(y,0,1))*ph;i?c.lineTo(px,py):c.moveTo(px,py);});c.stroke();}
+    line(histR,COLORS.dim); line(histA,COLORS.green);
+    c.textAlign='right';c.fillStyle=COLORS.green;c.fillText('adaptive '+((histA.length?histA[histA.length-1][1]:0)*100|0)+'%',W-pr-2,pt+11);
+    c.fillStyle=COLORS.dim;c.fillText('random '+((histR.length?histR[histR.length-1][1]:0)*100|0)+'%',W-pr-2,pt+24);c.textAlign='left';
+  }
+  function drawScatter(){
+    const dpr=window.devicePixelRatio||1,W=scatC.clientWidth||340,H=240;
+    if(scatC.width!==W*dpr){scatC.width=W*dpr;scatC.height=H*dpr;}scatC.style.height=H+'px';
+    const c=scatC.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+    const pl=30,pr=10,pt=12,pb=20,pw=W-pl-pr,ph=H-pt-pb;
+    c.strokeStyle='rgba(255,255,255,.06)';c.strokeRect(pl,pt,pw,ph);
+    c.fillStyle=COLORS.dim;c.font='10px ui-monospace,monospace';c.fillText('true skill →',pl+2,H-6);
+    // bounds
+    let tmin=Infinity,tmax=-Infinity,rmin=Infinity,rmax=-Infinity;
+    for(const i of sampleIdx){const ts=world.trueSkill[i],rs=adpSt.rating[i];if(ts<tmin)tmin=ts;if(ts>tmax)tmax=ts;if(rs<rmin)rmin=rs;if(rs>rmax)rmax=rs;}
+    if(rmax-rmin<1e-6){rmax=rmin+1;}
+    const xx=v=>pl+((v-tmin)/(tmax-tmin||1))*pw, yy=v=>pt+(1-(v-rmin)/(rmax-rmin||1))*ph;
+    // cutline (true K-th skill)
+    const cx=xx(world.cut);c.strokeStyle='rgba(245,196,81,.5)';c.setLineDash([4,3]);c.beginPath();c.moveTo(cx,pt);c.lineTo(cx,pt+ph);c.stroke();c.setLineDash([]);
+    c.fillStyle=COLORS.gold;c.fillText('top-'+K+' cut',cx+3,pt+10);
+    for(const i of sampleIdx){
+      const top=world.trueTopK.has(i);
+      c.fillStyle= top?COLORS.gold : 'rgba(76,141,246,.45)';
+      c.beginPath();c.arc(xx(world.trueSkill[i]),yy(adpSt.rating[i]),top?2.4:1.4,0,7);c.fill();
+    }
+  }
+
+  function loop(){if(!playing)return;advance(perTick);draw();raf=requestAnimationFrame(loop);}
+
+  $('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'⏸ pause':'▶ run matches';if(playing)loop();};
+  $('step').onclick=()=>{playing=false;$('play').textContent='▶ run matches';instant(5);};
+  $('reset').onclick=()=>{playing=false;reset((Date.now()&0xffff)+1);};
+  $('Ksel').onchange=e=>{K=parseInt(e.target.value);$('K').textContent='top '+K;
+    root.querySelectorAll('.tk-cap')[0].textContent=`recall@${K} vs matches played`;
+    $('rec').parentElement.querySelector('.k').textContent=`recall@${K} (adaptive)`;
+    reset((Date.now()&0xffff)+2);};
+  $('rate').oninput=e=>{perTick=parseInt(e.target.value);$('step').textContent='+'+(perTick*5).toLocaleString();};
+  window.addEventListener('resize',draw);
+
+  reset(seed);
+  if(opts.autoplay){playing=true;$('play').textContent='⏸ pause';loop();}
+  return {api:{instant,reset,play:()=>{if(!playing){playing=true;$('play').textContent='⏸ pause';loop();}},state:()=>{
+    const recA=histA.length?histA[histA.length-1][1]:0, recR=histR.length?histR[histR.length-1][1]:0;
+    return {matches:adpSt?adpSt.m:0, recallAdaptive:recA, recallRandom:recR, gap:recA-recR};
+  }}};
+}
+window.__component={name:'sort/topk-at-scale',mount:mountTopKScale,logic:{makeScaleWorld}};
+if(typeof document!=='undefined'){const st=document.getElementById('stage');if(st)mountTopKScale(st,{});}
+</script>
+</body>
+</html>
