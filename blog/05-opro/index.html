@@ -44,6 +44,12 @@ textarea{min-height:86px;resize:vertical}.tiny{font-family:var(--mono);font-size
 canvas{display:block;width:100%;background:var(--code);border-radius:7px}.history{max-height:330px;overflow:auto;background:var(--code);border:1px solid var(--border);border-radius:8px;padding:10px}
 .rowitem{border-bottom:1px solid rgba(255,255,255,0.06);padding:8px 0;font-family:var(--mono);font-size:12px}.rowitem:last-child{border-bottom:0}.score{color:var(--good);font-weight:700}.bad{color:var(--bad)}.muted{color:var(--dim)}
 pre{white-space:pre-wrap;background:var(--code);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:230px;overflow:auto;font-size:12px}
+.restable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;margin-top:4px}
+.restable th{text-align:left;color:var(--dim);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:0.06em;padding:6px 8px;border-bottom:1px solid var(--border)}
+.restable td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--fg)}
+.restable tr:last-child td{border-bottom:0}
+.restable td.good{color:var(--good)}.restable td.bad{color:var(--warn)}
+@media(max-width:600px){.restable{font-size:11px}.restable th,.restable td{padding:5px 5px}}
 footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
 </style>
 </head>
@@ -219,6 +225,27 @@ history.append((next, score))</pre>
 <label>Last raw model output / fallback trace</label>
 <pre id="raw">No proposal yet.</pre>
 </div>
+
+<hr class="scene">
+
+<h3>We actually ran this with LLM agents</h3>
+<p>The widget above lets <em>you</em> be the optimizer or call your own model. To stress-test the thesis directly, we pointed three general-purpose LLM agents at these exact three objectives and let each run the real OPRO loop: propose a JSON candidate, score it through a black-box CLI (<code>blog/components/opro_score.py</code>), read back only the scalar, reason over the growing <code>(candidate, score)</code> history, repeat. Each agent was <strong>blind</strong> to the scoring source — it never saw the objective, only its own trajectory of scores.</p>
+
+<div class="panel">
+<h2>OPRO-with-agents results</h2>
+<p class="legend">Three agents, three objectives, score-only feedback. Lower is better. "Calls" = candidates scored before converging.</p>
+<table class="restable">
+  <thead><tr><th>task</th><th>agent best</th><th>score</th><th>true optimum</th><th>calls</th><th>verdict</th></tr></thead>
+  <tbody>
+    <tr><td>regression</td><td>a=2.1, b=−1.59</td><td>0.0189</td><td>0.0 &nbsp;(a=2, b=−1.5)</td><td>34</td><td class="good">near-perfect descent</td></tr>
+    <tr><td>5-city TSP</td><td>[0,1,2,3,4]</td><td>2.3257</td><td>2.3257</td><td>13</td><td class="good">exact global optimum</td></tr>
+    <tr><td>constrained LP</td><td>x=1.6, y=0.4</td><td>−5.60</td><td>−5.80 &nbsp;(x=1.8, y=0.2)</td><td>27</td><td class="bad">stuck one corner short</td></tr>
+  </tbody>
+</table>
+<p class="tiny" style="margin-top:10px">Reproduce: <code>python3 blog/components/opro_score.py &lt;regression|tsp|lp&gt; '&lt;json&gt;'</code> — point any agent at it and forbid reading the file.</p>
+</div>
+
+<p>The pattern is exactly what the title question deserves: <strong>yes, an LLM can explore — until the feedback channel runs out.</strong> On the smooth regression bowl the agent walked straight downhill; on the tiny TSP it found the global optimum (the best tour was even the first seed, and every 2-opt-style swap it reasoned about confirmed no edge could be improved). But on the constrained LP it <em>felt</em> the penalty walls through score jumps — pushing x past ≈1.6 or y up toward 0.8 made the score leap from −5 into the positives — exploited the corner that gave, and <strong>settled at −5.60 instead of the true −5.80</strong>. With no gradient and no calibrated uncertainty, it had no way to see that a different binding corner was better. That near-miss is the OPRO fragility made concrete, and the setup for the next post.</p>
 
 <hr class="scene">
 
