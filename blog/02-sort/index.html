@@ -30,6 +30,27 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
 .mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
 .mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
+.latex-line{font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--fg);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0;overflow-x:auto}
+.latex-line .label{color:var(--dim);margin-right:8px}
+.latex-line .eq{font-size:14px;color:#fff}
+.latex-line sup,.latex-line sub{line-height:0}
+.math-intuition{color:var(--dim);font-size:13.5px;margin-top:8px}
+.algo-box{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:15px;margin:18px 0;font-size:14px}
+.algo-box .title{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.algo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.algo-tab{font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;cursor:pointer}
+.algo-tab.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.algo-panel{display:none;background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:13px}
+.algo-panel.on{display:block}
+.algo-panel h4{margin:0 0 8px;font-size:15px;color:#fff}
+.algo-panel p{margin:8px 0;color:var(--dim);line-height:1.48}
+.algo-panel ul{margin:8px 0 0 18px;padding:0;color:var(--dim)}
+.algo-panel li{margin:4px 0}
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.algo-card{background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:12px}
+.algo-card h4{margin:0 0 6px;font-size:14px;color:#fff}
+.algo-card p{margin:7px 0;color:var(--dim);line-height:1.45}
+.algo-card .formula{font-family:var(--mono);font-size:12px;color:var(--fg);background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;margin:8px 0}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}
@@ -146,18 +167,72 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <div class="mathbox">
 <div class="title">Math object</div>
-<ul>
-<li><strong>Unknowns:</strong> latent skills <code>sᵢ</code>; the true order is sorting by <code>sᵢ</code>.</li>
-<li><strong>Action:</strong> choose a pair <code>(i, j)</code> to play.</li>
-<li><strong>Feedback:</strong> one bit, <code>P(i ≻ j) = σ(β(sᵢ − sⱼ))</code> (Bradley-Terry; <code>β</code> = how decisive matches are).</li>
-<li><strong>Estimator:</strong> fit <code>ŝ</code> from the win matrix by maximum likelihood (a few MM iterations).</li>
-<li><strong>Metric:</strong> Kendall <code>τ</code> — fraction of pairwise orderings the table gets right (1 = perfect).</li>
-</ul>
+<div class="latex-line"><span class="label">Latent skill &amp; true order:</span><span class="eq">s<sub>i</sub> ∈ ℝ; true order = sort by s<sub>i</sub> (desc)</span></div>
+<p class="math-intuition"><strong>Intuition:</strong> every player has one hidden number. You never see it — the league table you build is just an attempt to recover the order those numbers imply.</p>
+<div class="latex-line"><span class="label">Action:</span><span class="eq">play a pair (i, j) and observe one bit: who won</span></div>
+<div class="latex-line"><span class="label">Match law (Bradley-Terry):</span><span class="eq">P(i ≻ j) = σ(β(s<sub>i</sub> − s<sub>j</sub>))</span></div>
+<p class="math-intuition"><strong>Intuition:</strong> the bigger the skill gap, the more lopsided the coin. At <span class="eq">s<sub>i</sub>=s<sub>j</sub></span> it is a fair flip; <span class="eq">β</span> sets how decisive matches are — high <span class="eq">β</span> means the stronger player almost always wins.</p>
+<div class="latex-line"><span class="label">MM estimator (the widget):</span><span class="eq">p<sub>i</sub> ← (W<sub>i</sub> + ½) / Σ<sub>j≠i</sub> n<sub>ij</sub>/(p<sub>i</sub>+p<sub>j</sub>),  ŝ<sub>i</sub> = ln p<sub>i</sub></span></div>
+<p class="math-intuition"><strong>Intuition:</strong> <span class="eq">W<sub>i</sub></span> is i's total wins, <span class="eq">n<sub>ij</sub></span> the games i and j played. A few minorize-maximize passes fit the skills by maximum likelihood; the <span class="eq">+½</span> (Laplace) smoothing keeps a player who has won or lost everything from flying off to <span class="eq">±∞</span>.</p>
+<div class="latex-line"><span class="label">Metric (Kendall τ):</span><span class="eq">τ = (concordant − discordant) / C(n,2)</span></div>
+<p class="math-intuition"><strong>Intuition:</strong> the fraction of the <span class="eq">C(n,2)</span> pairs your table orders the right way, rescaled to <span class="eq">[−1, 1]</span>. <span class="eq">τ = 1</span> is a perfect table.</p>
+<div class="latex-line"><span class="label">Comparison-sort budget:</span><span class="eq">exact oracle: Θ(n log n)   vs   noisy oracle: Θ(log(1/δ)/Δ²) repeats per close pair</span></div>
+<p class="math-intuition"><strong>Intuition:</strong> with a certain oracle you never ask the same comparison twice, so <span class="eq">Θ(n log n)</span> bits settle the order. With a noisy oracle, a pair with skill gap <span class="eq">Δ</span> needs <span class="eq">Θ(log(1/δ)/Δ²)</span> repeated matches to be sure at confidence <span class="eq">1−δ</span> — close pairs (tiny <span class="eq">Δ</span>) dominate the cost, which is exactly why <em>where</em> you spend matches matters.</p>
 </div>
 
 <h3>Act 3 — Where to spend the matches</h3>
 
 <p>The table in the hero already gives you the whole loop: schedule a pair, play the match, refit the skills, repeat. What it leaves open is <em>who to schedule</em>. Four policies, same league, plotted on one chart below: <strong>random</strong> draws; <strong>round-robin</strong> (everyone plays everyone equally); <strong>ladder</strong> (only play players adjacent on the current table); and <strong>active</strong> (play the closest, least-settled pair). The information you need lives at the <em>boundaries</em> — pairs whose order is genuinely in doubt — and most pairs aren't close. Policies that aim at the boundary settle the table with far fewer matches.</p>
+
+<div class="algo-box">
+<div class="title">How the scheduler picks the next match</div>
+<div class="algo-tabs" role="tablist" aria-label="Match schedulers">
+  <button class="algo-tab on" data-tab="rr">round-robin</button>
+  <button class="algo-tab" data-tab="ladder">ladder (adjacent)</button>
+  <button class="algo-tab" data-tab="active">active (boundary)</button>
+  <button class="algo-tab" data-tab="elo">Elo at scale</button>
+</div>
+<div class="algo-panel on" data-panel="rr">
+  <h4>Round-robin: everyone plays everyone, equally</h4>
+  <p><strong>Intuition:</strong> spread matches evenly so no pair is under-sampled. Fair, but blind — it spends as many matches confirming a blowout as resolving a coin-flip.</p>
+  <div class="latex-line"><span class="eq">(i, j) = argmin<sub>(i,j)</sub> n<sub>ij</sub></span></div>
+  <ul>
+    <li><strong>Good:</strong> unbiased coverage; trivial to run; great when n is tiny.</li>
+    <li><strong>Bad:</strong> wastes the budget on lopsided pairs whose order was never in doubt.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="ladder">
+  <h4>Ladder: only play players adjacent on the current table</h4>
+  <p><strong>Intuition:</strong> the order is uncertain between neighbours, not between #1 and #8. Play the rungs of the ladder — the pairs one rank apart — and let the table re-sort.</p>
+  <div class="latex-line"><span class="eq">play (i, j) where rank(j) − rank(i) = 1, fewest games first</span></div>
+  <ul>
+    <li><strong>Good:</strong> aims matches at the boundary; settles a correct table in ~1.5× fewer matches than random.</li>
+    <li><strong>Bad:</strong> trusts the current (noisy) ranking to define "adjacent" — early misorderings can mislead it.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="active">
+  <h4>Active: play the closest, least-settled pair</h4>
+  <p><strong>Intuition:</strong> information lives where two skills are nearly equal <em>and</em> you have little data. Score each pair by closeness and uncertainty, and play the maximiser.</p>
+  <div class="latex-line"><span class="eq">(i, j) = argmax<sub>(i,j)</sub> [ closeness(|ŝ<sub>i</sub> − ŝ<sub>j</sub>|) + uncertainty(1/(1+n<sub>ij</sub>)) ]</span></div>
+  <p class="math-intuition"><strong>Why:</strong> a pair with gap <span class="eq">Δ</span> needs <span class="eq">Θ(log(1/δ)/Δ²)</span> matches to call — so the smallest-<span class="eq">Δ</span>, lowest-<span class="eq">n</span> pairs are exactly the ones still costing you correctness.</p>
+  <ul>
+    <li><strong>Good:</strong> routes every match to the pair that buys the most table-correctness.</li>
+    <li><strong>Bad:</strong> needs an up-to-date skill estimate each round; can over-fixate on one stubborn tie.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="elo">
+  <h4>Elo at scale: streaming Bradley-Terry for 10,000 players</h4>
+  <p><strong>Intuition:</strong> refitting MM over 10k players every match is too slow. Elo is an O(1)-per-match online update whose stationary point is the Bradley-Terry fit — it <em>is</em> streaming BT, with ratings living on the 400-point scale.</p>
+  <div class="latex-line"><span class="label">Expected score:</span><span class="eq">E<sub>i</sub> = σ((R<sub>i</sub> − R<sub>j</sub>) / s<sub>elo</sub>),  s<sub>elo</sub> = 400 / ln 10</span></div>
+  <div class="latex-line"><span class="label">Online update:</span><span class="eq">R<sub>i</sub> ← R<sub>i</sub> + K(1{i wins} − E<sub>i</sub>)</span></div>
+  <p class="math-intuition"><strong>Why Elo ≈ BT:</strong> the update is one SGD step on the same logistic likelihood; <span class="eq">s<sub>elo</sub> = 400/ln 10</span> just rescales the logistic so a 400-point gap means a 10:1 odds favourite.</p>
+  <div class="latex-line"><span class="label">Top-K metric:</span><span class="eq">recall@K = |est_topK ∩ true_topK| / K</span></div>
+  <ul>
+    <li><strong>Good:</strong> O(1)/match; pair adaptively near the top-K cutline and recover most of the true top-100 in tens of thousands of matches.</li>
+    <li><strong>Bad:</strong> all-pairs round-robin over 10k players is <span class="eq">C(10000,2) ≈ 50 million</span> matches — only an adaptive, boundary-seeking scheduler makes the budget survivable.</li>
+  </ul>
+</div>
+</div>
 
 <div class="widget">
 <h2>Where to spend your matches</h2>
@@ -232,6 +307,16 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 
 <script>
+// ============ algo-box tab switching (scoped to each box) ============
+document.querySelectorAll('.algo-tab').forEach(btn=>{
+  btn.onclick=()=>{
+    const key=btn.dataset.tab;
+    const box=btn.closest('.algo-box');
+    box.querySelectorAll('.algo-tab').forEach(b=>b.classList.toggle('on',b===btn));
+    box.querySelectorAll('.algo-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===key));
+  };
+});
+
 // ============ shared pure logic ============
 const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',gold:'#f5c451',dim:'#8b95a8',fg:'#e6edf3'};
 function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}

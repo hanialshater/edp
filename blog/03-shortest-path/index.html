@@ -33,6 +33,25 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .algo-box .title{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
 .algo-box ol{margin:6px 0 0 18px;padding:0;color:var(--dim)}
 .algo-box li{margin:5px 0}.algo-box code{background:rgba(255,255,255,0.05);color:var(--fg)}
+.latex-line{font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--fg);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0;overflow-x:auto}
+.latex-line .label{color:var(--dim);margin-right:8px}
+.latex-line .eq{font-size:14px;color:#fff}
+.latex-line sup,.latex-line sub{line-height:0}
+.math-intuition{color:var(--dim);font-size:13.5px;margin-top:8px}
+.algo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.algo-tab{font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;cursor:pointer}
+.algo-tab.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.algo-panel{display:none;background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:13px}
+.algo-panel.on{display:block}
+.algo-panel h4{margin:0 0 8px;font-size:15px;color:#fff}
+.algo-panel p{margin:8px 0;color:var(--dim);line-height:1.48}
+.algo-panel ul{margin:8px 0 0 18px;padding:0;color:var(--dim)}
+.algo-panel li{margin:4px 0}
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.algo-card{background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:12px}
+.algo-card h4{margin:0 0 6px;font-size:14px;color:#fff}
+.algo-card p{margin:7px 0;color:var(--dim);line-height:1.45}
+.algo-card .formula{font-family:var(--mono);font-size:12px;color:var(--fg);background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;margin:8px 0}
 footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
 @media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
 
@@ -102,15 +121,18 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <div class="mathbox">
 <div class="title">Math object</div>
-<ul>
-<li><strong>Shared unknowns:</strong> a travel time <code>w_e</code> per edge <code>e ∈ E</code> — the parameters every route is built from.</li>
-<li><strong>Action:</strong> pick a route <code>P_t</code> (a path) from source to target.</li>
-<li><strong>Cost:</strong> <code>cost(P_t) = Σ_{e∈P_t} w_e</code>.</li>
-<li><strong>Semi-bandit feedback:</strong> observe a noisy sample of <em>every edge</em> in <code>P_t</code> — not just the total.</li>
-<li><strong>Route-as-an-arm feedback:</strong> observe only the <em>total</em> of <code>P_t</code>; no per-edge credit.</li>
-<li><strong>CombUCB rule:</strong> run Dijkstra on optimistic edge costs <code>LCB_e = μ̂_e − bonus_e</code>.</li>
-<li><strong>Regret:</strong> <code>Σ_t (cost(P_t) − cost(P*))</code> against the true optimal route <code>P*</code>.</li>
-</ul>
+<div class="latex-line"><span class="label">Shared unknowns:</span><span class="eq">w<sub>e</sub> ∈ ℝ<sub>+</sub> for each edge e ∈ E</span></div>
+<div class="latex-line"><span class="label">Action / cost:</span><span class="eq">play path P<sub>t</sub>, pay c(P<sub>t</sub>) = Σ<sub>e ∈ P<sub>t</sub></sub> w<sub>e</sub></span></div>
+<p class="math-intuition"><strong>Intuition:</strong> a route is built entirely out of per-edge times. Learn the edges and you have learned every route that crosses them — that shared structure is the whole game.</p>
+<div class="latex-line"><span class="label">Semi-bandit feedback:</span><span class="eq">observe { w<sub>e</sub> + noise : e ∈ P<sub>t</sub> } &nbsp;(per-edge)</span></div>
+<div class="latex-line"><span class="label">Full-bandit feedback:</span><span class="eq">observe only c(P<sub>t</sub>) &nbsp;(per-route total)</span></div>
+<p class="math-intuition"><strong>Semi vs full:</strong> semi-bandit hands you a labelled sample for <em>each street you drove</em>; full-bandit hands you one opaque sum and leaves you to guess which street was slow.</p>
+<div class="latex-line"><span class="label">Per-edge estimate:</span><span class="eq">ŵ<sub>e</sub> = mean of the n<sub>e</sub> samples seen on edge e</span></div>
+<div class="latex-line"><span class="label">Optimism (the widget):</span><span class="eq">LCB<sub>e</sub> = ŵ<sub>e</sub> − β·σ·ŵ<sub>e</sub>·√( 2 ln t / (n<sub>e</sub> + 1) )</span></div>
+<div class="latex-line"><span class="label">Pick the route:</span><span class="eq">P<sub>t</sub> = argmin<sub>P</sub> Σ<sub>e ∈ P</sub> LCB<sub>e</sub> &nbsp;(Dijkstra on the LCBs)</span></div>
+<p class="math-intuition"><strong>Optimism, minimised:</strong> under-driven edges get a fat bonus, so their LCB dips below the truth and Dijkstra is tempted to route through them — that is exploration, smuggled into the edge weights. As n<sub>e</sub> grows the bonus shrinks and LCB<sub>e</sub> → ŵ<sub>e</sub>.</p>
+<div class="latex-line"><span class="label">Cumulative regret:</span><span class="eq">R(T) = Σ<sub>t=1</sub><sup>T</sup> ( c(P<sub>t</sub>) − c(P*) ), &nbsp;P* = argmin<sub>P</sub> c(P)</span></div>
+<p class="math-intuition"><strong>What you pay:</strong> regret is the extra travel time stacked up against the true optimal route P*. The two curves in the chart are exactly this sum for the two drivers.</p>
 </div>
 
 <hr class="scene">
@@ -122,6 +144,37 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 
 <p>Try this: hit play and watch. The blue CombUCB curve bends almost immediately — within a few dozen trips every street has been driven enough that Dijkstra-on-optimistic-times locks onto the true route. The orange route-as-an-arm curve keeps climbing: with eight whole routes as arms and no way to share what one trip taught about a shared street, it has to re-discover every overlap from scratch.</p>
+
+<div class="algo-box">
+<div class="title">Two ways to credit a path</div>
+<div class="algo-tabs" role="tablist" aria-label="Credit-assignment strategies">
+  <button class="algo-tab on" data-tab="comb">CombUCB-on-edges (semi-bandit)</button>
+  <button class="algo-tab" data-tab="arm">Route-as-an-arm (full bandit)</button>
+</div>
+<div class="algo-panel on" data-panel="comb">
+  <h4>Credit each street, not the trip</h4>
+  <p>Keep an estimate per <em>edge</em>, drop the optimistic bonus on each one, and let Dijkstra stitch the cheapest path out of the LCBs. Every trip updates many edges at once, and an edge's time is shared by every route that uses it — so one drive teaches all of them.</p>
+  <div class="latex-line"><span class="eq">P<sub>t</sub> = argmin<sub>P</sub> Σ<sub>e ∈ P</sub> LCB<sub>e</sub>, &nbsp; LCB<sub>e</sub> = ŵ<sub>e</sub> − β·σ·ŵ<sub>e</sub>·√(2 ln t /(n<sub>e</sub>+1))</span></div>
+  <div class="latex-line"><span class="label">Regret:</span><span class="eq">R(T) = Õ( |E| · √T ) &nbsp;— linear in the number of edges</span></div>
+  <ul>
+    <li><strong>Good:</strong> knowledge is shared across routes; the bound scales with <code>|E|</code>, not with how many routes exist.</li>
+    <li><strong>Good:</strong> the hard combinatorics stay inside Dijkstra — the bandit only keeps per-edge means honest.</li>
+    <li><strong>Bad:</strong> needs per-edge feedback. If production only reports the route total, this credit assignment is structurally unavailable.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="arm">
+  <h4>Treat each whole route as one arm</h4>
+  <p>Enumerate the candidate routes, run plain UCB1 over them, and observe only each route's total. No per-edge sharing: two routes that overlap on 90% of their streets are still two unrelated arms.</p>
+  <div class="latex-line"><span class="eq">a<sub>t</sub> = argmin<sub>a</sub> ( m̂<sub>a</sub> − bonus<sub>a</sub> ), &nbsp; m̂<sub>a</sub> = mean total of route a</span></div>
+  <div class="latex-line"><span class="label">Regret:</span><span class="eq">R(T) scales with the NUMBER of routes — combinatorially many, ~exponential</span></div>
+  <ul>
+    <li><strong>Good:</strong> works with the weakest possible signal — just the scalar total of the route you drove.</li>
+    <li><strong>Bad:</strong> every route must be explored on its own; what you learn on one tells you nothing about an overlapping one.</li>
+    <li><strong>Bad:</strong> the arm set is the set of paths, which is exponential in the graph — the regret inherits that blow-up.</li>
+  </ul>
+</div>
+<p class="math-intuition"><strong>The structural axis:</strong> this is the same split the WPO paper draws in §5.2. CombUCB's per-edge credit is exactly the <em>per-slot</em> attribution a combinatorial bandit relies on; route-as-an-arm — one opaque total per action — is <em>page-level</em> attribution. When the signal collapses to the page total, the per-arm credit these methods need is structurally absent, and the same <code>Õ(|E|√T)</code>-vs-exponential gap reappears as the bandit's loss under whole-page reward.</p>
+</div>
 
 <hr class="scene">
 
@@ -422,6 +475,16 @@ function mountBerlinPath(root,opts){
   return {api:{instant,play:()=>setPlaying(true),reset:(s)=>{seed=s||seed;sim=makeSim({seed,sigma:curSig,bonus:opts.bonus,k:opts.k,K:opts.K});manualPath=[];redraw();},state:()=>sim.state()}};
 }
 window.__component={name:'path/berlin-path',mount:mountBerlinPath};
+
+// ============================ tab-switch for .algo-box (scoped, multiple boxes) ============================
+document.querySelectorAll('.algo-tab').forEach(btn=>{
+  btn.onclick=()=>{
+    const key=btn.dataset.tab;
+    const box=btn.closest('.algo-box');
+    box.querySelectorAll('.algo-tab').forEach(b=>b.classList.toggle('on',b===btn));
+    box.querySelectorAll('.algo-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===key));
+  };
+});
 
 // ============================ POST: drive the two mounts explicitly ============================
 (function(){

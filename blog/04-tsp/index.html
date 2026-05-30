@@ -30,6 +30,27 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
 .mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
 .mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
+.latex-line{font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--fg);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0;overflow-x:auto}
+.latex-line .label{color:var(--dim);margin-right:8px}
+.latex-line .eq{font-size:14px;color:#fff}
+.latex-line sup,.latex-line sub{line-height:0}
+.math-intuition{color:var(--dim);font-size:13.5px;margin-top:8px}
+.algo-box{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:15px;margin:18px 0;font-size:14px}
+.algo-box .title{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.algo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.algo-tab{font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;cursor:pointer}
+.algo-tab.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.algo-panel{display:none;background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:13px}
+.algo-panel.on{display:block}
+.algo-panel h4{margin:0 0 8px;font-size:15px;color:#fff}
+.algo-panel p{margin:8px 0;color:var(--dim);line-height:1.48}
+.algo-panel ul{margin:8px 0 0 18px;padding:0;color:var(--dim)}
+.algo-panel li{margin:4px 0}
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.algo-card{background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:12px}
+.algo-card h4{margin:0 0 6px;font-size:14px;color:#fff}
+.algo-card p{margin:7px 0;color:var(--dim);line-height:1.45}
+.algo-card .formula{font-family:var(--mono);font-size:12px;color:var(--fg);background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;margin:8px 0}
 footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
 @media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
 
@@ -86,17 +107,82 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <div class="mathbox">
 <div class="title">Math object</div>
-<ul>
-<li><strong>Unknowns:</strong> distances <code>d_{ij}</code> for <code>n(n−1)/2 = 1326</code> city pairs.</li>
-<li><strong>Action:</strong> a tour <code>π</code> — one of <code>n!/(2n) ≈ 10⁶⁵</code> permutations.</li>
-<li><strong>Cost:</strong> <code>cost(π) = Σ d_{π_k, π_{k+1}}</code>, including the return to the depot.</li>
-<li><strong>Feedback:</strong> a noisy sample of <em>each edge</em> the tour traverses — shared across all tours that reuse it.</li>
-<li><strong>Optimism:</strong> build a lower-confidence-bound cost per edge (<code>mean − bonus·√(log t / n_e)</code>); under-driven edges look cheap, so the solver wants to probe them.</li>
-<li><strong>Solver:</strong> run 2-opt on the optimistic matrix; the recommended tour is 2-opt on the current means. Score against the known optimum 7542.</li>
-</ul>
+<div class="latex-line"><span class="label">Unknown leg distances:</span><span class="eq">d<sub>ij</sub> ≥ 0 for the C(52,2) = 1326 city pairs</span></div>
+<div class="latex-line"><span class="label">A tour and its cost:</span><span class="eq">c(T) = Σ<sub>(i,j)∈T</sub> d<sub>ij</sub>, over a cyclic ordering T</span></div>
+<div class="latex-line"><span class="label">How many tours:</span><span class="eq">n! / (2n) ≈ 10<sup>65</sup> for n = 52</span></div>
+<div class="latex-line"><span class="label">Semi-bandit feedback:</span><span class="eq">drive T, observe each leg d<sub>ij</sub> + noise (σ per leg)</span></div>
+<div class="latex-line"><span class="label">Per-edge belief:</span><span class="eq">d̂<sub>ij</sub> = running mean of samples, n<sub>ij</sub> = visit count</span></div>
+<div class="latex-line"><span class="label">Optimistic (LCB) leg cost:</span><span class="eq">LCB<sub>ij</sub> = d̂<sub>ij</sub> − β · D̄ · √(ln t / (n<sub>ij</sub> + 1))</span></div>
+<div class="latex-line"><span class="label">Solver:</span><span class="eq">2-opt local search on the LCB (or mean) matrix; score c(T) vs optimum 7542</span></div>
+<p class="math-intuition"><strong>Intuition:</strong> the arms (tours) are not independent — every tour is a sum over the same shared pool of legs. Drive a leg on any tour and you learn it for <em>every</em> tour that reuses it.</p>
+<p class="math-intuition"><strong>D̄</strong> is the global mean leg length; it both sets the scale of the confidence bonus and is the default cost an <em>unseen</em> edge is assigned. Under-driven legs get a fat bonus, so their LCB looks cheap and the solver wants to route through them.</p>
+<p class="math-intuition"><strong>The escape:</strong> you never enumerate the ~10<sup>65</sup> tours. You estimate the C(52,2) = 1326 edge parameters and let a classical solver assemble them — a factorial search collapses into per-edge estimation.</p>
 </div>
 
 <p>2-opt is the perfect base solver here precisely because each swap touches only <em>two</em> edges. Deciding whether a swap helps is a comparison of two edge estimates against two others — exactly the kind of per-component question semi-bandit feedback answers cheaply. A method that had to compare whole 52-stop tours could never keep up.</p>
+
+<div class="algo-box">
+<div class="title">Three tour strategies</div>
+<div class="algo-tabs" role="tablist" aria-label="Tour strategies">
+  <button class="algo-tab on" data-tab="random">random tours</button>
+  <button class="algo-tab" data-tab="mean">2-opt on mean estimates</button>
+  <button class="algo-tab" data-tab="ucb">CombUCB (2-opt on LCB)</button>
+</div>
+<div class="algo-panel on" data-panel="random">
+  <h4>Random tours: no model at all</h4>
+  <p><strong>Intuition:</strong> shuffle the 52 stops into a fresh permutation each day and pay for it. There is no belief, no estimation — pure sampling of the tour space.</p>
+  <div class="latex-line"><span class="eq">T ~ Uniform(permutations), c(T) = Σ<sub>(i,j)∈T</sub> d<sub>ij</sub></span></div>
+  <ul>
+    <li><strong>Good:</strong> trivially unbiased coverage of edges; a useful floor to race against.</li>
+    <li><strong>Bad:</strong> never improves — it sits tens of percent over 7542 forever, since nothing accumulates into a better tour.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="mean">
+  <h4>2-opt on mean estimates: greedy, no exploration</h4>
+  <p><strong>Intuition:</strong> trust the running averages. Run 2-opt on the mean matrix d̂<sub>ij</sub>, drive the result, fold the new samples back in. No bonus, no deliberate probing.</p>
+  <div class="latex-line"><span class="eq">d̂<sub>ij</sub> = mean samples (default D̄ if unseen), T = 2-opt(d̂)</span></div>
+  <p class="math-intuition">Unseen edges default to the global mean <strong>D̄</strong>. If a genuinely short leg has never been driven, it looks merely average — so 2-opt has no reason to route through it, so it stays unseen. The estimate is biased by the legs it has not yet sampled.</p>
+  <ul>
+    <li><strong>Good:</strong> exploits known-good legs immediately; cheap and stable.</li>
+    <li><strong>Bad:</strong> no exploration → can lock onto a tour built from already-seen edges and never discover a cheaper unseen shortcut.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="ucb">
+  <h4>CombUCB: 2-opt on the lower confidence bound</h4>
+  <p><strong>Intuition:</strong> optimism in the face of uncertainty, per edge. Subtract a confidence bonus from each leg's mean and 2-opt on <em>those</em> costs, so under-sampled legs look cheap and the tour deliberately probes them.</p>
+  <div class="latex-line"><span class="eq">LCB<sub>ij</sub> = d̂<sub>ij</sub> − β · D̄ · √(ln t / (n<sub>ij</sub> + 1)), T = 2-opt(LCB)</span></div>
+  <p class="math-intuition">The bonus shrinks as n<sub>ij</sub> grows, so a leg is over-probed only until its estimate tightens, then the LCB relaxes back toward d̂<sub>ij</sub> and 2-opt stops favouring it.</p>
+  <ul>
+    <li><strong>Good:</strong> directed exploration of short under-sampled legs; converges to a few percent over 7542 without ever being told a distance.</li>
+    <li><strong>Bad:</strong> β too large wastes days probing; the generic √ bonus can over-explore where a tighter model would commit sooner.</li>
+  </ul>
+</div>
+</div>
+
+<p>The three strategies are the three curves in the widget below. They share the same solver — bounded 2-opt — and differ only in the matrix it runs on: nothing, the means, or the optimistic lower bound. That is the whole lesson of a combinatorial bandit: the optimism lives in the inputs, the algorithm stays the same.</p>
+
+<h3>For contrast: when the distances are known</h3>
+
+<div class="algo-grid">
+  <div class="algo-card">
+    <h4>Exact: Held-Karp DP</h4>
+    <p>Dynamic program over (visited-subset, current-city). Returns the provably optimal tour.</p>
+    <div class="formula">time O(2<sup>n</sup> n<sup>2</sup>), space O(2<sup>n</sup> n)</div>
+    <p>Exact but exponential — fine for n ≈ 20, hopeless at n = 52.</p>
+  </div>
+  <div class="algo-card">
+    <h4>Christofides</h4>
+    <p>MST + minimum matching on odd-degree nodes + shortcutting. Polynomial, with a worst-case guarantee on metric instances.</p>
+    <div class="formula">cost ≤ 1.5 × optimum</div>
+    <p>Cheap, provably close, no local-optimum trap.</p>
+  </div>
+  <div class="algo-card">
+    <h4>2-opt local search</h4>
+    <p>Repeatedly uncross two edges while it lowers cost; halts at a local optimum.</p>
+    <div class="formula">each swap: Δ = (d<sub>ac</sub> + d<sub>bd</sub>) − (d<sub>ab</sub> + d<sub>cd</sub>)</div>
+    <p>No guarantee, but lands within a few percent in milliseconds — the workhorse the bandit wraps.</p>
+  </div>
+</div>
 
 <hr class="scene">
 
@@ -479,6 +565,16 @@ window.__component={name:'tsp/berlin52',mount:mountBerlin52};
     mountBerlin52(widgetEl,{seed:7});
   }
 })();
+
+// ----- algo-box tab switching (scoped per box) -----
+document.querySelectorAll('.algo-tab').forEach(btn=>{
+  btn.onclick=()=>{
+    const key=btn.dataset.tab;
+    const box=btn.closest('.algo-box');
+    box.querySelectorAll('.algo-tab').forEach(b=>b.classList.toggle('on',b===btn));
+    box.querySelectorAll('.algo-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===key));
+  };
+});
 </script>
 </body>
 </html>
