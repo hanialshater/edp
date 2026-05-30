@@ -26,6 +26,25 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
 .mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
 .mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
+.latex-line{font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--fg);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0;overflow-x:auto}
+.latex-line .label{color:var(--dim);margin-right:8px}.latex-line .eq{font-size:14px;color:#fff}.latex-line sup,.latex-line sub{line-height:0}
+.math-intuition{color:var(--dim);font-size:13.5px;margin-top:8px}
+.algo-box{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:15px;margin:18px 0;font-size:14px}
+.algo-box .title{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.algo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.algo-tab{font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;cursor:pointer}
+.algo-tab.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.algo-panel{display:none;background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:13px}
+.algo-panel.on{display:block}.algo-panel h4{margin:0 0 8px;font-size:15px;color:#fff}.algo-panel p{margin:8px 0;color:var(--dim);line-height:1.48}
+.algo-panel ul{margin:8px 0 0 18px;padding:0;color:var(--dim)}.algo-panel li{margin:4px 0}
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.algo-card{background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:12px}
+.algo-card h4{margin:0 0 6px;font-size:14px;color:#fff}.algo-card p{margin:7px 0;color:var(--dim);line-height:1.45}
+.algo-card .formula{font-family:var(--mono);font-size:12px;color:var(--fg);background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;margin:8px 0}
+.restable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;margin-top:4px}
+.restable th{text-align:left;color:var(--dim);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:0.06em;padding:6px 8px;border-bottom:1px solid var(--border)}
+.restable td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--fg)}
+.restable tr:last-child td{border-bottom:0}.restable td.good{color:var(--good)}.restable td.bad{color:var(--warn)}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 @media (max-width:700px){.row{grid-template-columns:1fr}}
 .col{background:var(--code);border-radius:8px;padding:12px}
@@ -67,7 +86,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 6 / 7 · <a href="../05-opro/">← prev</a> · <a href="../">index</a> · <a href="../06-edp-adapts/">next →</a></span></div>
 
 <h1>Human-like priors as executable policy</h1>
-<p class="subtitle">OPRO explores by proposing candidates from score history. EDP makes the next move: put the guess inside a readable model, estimate hidden parameters from signals, and run the solver on that estimate.</p>
+<p class="subtitle">Posts <a href="../01-bandit/">1</a>–<a href="../04-tsp/">4</a> learned by exploring; <a href="../05-opro/">Post 5</a> learned by reasoning from world knowledge. EDP fuses them: the LLM authors a readable model from what it knows, the solver runs on it from session zero, and data calibrates the same named parameters — world knowledge for the cold-start, exploration for the rest.</p>
 
 <div class="banner">
 <b>Live: an actual EDP instance from the research project</b> · 245 named parameters, authored offline from shopping psychology, zero training data. Drag the sliders — watch hidden intent estimates change, then watch the solver compose a page.
@@ -85,13 +104,13 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <div class="mathbox">
 <div class="title">EDP / GAM object</div>
-<ul>
-<li><strong>Signals:</strong> observed features <code>x</code>, such as clicks, price dwell, weather, congestion, or review text scores.</li>
-<li><strong>Latents:</strong> problem intensities <code>z_p = Σ_j w_{pj} g_{pj}(x_j)</code>, where <code>g</code> are named piecewise-linear curves.</li>
-<li><strong>Module score:</strong> <code>score(w) = base + Σ_p on_rem_p · remaining_p + Σ_p on_cov_p · coverage_p − decay · slot</code>.</li>
-<li><strong>Solver:</strong> greedy composition chooses the next widget with the highest score, updates remaining/coverage, repeats.</li>
-<li><strong>Edit unit:</strong> one named scalar or breakpoint, e.g. <code>size_guide.on_rem.F32</code>, with a human-readable reason.</li>
-</ul>
+<div class="latex-line"><span class="label">Signals:</span><span class="eq">x = observed features (clicks, price dwell, weather, review scores …)</span></div>
+<div class="latex-line"><span class="label">Latent intensities:</span><span class="eq">z<sub>p</sub> = Σ<sub>j</sub> w<sub>pj</sub> · g<sub>pj</sub>(x<sub>j</sub>) &nbsp; — g<sub>pj</sub> named piecewise-linear curves</span></div>
+<div class="latex-line"><span class="label">Module score:</span><span class="eq">s(m) = base<sub>m</sub> + Σ<sub>p</sub> on_rem<sub>m,p</sub>·remaining<sub>p</sub> + Σ<sub>p</sub> on_cov<sub>m,p</sub>·coverage<sub>p</sub> − decay<sub>m</sub>·slot</span></div>
+<div class="latex-line"><span class="label">Solver (greedy):</span><span class="eq">at each slot pick argmax<sub>m</sub> s(m); update remaining/coverage; repeat ×6</span></div>
+<div class="latex-line"><span class="label">Edit unit:</span><span class="eq">one named scalar, e.g. size_guide.on_rem.F32 ← 2.4, with a reason</span></div>
+<p class="math-intuition"><strong>Why a GAM:</strong> the policy is a <em>sum of named contributions</em>, so every decision factors into readable terms and every parameter has an address an LLM can name and a human can plot. That is what makes it editable by both — the property a neural net's <span class="eq">weights[847][22]</span> does not have.</p>
+<p class="math-intuition"><strong>The fusion (from Post 5):</strong> the LLM authors <span class="eq">{w, g, on_rem, …}</span> from world knowledge — the warm start OPRO gave you — and a regularised-SGD channel nudges those same named scalars from data — the explore-and-correct loop the bandits gave you. <span class="eq">θ ← θ<sub>LLM</sub> + SGD-correction</span>.</p>
 </div>
 
 <p>Below is the paper's largest instance: whole-page optimization. Move the persona sliders to simulate different shoppers; watch the 7 problem scores (Layer 1) recompute; watch the 6-widget page (Layer 2) recompose. This is what the policy <em>does</em> at every page render: it reads signals, evaluates named scalars in pure code, and returns a page in about 1 ms. No LLM in the serving path.</p>
@@ -136,6 +155,34 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <p>Two reasons. First, the grammar is small and named, so an LLM can hold the entire policy in one prompt, edit a curve, and have the change be both <em>readable</em> (a human sees what changed) and <em>executable</em> (the system serves the new version with no retraining). Try asking a model to directly choose every route, sort order, or page at runtime; now compare that with asking it to edit <code>fit_reassurance.on_rem.F32 = 2.4</code> in a 9 KB JSON. The latter is reviewable software.</p>
 
 <p>Second — and this is the load-bearing move — the small named GAM is a <em>fixed compositional structure</em>, not free-form code. Every page decision factors as <code>base + Σ(on_rem · remaining) + Σ(on_cov · coverage) − slot_decay · slot</code>. The LLM doesn't write the algorithm; it writes the numbers. The algorithm runs in microseconds, deterministically, in pure Python or compiled JavaScript.</p>
+
+<div class="algo-box">
+<div class="title">Three artifacts an LLM might hand you</div>
+<div class="algo-tabs" role="tablist" aria-label="What the LLM produces">
+  <button class="algo-tab on" data-tab="weights">neural weights</button>
+  <button class="algo-tab" data-tab="string">OPRO string</button>
+  <button class="algo-tab" data-tab="gam">EDP / named GAM</button>
+</div>
+<div class="algo-panel on" data-panel="weights">
+  <h4>A trained neural net: not closed under edits</h4>
+  <p><strong>Intuition:</strong> powerful, but the policy lives in thousands of anonymous weights. There is no <span class="eq">weights[847][22]</span> an LLM can reason about, and no plot a human can audit.</p>
+  <div class="latex-line"><span class="eq">a = f<sub>θ</sub>(x),&nbsp; θ ∈ ℝ<sup>thousands</sup>, unnamed</span></div>
+  <ul><li><strong>Learns from data:</strong> yes (gradient).</li><li><strong>LLM-editable / human-auditable:</strong> no.</li></ul>
+</div>
+<div class="algo-panel" data-panel="string">
+  <h4>An OPRO free-form string: editable but ungrounded</h4>
+  <p><strong>Intuition:</strong> Post 5's artifact — a candidate the LLM proposes from score history. The model can rewrite it, but there is no fixed structure, no per-parameter meaning, and no gradient channel to calibrate it from data.</p>
+  <div class="latex-line"><span class="eq">x<sub>t+1</sub> ~ π<sub>LLM</sub>(x | scored history)</span></div>
+  <ul><li><strong>Learns from data:</strong> only via score-only re-proposal (weak).</li><li><strong>LLM-editable:</strong> yes; <strong>typed / auditable:</strong> no.</li></ul>
+</div>
+<div class="algo-panel" data-panel="gam">
+  <h4>A named GAM: closed under both LLM and gradient edits</h4>
+  <p><strong>Intuition:</strong> ~245 named scalars. Small enough to fit in one prompt, typed enough that every edit is well-formed and plottable, and differentiable so SGD can calibrate the same numbers from data. This is the EDP fit — and why it sits between the other two.</p>
+  <div class="latex-line"><span class="eq">θ = {w<sub>pj</sub>, g<sub>pj</sub>, base<sub>m</sub>, on_rem<sub>m,p</sub>, …},&nbsp; ~245 named scalars</span></div>
+  <div class="latex-line"><span class="eq">θ ← θ<sub>LLM-authored</sub> &nbsp;then&nbsp; θ ← θ − η ∇<sub>θ</sub> regret (regularised)</span></div>
+  <ul><li><strong>Learns from data:</strong> yes (SGD on named params).</li><li><strong>LLM-editable + human-auditable:</strong> yes. Closure under both.</li></ul>
+</div>
+</div>
 
 <h3>Act 3 — What this skips, and what it doesn't</h3>
 
@@ -203,6 +250,8 @@ function render(){
 
 const pdiv=document.getElementById('personas');for(const k of Object.keys(PERSONAS)){const b=document.createElement('button');b.textContent=k;b.onclick=()=>setPersona(k);pdiv.appendChild(b);}
 setPersona('size-anxious');
+// theory algo-box tabs (scoped per box)
+document.querySelectorAll('.algo-tab').forEach(btn=>{btn.onclick=()=>{const key=btn.dataset.tab,box=btn.closest('.algo-box');box.querySelectorAll('.algo-tab').forEach(b=>b.classList.toggle('on',b===btn));box.querySelectorAll('.algo-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===key));};});
 </script>
 </body>
 </html>

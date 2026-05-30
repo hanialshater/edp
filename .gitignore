@@ -15,3 +15,5 @@ results/*.npz
 # Multi-seed agent-edit dirs are run-specific
 state/evolve_state_rep*/
 state/opro_state_rep*/
+# Transient state from the blog EDP/OPRO harness agent runs
+blog/components/edp_state.json
