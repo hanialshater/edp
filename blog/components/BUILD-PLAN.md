@@ -3,6 +3,11 @@
 Live tracker for the component-first rebuild of posts 2/3/4. Updated every
 build round. Workflow rules live in `README.md`; this file is the *state*.
 
+> **Status (current): all three posts composed & pushed.** 02-sort, 03-shortest-path,
+> and 04-tsp now embed the finished components (abstract widgets replaced;
+> prose + BT-vs-CombUCB panel kept). `node components/test.mjs` → 13/13;
+> `node components/test-post.mjs 02-sort/index.html 03-shortest-path/index.html 04-tsp/index.html` → 9/9.
+
 Legend: ☐ todo · ◐ building · ☑ done & smoke-passing · ✦ in post
 
 ## Post 2 · Sort = sports skill estimation
