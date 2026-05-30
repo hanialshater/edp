@@ -18,6 +18,21 @@ hr.scene{border:0;text-align:center;margin:36px 0 20px;color:var(--faint)}hr.sce
 .mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
 .mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
 .mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
+.latex-line{font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--fg);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0;overflow-x:auto}
+.latex-line .label{color:var(--dim);margin-right:8px}.latex-line .eq{font-size:14px;color:#fff}.latex-line sup,.latex-line sub{line-height:0}
+.math-intuition{color:var(--dim);font-size:13.5px;margin-top:8px}
+.algo-box{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:15px;margin:18px 0;font-size:14px}
+.algo-box .title{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.algo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.algo-tab{font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;cursor:pointer}
+.algo-tab.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.algo-panel{display:none;background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:13px}
+.algo-panel.on{display:block}.algo-panel h4{margin:0 0 8px;font-size:15px;color:#fff}.algo-panel p{margin:8px 0;color:var(--dim);line-height:1.48}
+.algo-panel ul{margin:8px 0 0 18px;padding:0;color:var(--dim)}.algo-panel li{margin:4px 0}
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.algo-card{background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:12px}
+.algo-card h4{margin:0 0 6px;font-size:14px;color:#fff}.algo-card p{margin:7px 0;color:var(--dim);line-height:1.45}
+.algo-card .formula{font-family:var(--mono);font-size:12px;color:var(--fg);background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;margin:8px 0}
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 12px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:700}button.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
 .tabs{display:flex;flex-wrap:wrap;gap:8px}.tabs button{font-size:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -56,14 +71,59 @@ score   = hidden_objective(next)
 history.append((next, score))</pre>
 
 <div class="mathbox">
-<div class="title">OPRO object</div>
-<ul>
-<li><strong>Unknown:</strong> black-box objective <code>F(x)</code>; you can score candidates but not inspect gradients.</li>
-<li><strong>Action:</strong> propose a candidate string/JSON object <code>x_t</code>.</li>
-<li><strong>Feedback:</strong> observe scalar score <code>y_t = F(x_t)</code>, often lower is better.</li>
-<li><strong>Prompt state:</strong> history <code>H_t = {(x_i, y_i)}</code>, sorted or summarized for the LLM.</li>
-<li><strong>Risk:</strong> score-only feedback gives no local gradient, no uncertainty estimate, and weak validity guarantees.</li>
-</ul>
+<div class="title">OPRO object (Yang et al., 2023)</div>
+<div class="latex-line"><span class="label">Unknown objective:</span><span class="eq">F : 𝒳 → ℝ &nbsp; (black box — score it, can't differentiate it)</span></div>
+<div class="latex-line"><span class="label">Action at step t:</span><span class="eq">x<sub>t</sub> ∈ 𝒳 &nbsp; (a candidate string / JSON object)</span></div>
+<div class="latex-line"><span class="label">Feedback:</span><span class="eq">y<sub>t</sub> = F(x<sub>t</sub>) &nbsp; (scalar score; here lower is better)</span></div>
+<div class="latex-line"><span class="label">Prompt state:</span><span class="eq">H<sub>t</sub> = {(x<sub>i</sub>, y<sub>i</sub>)}<sub>i&lt;t</sub>, sorted by score</span></div>
+<div class="latex-line"><span class="label">Proposal:</span><span class="eq">x<sub>t</sub> ~ LLM(· | H<sub>t</sub>, instruction) &nbsp; — the model <em>is</em> the policy π(x | H)</span></div>
+<p class="math-intuition"><strong>Intuition:</strong> a bandit keeps an explicit estimate <span class="eq">μ̂</span> and bonus per arm; OPRO keeps <em>nothing</em> but the text of past attempts and their scores, and asks the LLM to be the optimizer. The model's pattern-matching over <span class="eq">H<sub>t</sub></span> stands in for the posterior and the acquisition function at once.</p>
+<p class="math-intuition"><strong>The catch:</strong> score-only feedback gives no local gradient <span class="eq">∇F</span>, no calibrated uncertainty, and no validity guarantee — the next <span class="eq">x<sub>t</sub></span> can be malformed JSON or an infeasible point. This is exactly why Post 6 hands the LLM a <em>structured</em> artifact to edit instead of a free string.</p>
+</div>
+
+<div class="algo-box">
+<div class="title">What kind of optimizer is the LLM imitating?</div>
+<div class="algo-tabs" role="tablist" aria-label="Black-box optimizers">
+  <button class="algo-tab on" data-tab="rs">random / local search</button>
+  <button class="algo-tab" data-tab="bo">Bayesian optimization</button>
+  <button class="algo-tab" data-tab="es">evolution (CMA-ES)</button>
+  <button class="algo-tab" data-tab="opro">OPRO (LLM)</button>
+</div>
+<div class="algo-panel on" data-panel="rs">
+  <h4>Random / hill-climbing: the dumb baselines</h4>
+  <p><strong>Intuition:</strong> perturb the best candidate so far and keep what scores better. No model of <span class="eq">F</span>, just trial and error.</p>
+  <div class="latex-line"><span class="eq">x<sub>t+1</sub> = x* + ε,&nbsp; ε ~ 𝒩(0, σ²I);&nbsp; accept if F(x<sub>t+1</sub>) &lt; F(x*)</span></div>
+  <ul><li><strong>Good:</strong> trivial, needs no gradient.</li><li><strong>Bad:</strong> blind in high dimensions; wastes the structure in the score history.</li></ul>
+</div>
+<div class="algo-panel" data-panel="bo">
+  <h4>Bayesian optimization: a posterior + an acquisition rule</h4>
+  <p><strong>Intuition:</strong> fit a surrogate (a Gaussian process) to the observed <span class="eq">(x<sub>i</sub>, y<sub>i</sub>)</span>, then pick the next point by an explicit explore/exploit rule — the same optimism we saw in UCB.</p>
+  <div class="latex-line"><span class="eq">x<sub>t+1</sub> = argmin<sub>x</sub> [ μ̂(x) − κ·σ̂(x) ]&nbsp; (lower confidence bound)</span></div>
+  <p class="math-intuition">OPRO is the model-free shadow of this: the LLM never writes down <span class="eq">μ̂</span> or <span class="eq">σ̂</span>, but a good proposal balances "near the best so far" (exploit) with "somewhere new" (explore) — the acquisition trade-off, done implicitly in text.</p>
+  <ul><li><strong>Good:</strong> sample-efficient, calibrated uncertainty.</li><li><strong>Bad:</strong> needs a numeric space + a kernel; awkward for strings, routes, or JSON.</li></ul>
+</div>
+<div class="algo-panel" data-panel="es">
+  <h4>Evolution strategies: a population that drifts toward good regions</h4>
+  <p><strong>Intuition:</strong> sample a population, score it, move the sampling distribution toward the winners. Gradient-free, handles odd search spaces.</p>
+  <div class="latex-line"><span class="eq">m<sub>t+1</sub> = m<sub>t</sub> + η Σ<sub>k</sub> w<sub>k</sub> (x<sub>k</sub> − m<sub>t</sub>),&nbsp; w<sub>k</sub> ranked by score</span></div>
+  <ul><li><strong>Good:</strong> robust on rugged, non-differentiable landscapes.</li><li><strong>Bad:</strong> many evaluations per step; no semantic prior about what a "reasonable" candidate looks like.</li></ul>
+</div>
+<div class="algo-panel" data-panel="opro">
+  <h4>OPRO: the LLM as a learned, semantic proposal distribution</h4>
+  <p><strong>Intuition:</strong> the prompt <em>is</em> the algorithm. Feed the sorted history and an instruction; the model proposes the next candidate. It brings a prior no numeric optimizer has — it "knows" what a plausible regression coefficient, tour, or feasible point looks like.</p>
+  <div class="latex-line"><span class="eq">x<sub>t+1</sub> ~ π<sub>LLM</sub>(x | sort(H<sub>t</sub>), instruction)</span></div>
+  <p class="math-intuition">That semantic prior is the upside and the danger: it can leap to a good region in one shot, or confidently propose an invalid or non-improving move because it has no scored model of <span class="eq">F</span> to check itself against.</p>
+  <ul><li><strong>Good:</strong> handles strings/JSON natively; warm priors; zero tuning.</li><li><strong>Bad:</strong> no gradient or uncertainty; can stall, repeat, or emit malformed output.</li></ul>
+</div>
+</div>
+
+<div class="mathbox">
+<div class="title">The result that motivates EDP (paper §5.4)</div>
+<p style="margin:2px 0 8px;color:var(--dim);font-size:13.5px">In the WPO-Gym ablation, the <em>same</em> LLM and edit grammar were given two prompt diets. Score-only (OPRO-style) feedback is measurably weaker than structured context (domain priors + a diagnostic report):</p>
+<div class="latex-line"><span class="label">OPRO prompt:</span><span class="eq">H<sub>t</sub> = (edit_batch<sub>i</sub>, batch_regret<sub>i</sub>) pairs only</span></div>
+<div class="latex-line"><span class="label">Structured prompt:</span><span class="eq">priors ⊕ per-persona regret ⊕ widget activation ⊕ H<sub>t</sub></span></div>
+<div class="latex-line"><span class="label">LLM simulator:</span><span class="eq">structured 13.3% &nbsp;vs&nbsp; OPRO 15.8% &nbsp;vs&nbsp; static 19.8% oracle-regret</span></div>
+<p class="math-intuition"><strong>Reading:</strong> on the harder simulator, removing the structure costs ~2.4 pp (≈2.2σ at N=3–4 — suggestive, not conclusive). Score-only search captures <em>some</em> of the gain by probing plausible directions, but the structured artifact is what lets the editor reason about <em>which</em> curve to nudge. That artifact is the subject of the next post.</p>
 </div>
 
 <div class="panel">
@@ -211,6 +271,8 @@ function draw(){const cv=document.getElementById('viz');const dpr=window.deviceP
 function escapeHtml(s){return s.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');task=b.dataset.task;history=[];proposalIx=0;els.raw.textContent='Task changed. Seed the history to begin.';render();});
+// theory algo-box tabs (scoped per box, independent of the playground .tab handler)
+document.querySelectorAll('.algo-tab').forEach(btn=>{btn.onclick=()=>{const key=btn.dataset.tab,box=btn.closest('.algo-box');box.querySelectorAll('.algo-tab').forEach(b=>b.classList.toggle('on',b===btn));box.querySelectorAll('.algo-panel').forEach(p=>p.classList.toggle('on',p.dataset.panel===key));};});
 document.getElementById('seed').onclick=seedHistory;document.getElementById('recorded').onclick=recordedNext;document.getElementById('live').onclick=liveNext;document.getElementById('reset').onclick=()=>{history=[];proposalIx=0;els.raw.textContent='Reset.';render();};
 window.addEventListener('resize',draw);loadProvider();render();
 </script>
