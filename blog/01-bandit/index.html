@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1 · Picking the max when you don't know the numbers</title>
+<title>1 · Choosing dinner when you don't know the best restaurant</title>
 <style>
 :root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,"SF Mono",Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
@@ -22,13 +22,43 @@ em{color:var(--fg);font-style:italic}
 strong{color:#fff}
 hr.scene{border:0;text-align:center;margin:44px 0 24px;color:var(--faint)}
 hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);font-size:12px}
-.hero{background:linear-gradient(180deg,var(--card) 0%,var(--bg) 100%);border:1px solid var(--border);border-radius:14px;padding:18px;margin:0 0 32px;position:relative;overflow:hidden}
-.hero-title{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
-.hero canvas{display:block;width:100%;height:180px;background:transparent}
-.hero-caption{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:8px;display:flex;justify-content:space-between}
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
 .widget h2{margin-top:0;font-size:18px;border:0}
 .legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
+.problem-card{background:linear-gradient(180deg,#172744,var(--code));border:1px solid #284065;border-radius:12px;padding:18px;margin:24px 0 34px;box-shadow:0 18px 50px rgba(0,0,0,0.22)}
+.problem-card h2{font-size:18px;margin:0 0 8px}
+.problem-card p{font-size:14.5px;color:var(--dim);margin:8px 0 14px}
+.restaurant-scene{width:100%;height:auto;display:block;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+.restaurant-scene text{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.latex-line{font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--fg);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0;overflow-x:auto}
+.latex-line .label{color:var(--dim);margin-right:8px}
+.latex-line .eq{font-size:14px;color:#fff}
+.latex-line sup,.latex-line sub{line-height:0}
+.math-intuition{color:var(--dim);font-size:13.5px;margin-top:8px}
+.restaurant-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px}
+.restaurant-legend div{background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.restaurant-legend b{display:block;color:var(--fg);font-size:12px;margin-bottom:2px}
+.algo-box{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:15px;margin:18px 0;font-size:14px}
+.algo-box .title{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.algo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.algo-tab{font-size:12px;padding:6px 10px}
+.algo-tab.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.algo-panel{display:none;background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:13px}
+.algo-panel.on{display:block}
+.algo-panel h4{margin:0 0 8px;font-size:15px;color:#fff}
+.algo-panel p{margin:8px 0;color:var(--dim);line-height:1.48}
+.algo-panel ul{margin:8px 0 0 18px;padding:0;color:var(--dim)}
+.algo-panel li{margin:4px 0}
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.algo-card{background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:8px;padding:12px}
+.algo-card h4{margin:0 0 6px;font-size:14px;color:#fff}
+.algo-card p{margin:7px 0;color:var(--dim);line-height:1.45}
+.algo-card .formula{font-family:var(--mono);font-size:12px;color:var(--fg);background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;margin:8px 0}
+.algo-card ol{margin:8px 0 0 18px;padding:0;color:var(--dim)}
+.algo-card li{margin:4px 0}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}
@@ -41,12 +71,16 @@ select{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(
 .stat{background:var(--code);padding:9px 11px;border-radius:6px}
 .stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
 .stat .value{color:var(--fg);font-size:17px;margin-top:3px}
+.stat .sub{color:var(--dim);font-size:10.5px;margin-top:2px}
 canvas{display:block;width:100%;background:var(--code);border-radius:6px}
-.arms{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.arms{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;margin-bottom:12px}
 .arm{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:border-color 0.12s,transform 0.08s}
 .arm:hover{border-color:var(--accent)}
 .arm:active{transform:scale(0.98)}
-.arm .top{font-family:var(--mono);font-size:10.5px;color:var(--dim);display:flex;justify-content:space-between;margin-bottom:6px}
+.arm .top{font-family:var(--mono);font-size:10.5px;color:var(--dim);display:flex;justify-content:space-between;gap:6px;margin-bottom:6px}
+.arm .name{color:var(--fg);font-weight:600;font-size:11.5px;line-height:1.25}
+.arm .tag{font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:1.3;min-height:28px}
+.arm-icon{display:block;width:38px;height:30px;margin:2px 0 6px}
 .arm .bar{height:5px;background:var(--bg);border-radius:3px;margin:6px 0;overflow:hidden;position:relative}
 .arm .bar > div{height:100%;border-radius:3px;transition:width 0.2s}
 .arm .mu{font-family:var(--mono);font-size:13px;color:var(--fg);margin-top:2px}
@@ -54,40 +88,159 @@ canvas{display:block;width:100%;background:var(--code);border-radius:6px}
 .arm.star{border-color:var(--good)}
 .policy-pills{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px}
 .policy-pills button{font-size:11.5px;padding:5px 9px}
+.context-card{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:12px;margin:12px 0}
+.context-title{font-family:var(--mono);font-size:12px;color:var(--fg);margin-bottom:8px}
+.context-chips{display:flex;flex-wrap:wrap;gap:6px}
+.context-chips span{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--border);border-radius:999px;padding:4px 8px;background:rgba(255,255,255,0.035)}
+.context-chips span.on{color:var(--good);border-color:rgba(95,210,163,0.45);background:rgba(95,210,163,0.08)}
 footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
-@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:25px}.arms{grid-template-columns:repeat(2,1fr)}.hero canvas{height:140px}}
+@media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:25px}.arms{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:430px){.algo-grid{grid-template-columns:1fr}.arms{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 1 / 6 · <a href="../">index</a> · <a href="../02-sort/">next →</a></span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 1 / 7 · <a href="../">index</a> · <a href="../02-sort/">next →</a></span></div>
 
-<h1>Picking the max when you don't know the numbers</h1>
-<p class="subtitle">Five things in a row. One is best. You can sample them, noisily, one at a time, and every sample costs you. Pick well, or pay.</p>
+<h1>Choosing dinner when you don't know the best restaurant</h1>
+<p class="subtitle">Five restaurants nearby. One will make you happiest on average. You can try only one tonight, your experience is noisy, and every mediocre dinner costs you a chance at a better one.</p>
 
-<div class="hero">
-  <div class="hero-title">live demo · three policies racing for the same 1,000 pulls</div>
-  <canvas id="hero"></canvas>
-  <div class="hero-caption"><span id="hero-status">running…</span><span id="hero-best">—</span></div>
+<p>That is <em>the multi-armed bandit problem</em>: choose one option, observe one noisy outcome, update your belief, and repeat. The hard part is deciding how many bad dinners you are willing to buy in order to learn which restaurant is actually best.</p>
+
+<div class="problem-card">
+<h2>Tonight's real bandit</h2>
+<p>You are not optimizing a casino. You are choosing where to eat. Each restaurant is an <strong>arm</strong>. A visit is a <strong>pull</strong>. The reward is whether tonight was good enough that you would choose it again. You never observe the restaurant's true average quality; you only observe one noisy dinner at a time.</p>
+<svg class="restaurant-scene" viewBox="0 0 720 370" role="img" aria-label="Bandit loop: choose one restaurant, observe one reward, update beliefs">
+  <defs>
+    <linearGradient id="loopBg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#162845"/>
+      <stop offset="0.58" stop-color="#10213a"/>
+      <stop offset="1" stop-color="#0e1626"/>
+    </linearGradient>
+    <linearGradient id="sushiCard" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#243b64"/>
+      <stop offset="1" stop-color="#18233a"/>
+    </linearGradient>
+    <linearGradient id="receipt" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#193455"/>
+      <stop offset="1" stop-color="#121c31"/>
+    </linearGradient>
+    <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4c8df6"/>
+    </marker>
+  </defs>
+  <rect width="720" height="370" fill="url(#loopBg)"/>
+  <path d="M0 298 C120 250, 222 284, 350 246 C476 208, 585 248, 720 198 L720 370 L0 370 Z" fill="#0b1220" opacity=".35"/>
+  <text x="32" y="34" fill="#e6edf3" font-size="17">Bandit loop: choose, observe, update</text>
+  <text x="32" y="57" fill="#9aa8c0" font-size="11">The unchosen restaurants stay counterfactual. Only tonight's dinner becomes data.</text>
+
+  <g transform="translate(36 88)">
+    <rect width="210" height="172" rx="14" fill="#111d33" stroke="#284065"/>
+    <text x="18" y="28" fill="#e6edf3" font-size="13">belief state before dinner</text>
+    <text x="18" y="48" fill="#8b95a8" font-size="10">estimated satisfaction + uncertainty</text>
+    <g transform="translate(18 67)">
+      <text x="0" y="0" fill="#8b95a8" font-size="10">Ramen</text>
+      <rect x="58" y="-8" width="96" height="8" rx="4" fill="#0b1220"/><rect x="58" y="-8" width="38" height="8" rx="4" fill="#4c8df6"/>
+      <line x1="100" y1="-14" x2="132" y2="6" stroke="#8b95a8" stroke-width="1"/>
+      <text x="162" y="0" fill="#8b95a8" font-size="10">wide</text>
+    </g>
+    <g transform="translate(18 94)">
+      <text x="0" y="0" fill="#8b95a8" font-size="10">Taco</text>
+      <rect x="58" y="-8" width="96" height="8" rx="4" fill="#0b1220"/><rect x="58" y="-8" width="56" height="8" rx="4" fill="#5fd2a3"/>
+      <line x1="96" y1="-13" x2="119" y2="5" stroke="#8b95a8" stroke-width="1"/>
+      <text x="162" y="0" fill="#8b95a8" font-size="10">some</text>
+    </g>
+    <g transform="translate(18 121)">
+      <text x="0" y="0" fill="#8b95a8" font-size="10">Sushi</text>
+      <rect x="58" y="-8" width="96" height="8" rx="4" fill="#0b1220"/><rect x="58" y="-8" width="70" height="8" rx="4" fill="#c879f0"/>
+      <line x1="116" y1="-12" x2="132" y2="4" stroke="#5fd2a3" stroke-width="1.5"/>
+      <text x="162" y="0" fill="#5fd2a3" font-size="10">best?</text>
+    </g>
+    <g transform="translate(18 148)">
+      <text x="0" y="0" fill="#8b95a8" font-size="10">Pasta</text>
+      <rect x="58" y="-8" width="96" height="8" rx="4" fill="#0b1220"/><rect x="58" y="-8" width="44" height="8" rx="4" fill="#e16c6c"/>
+      <line x1="91" y1="-12" x2="106" y2="4" stroke="#8b95a8" stroke-width="1"/>
+      <text x="162" y="0" fill="#8b95a8" font-size="10">known</text>
+    </g>
+  </g>
+
+  <g transform="translate(286 78)">
+    <rect width="164" height="82" rx="14" fill="#121f36" stroke="#4c8df6"/>
+    <text x="82" y="25" text-anchor="middle" fill="#e6edf3" font-size="13">policy picks arm</text>
+    <text x="82" y="45" text-anchor="middle" fill="#8b95a8" font-size="10">UCB / Thompson / ε-greedy</text>
+    <path d="M48 61 H116" stroke="#4c8df6" stroke-width="4" stroke-linecap="round"/>
+    <path d="M106 52 L123 61 L106 70" fill="none" stroke="#4c8df6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(501 67)">
+    <rect width="154" height="112" rx="14" fill="url(#sushiCard)" stroke="#5fd2a3" stroke-width="2"/>
+    <path d="M20 42 L77 14 L134 42" fill="#25395f" stroke="#5fd2a3"/>
+    <rect x="28" y="42" width="98" height="42" rx="8" fill="#101b30" stroke="#30476f"/>
+    <circle cx="77" cy="63" r="14" fill="#0b1220" stroke="#c879f0" stroke-width="2"/>
+    <path d="M65 59 H89 M65 67 H89" stroke="#c879f0" stroke-width="2" stroke-linecap="round"/>
+    <text x="77" y="101" text-anchor="middle" fill="#e6edf3" font-size="13">Sushi Bar</text>
+    <text x="77" y="121" text-anchor="middle" fill="#5fd2a3" font-size="10">chosen tonight</text>
+  </g>
+
+  <path d="M247 152 C265 131, 272 119, 286 119" fill="none" stroke="#4c8df6" stroke-width="2.8" marker-end="url(#arrowHead)"/>
+  <path d="M450 119 C470 111, 482 109, 501 111" fill="none" stroke="#4c8df6" stroke-width="2.8" marker-end="url(#arrowHead)"/>
+
+  <g transform="translate(510 220)">
+    <rect width="160" height="100" rx="14" fill="url(#receipt)" stroke="#4c8df6"/>
+    <text x="80" y="24" text-anchor="middle" fill="#e6edf3" font-size="13">reward receipt</text>
+    <text x="80" y="43" text-anchor="middle" fill="#8b95a8" font-size="10">observed only for Sushi</text>
+    <circle cx="52" cy="69" r="18" fill="#5fd2a3"/>
+    <text x="52" y="75" text-anchor="middle" fill="#0b1220" font-size="17">1</text>
+    <text x="96" y="66" fill="#e6edf3" font-size="11">liked</text>
+    <text x="96" y="82" fill="#8b95a8" font-size="10">r_t = 1</text>
+  </g>
+  <path d="M578 180 C600 196, 604 207, 590 220" fill="none" stroke="#4c8df6" stroke-width="2.8" marker-end="url(#arrowHead)"/>
+
+  <g transform="translate(60 284)">
+    <rect width="246" height="58" rx="14" fill="#111d33" stroke="#284065"/>
+    <text x="18" y="23" fill="#e6edf3" font-size="12">update beliefs, not reality</text>
+    <text x="18" y="42" fill="#8b95a8" font-size="10">Sushi: n ← n+1, μ̂ moves. Others unchanged.</text>
+  </g>
+  <path d="M510 285 C420 344, 268 354, 190 342" fill="none" stroke="#4c8df6" stroke-width="2.8" marker-end="url(#arrowHead)"/>
+  <path d="M96 284 C70 234, 76 189, 118 160" fill="none" stroke="#4c8df6" stroke-width="2.8" marker-end="url(#arrowHead)"/>
+
+  <g transform="translate(326 224)">
+    <rect width="132" height="72" rx="12" fill="#101b30" stroke="#30476f"/>
+    <text x="66" y="24" text-anchor="middle" fill="#e6edf3" font-size="12">counterfactuals</text>
+    <text x="66" y="43" text-anchor="middle" fill="#8b95a8" font-size="10">Ramen? Taco?</text>
+    <text x="66" y="58" text-anchor="middle" fill="#8b95a8" font-size="10">not observed</text>
+  </g>
+</svg>
+<div class="restaurant-legend">
+  <div><b>explore</b>try a place because you still know little</div>
+  <div><b>exploit</b>return to the best place so far</div>
+  <div><b>regret</b>the quality you missed by not picking the true best</div>
 </div>
-
-<p>Above: three algorithms are pulling slot machines you can't see, racing to accumulate reward. The y-axis is cumulative <strong>regret</strong> — the gap between what they got and what the perfect oracle would have gotten. Lower curve = better. None of them know which arm is best when they start.</p>
-
-<p>By the time you've finished this paragraph, all three have figured it out. That's <em>the multi-armed bandit problem</em>, and it is the foundation of every interesting question we'll meet in this series.</p>
+</div>
 
 <hr class="scene">
 
 <h3>Act 1 — The classical problem</h3>
 
-<p>If I hand you five numbers — 0.3, 0.7, 0.5, 0.4, 0.6 — and ask for the max, you scan, you compare, you return 0.7 with index 1. Done in five steps. It's the most boring algorithm in your textbook.</p>
+<p>If I hand you five restaurant scores — 0.3, 0.7, 0.5, 0.4, 0.6 — and ask for the best dinner, you scan, you compare, you return 0.7 with index 1. Done in five steps. It's the most boring algorithm in your textbook.</p>
 
-<p>The interesting version is the one where I don't show you the numbers. I show you five buttons. Each button, when pressed, gives you a noisy sample of a number you can't see. The samples are positive when the underlying number is high, negative when it's low, but they're noisy enough that one pull tells you very little. You have a hundred presses. Or a thousand. Or ten thousand. Pick the order.</p>
+<p>The interesting version is the one where I don't show you the scores. I show you five restaurants. Each dinner gives you a noisy sample of a quality you can't see. Maybe the chef had a good night, maybe you ordered badly, maybe the place is actually great. One visit tells you something, but not enough. You have a hundred dinners. Or a thousand. Or ten thousand. Pick the order.</p>
 
 <h3>Act 2 — The cost of not knowing</h3>
 
-<p>This is the situation of every A/B test (which of five email subject lines should I send?), every recommender (which of five widgets should I show?), every slot-machine floor (which of five machines pays best?). The textbook calls it the <strong>multi-armed bandit</strong>: <em>k</em> arms, each with a hidden reward distribution, one pull per round, noisy reward observed, maximize cumulative reward — equivalently, minimize <strong>regret</strong>, the gap to the oracle.</p>
+<p>This is the situation of every repeated decision under uncertainty: where should we eat, which email subject line should we send, which widget should we show? The textbook calls it the <strong>multi-armed bandit</strong>: <em>k</em> arms, each with a hidden reward distribution, one pull per round, noisy reward observed, maximize cumulative reward — equivalently, minimize <strong>regret</strong>, the gap to the oracle.</p>
 
 <p>You cannot just commit to the best arm after a handful of pulls — early estimates are noisy, you'll often commit to the wrong one. You cannot just keep exploring uniformly — every round spent on a bad arm is regret you don't recover. Every algorithm is a particular way of dividing your pulls between <em>finding out</em> and <em>cashing in</em>.</p>
+
+<div class="mathbox">
+<div class="title">Math object</div>
+<div class="latex-line"><span class="label">Unknown restaurant quality:</span><span class="eq">μ<sub>i</sub> = E[R<sub>t</sub> | a<sub>t</sub> = i]</span></div>
+<div class="latex-line"><span class="label">Action each night:</span><span class="eq">a<sub>t</sub> ∈ {1,...,k}</span></div>
+<div class="latex-line"><span class="label">Observed feedback:</span><span class="eq">r<sub>t</sub> ~ Bernoulli(μ<sub>a<sub>t</sub></sub>)</span></div>
+<div class="latex-line"><span class="label">Cumulative regret:</span><span class="eq">Regret(T) = Σ<sub>t=1</sub><sup>T</sup>(μ* - μ<sub>a<sub>t</sub></sub>), μ* = max<sub>i</sub> μ<sub>i</sub></span></div>
+<p class="math-intuition"><strong>Intuition:</strong> regret is the quality you leave on the table. If Sushi is the true best restaurant and you spend tonight at a weaker place, the difference between those two hidden averages is tonight's expected regret.</p>
+<p class="math-intuition"><strong>The asymmetry:</strong> after choosing arm <span class="eq">a<sub>t</sub></span>, you learn only about that arm. The unchosen restaurants do not reveal counterfactual rewards.</p>
+</div>
 
 <h3>Act 3 — Three policies</h3>
 
@@ -95,15 +248,73 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <ul>
 <li><strong>ε-greedy.</strong> Pull the best-so-far 90% of the time; pull a random arm the other 10%. The randomness is your tax on stagnation.</li>
-<li><strong>UCB1</strong> (Auer et al., 2002). Pull the arm with the highest <code>μ̂ + √(2 ln t / n)</code>: optimism in the face of uncertainty. Arms you've pulled little get a bonus that decays as you sample them. Theoretically beautiful.</li>
+<li><strong>UCB1</strong> (Auer et al., 2002). Pull the arm with the highest <code>μ̂ + √(2 ln t / n)</code>: optimism in the face of uncertainty. Arms you've pulled little get a bonus that decays as you sample them. It is simple and has strong guarantees, but in short runs it can look conservative.</li>
 <li><strong>Thompson sampling</strong> (Thompson, 1933). Keep a posterior over each arm's mean (a Beta for Bernoulli rewards). Each round, sample once from each posterior; pull the arm whose sample was highest. Bayesian. Embarrassingly good in practice.</li>
 </ul>
+
+<p>The loop is almost embarrassingly small. Start every arm with a weak prior. Choose an arm using one of the policies above. Pull it. Update only that arm's estimate. Repeat. What changes between algorithms is not the data they receive, but how they translate <em>estimate plus uncertainty</em> into the next pull.</p>
+
+<div class="algo-box">
+<div class="title">How the algorithms decide</div>
+<div class="algo-tabs" role="tablist" aria-label="Bandit algorithms">
+  <button class="algo-tab on" data-tab="epsilon">ε-greedy</button>
+  <button class="algo-tab" data-tab="ucb">UCB1</button>
+  <button class="algo-tab" data-tab="thompson">Thompson</button>
+  <button class="algo-tab" data-tab="linucb">Contextual LinUCB</button>
+</div>
+<div class="algo-panel on" data-panel="epsilon">
+  <h4>ε-greedy: simplest exploration tax</h4>
+  <p><strong>Intuition:</strong> trust the best average so far, but reserve a fixed fraction of nights for trying something else. This prevents early noise from locking you into the wrong restaurant forever.</p>
+  <div class="latex-line"><span class="eq">μ̂<sub>i</sub>(t) = s<sub>i</sub>(t) / n<sub>i</sub>(t)</span></div>
+  <div class="latex-line"><span class="eq">with probability ε: random restaurant; otherwise: a<sub>t</sub> = argmax<sub>i</sub> μ̂<sub>i</sub>(t)</span></div>
+  <ul>
+    <li><strong>Good:</strong> very hard to break; cheap to implement.</li>
+    <li><strong>Bad:</strong> keeps wasting <span class="eq">ε</span> of traffic even after the winner is obvious.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="ucb">
+  <h4>UCB1: optimism in the face of uncertainty</h4>
+  <p><strong>Intuition:</strong> score each restaurant by "what we know" plus "how wrong we might be." Under-sampled arms get a big bonus; the bonus shrinks as evidence accumulates.</p>
+  <div class="latex-line"><span class="eq">score<sub>i</sub>(t) = μ̂<sub>i</sub>(t) + sqrt(2 ln t / n<sub>i</sub>(t))</span></div>
+  <div class="latex-line"><span class="eq">a<sub>t</sub> = argmax<sub>i</sub> score<sub>i</sub>(t)</span></div>
+  <p class="math-intuition">The square-root term is a confidence radius from concentration bounds. It is intentionally conservative, which is why UCB1 can feel statistically slow in short runs.</p>
+  <ul>
+    <li><strong>Good:</strong> directed exploration and strong regret guarantees.</li>
+    <li><strong>Bad:</strong> generic bound can over-explore arms a tighter model would drop earlier.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="thompson">
+  <h4>Thompson sampling: probability matching</h4>
+  <p><strong>Intuition:</strong> instead of an explicit bonus, keep a belief distribution for each restaurant. Sample one plausible world; act optimally in that sampled world.</p>
+  <div class="latex-line"><span class="eq">θ<sub>i</sub> ~ Beta(α<sub>i</sub>, β<sub>i</sub>), α<sub>i</sub> = 1+s<sub>i</sub>, β<sub>i</sub> = 1+f<sub>i</sub></span></div>
+  <div class="latex-line"><span class="eq">a<sub>t</sub> = argmax<sub>i</sub> θ<sub>i</sub></span></div>
+  <p class="math-intuition">Wide posteriors create exploration automatically: a restaurant with little data sometimes draws a high <span class="eq">θ<sub>i</sub></span>. Known-bad restaurants have narrow low posteriors and almost never win.</p>
+  <ul>
+    <li><strong>Good:</strong> often excellent empirically; exploration fades naturally.</li>
+    <li><strong>Bad:</strong> you need a reward model/posterior that fits the problem.</li>
+  </ul>
+</div>
+<div class="algo-panel" data-panel="linucb">
+  <h4>Contextual LinUCB: choose after seeing the situation</h4>
+  <p><strong>Intuition:</strong> the best restaurant is not global. It depends on tonight's features: quick, social, spicy, budget. Contextual bandits learn how each arm responds to the context vector.</p>
+  <div class="latex-line"><span class="eq">x<sub>t</sub> = [1, quick, social, spicy, budget]</span></div>
+  <div class="latex-line"><span class="eq">r̂<sub>a,t</sub> = x<sub>t</sub><sup>T</sup> θ̂<sub>a</sub></span></div>
+  <div class="latex-line"><span class="eq">score<sub>a</sub> = x<sub>t</sub><sup>T</sup> θ̂<sub>a</sub> + α sqrt(x<sub>t</sub><sup>T</sup>A<sub>a</sub><sup>-1</sup>x<sub>t</sub>)</span></div>
+  <div class="latex-line"><span class="eq">a<sub>t</sub> = argmax<sub>a</sub> score<sub>a</sub></span></div>
+  <ul>
+    <li><strong>Good:</strong> transfers learning across similar nights.</li>
+    <li><strong>Bad:</strong> only works if the context features explain reward.</li>
+  </ul>
+</div>
+</div>
+
+<p>So is UCB "slow"? Not in CPU terms: basic UCB is just one index per arm. The slowness you feel in the chart is <em>learning slowness</em>. UCB1 uses a Hoeffding-style confidence bound that is deliberately safe for any bounded reward distribution, so it can keep re-checking arms that a more model-aware method would already mostly abandon. In production people often use tighter UCB variants such as KL-UCB or UCB-Tuned, or Thompson sampling when a Bayesian reward model is natural.</p>
 
 <hr class="scene">
 
 <div class="widget">
 <h2>1 — Race them yourself</h2>
-<p class="legend">Five hidden Bernoulli arms. Pick which policies to race; press play; watch their regret diverge. The shaded band is the low-budget zone where most A/B tests actually live.</p>
+<p class="legend">Five hidden restaurant-quality arms. Pick which policies to race; press play; watch their regret diverge. The shaded band is the low-budget zone where most A/B tests actually live.</p>
 
 <div class="policy-pills">
   <span style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-right:6px;">in the race:</span>
@@ -142,16 +353,62 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <div class="widget">
 <h2>2 — Pull manually, see what you'd do</h2>
-<p class="legend">Same arms. Click an arm to pull it. The estimates update; the regret line accumulates. Try a hundred pulls picking arms by hand — see how well your intuition does against the algorithms.</p>
+<p class="legend">Same restaurants. Click a place to eat there tonight. The estimates update; the regret line accumulates. Try a hundred dinners by hand — see how well your intuition does against the algorithms.</p>
 
 <div class="arms" id="arms"></div>
 <div class="controls">
   <button id="reveal">reveal true means</button>
   <button id="manreset">reset</button>
-  <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--dim);">pulls: <span id="mpulls">0</span> · your regret: <span id="mregret">0.00</span></span>
+</div>
+<div class="stats">
+  <div class="stat"><div class="label">dinners</div><div class="value" id="mpulls">0</div></div>
+  <div class="stat"><div class="label">your regret</div><div class="value" id="mregret">0.00</div></div>
+  <div class="stat"><div class="label">Thompson regret</div><div class="value" id="botregret">0.00</div></div>
+  <div class="stat"><div class="label">bot picked</div><div class="value" id="botpick">—</div></div>
 </div>
 <canvas id="mancanvas" height="160"></canvas>
 </div>
+
+<hr class="scene">
+
+<h3>Act 4 — Context changes the best arm</h3>
+
+<p>The restaurant story has one more real-world wrinkle: the best dinner depends on the night. A quick lunch, a date night, and a rainy solo dinner are different contexts. A plain bandit ignores that and learns one global average per restaurant. A <strong>contextual bandit</strong> observes features of the situation first, then chooses an arm.</p>
+
+<div class="mathbox">
+<div class="title">Contextual bandit object</div>
+<ul>
+<li><strong>Context:</strong> before round <code>t</code>, observe features <code>x_t</code>: quick, social, spicy, budget, and a bias term.</li>
+<li><strong>Action:</strong> choose restaurant <code>a_t</code> after seeing <code>x_t</code>.</li>
+<li><strong>Model:</strong> each arm has weights <code>θ_a</code>; predicted reward is <code>x_tᵀ θ_a</code>.</li>
+<li><strong>LinUCB:</strong> choose <code>argmax_a x_tᵀ θ̂_a + α√(x_tᵀ A_a⁻¹x_t)</code>.</li>
+<li><strong>Why it matters:</strong> the same restaurant can be bad for lunch and great for a rainy solo dinner.</li>
+</ul>
+</div>
+
+<div class="widget">
+<h2>3 — Contextual dinner bandit</h2>
+<p class="legend">Each night has a situation. Plain Thompson sees only restaurant averages; LinUCB sees the context vector before choosing. Lower regret means fewer bad-context dinners.</p>
+
+<div class="context-card">
+  <div class="context-title" id="ctxTitle">context: —</div>
+  <div class="context-chips" id="ctxChips"></div>
+</div>
+<div class="controls">
+  <button id="ctx1" class="primary">+1 night</button>
+  <button id="ctx50">+50 nights</button>
+  <button id="ctxReset">reset contexts</button>
+</div>
+<canvas id="ctxcanvas" height="230"></canvas>
+<div class="stats">
+  <div class="stat"><div class="label">night</div><div class="value" id="ctxT">0</div></div>
+  <div class="stat"><div class="label">plain Thompson</div><div class="value" id="ctxPlain">0.0</div><div class="sub" id="ctxPlainPick">—</div></div>
+  <div class="stat"><div class="label">contextual LinUCB</div><div class="value" id="ctxLin">0.0</div><div class="sub" id="ctxLinPick">—</div></div>
+  <div class="stat"><div class="label">oracle tonight</div><div class="value" id="ctxBest">—</div></div>
+</div>
+</div>
+
+<p>That widget is the first step from "which arm is best?" to "which arm is best <em>given what I know right now?</em>" The later posts keep stretching that question: paths, tours, page slates, and finally policies whose inputs are rich signals rather than one tiny context vector.</p>
 
 <hr class="scene">
 
@@ -159,7 +416,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <p><em>A small amount of cleverness wins by a lot; more cleverness wins by very little.</em> That's the bandit lesson. ε-greedy, UCB, and Thompson are different points on a smooth curve, and any of them is dramatically better than committing too early or never committing at all. Real-world recommenders use Thompson and UCB because the constant-factor differences add up at scale, but the textbook problem is essentially solved.</p>
 
-<p>It's also a very specific kind of problem. <em>k</em> independent arms; one pull per round; reward observed immediately. Most of the things you'd want to do — sort a list, find a path, plan a tour — are bandit problems with structure: arms are not independent, an action consists of several elements, the reward you observe is the sum across them, not the part attributable to each. That structure is where the next four posts go.</p>
+<p>It's also a very specific kind of problem. <em>k</em> independent arms; one pull per round; reward observed immediately. Contextual bandits add state, but the action is still one arm. Most of the things you'd want to do — sort a list, find a path, plan a tour, compose a page — are algorithms running with missing inputs. That structure is where the next levels go.</p>
 
 <p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> what happens when the "arm" you're pulling is a pair of items and the only thing you learn is which one is larger? <a href="../02-sort/">Post 2 — sorting numbers you cannot read</a>.</p>
 
@@ -172,8 +429,36 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 const COLORS={blue:'#4c8df6',green:'#5fd2a3',orange:'#f0a058',purple:'#c879f0',red:'#e16c6c',dim:'#8b95a8',faint:'#3a4358',fg:'#e6edf3',bg:'#0e1626'};
 function rng(seed){let s=seed|0||1;return function(){s=(s+0x6D2B79F5)|0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
 function gauss(rand){let u=rand()||1e-12,v=rand();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function beta(a,b,rand){const x=Math.pow(rand(),1/Math.max(a,0.01));const y=Math.pow(rand(),1/Math.max(b,0.01));return x/(x+y);}
+function gammaSample(shape,rand){
+  if(shape<1){
+    const u=Math.max(rand(),1e-12);
+    return gammaSample(shape+1,rand)*Math.pow(u,1/shape);
+  }
+  const d=shape-1/3,c=1/Math.sqrt(9*d);
+  while(true){
+    let x=gauss(rand),v=1+c*x;
+    if(v<=0)continue;
+    v=v*v*v;
+    const u=rand(),x2=x*x;
+    if(u<1-0.0331*x2*x2)return d*v;
+    if(Math.log(u)<0.5*x2+d*(1-v+Math.log(v)))return d*v;
+  }
+}
+function beta(a,b,rand){const x=gammaSample(a,rand),y=gammaSample(b,rand);return x/(x+y);}
 function argmax(a){let i=0;for(let j=1;j<a.length;j++)if(a[j]>a[i])i=j;return i;}
+function dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;}
+function solveLinear(A,b){
+  const n=b.length,M=A.map((row,i)=>row.slice().concat(b[i]));
+  for(let col=0;col<n;col++){
+    let pivot=col;
+    for(let r=col+1;r<n;r++)if(Math.abs(M[r][col])>Math.abs(M[pivot][col]))pivot=r;
+    if(pivot!==col){const tmp=M[col];M[col]=M[pivot];M[pivot]=tmp;}
+    const div=Math.abs(M[col][col])<1e-9?1e-9:M[col][col];
+    for(let c=col;c<=n;c++)M[col][c]/=div;
+    for(let r=0;r<n;r++)if(r!==col){const f=M[r][col];for(let c=col;c<=n;c++)M[r][c]-=f*M[col][c];}
+  }
+  return M.map(row=>row[n]);
+}
 class Chart{
   constructor(canvas,opts){this.canvas=canvas;this.opts=Object.assign({xlabel:'',ylabel:'',padding:{l:46,r:14,t:18,b:28},grid:4,yMin:null,yMax:null,xMin:0,xMax:null,shade:null},opts||{});this.series={};}
   line(name,color){this.series[name]={color:color||COLORS.blue,points:[]};return this;}
@@ -199,6 +484,13 @@ class Chart{
 
 // ============ Bandit core ============
 const K=5;
+const RESTAURANTS=[
+  {name:'Ramen Den',tag:'fast, cozy, a little salty'},
+  {name:'Taco Yard',tag:'bright, cheap, inconsistent'},
+  {name:'Biryani House',tag:'slow, fragrant, high upside'},
+  {name:'Sushi Bar',tag:'precise, pricey, reliable'},
+  {name:'Pasta Corner',tag:'nearby, filling, safe'}
+];
 const SCENARIOS={
   balanced:{name:'balanced',ps:[0.30,0.55,0.40,0.65,0.50]},
   hard:    {name:'hard (top two close)',ps:[0.45,0.62,0.40,0.58,0.30]},
@@ -238,6 +530,14 @@ function policyPick(b,name,t){
   return 0;
 }
 
+document.querySelectorAll('.algo-tab').forEach(btn=>{
+  btn.onclick=()=>{
+    const key=btn.dataset.tab;
+    document.querySelectorAll('.algo-tab').forEach(b=>b.classList.toggle('on',b===btn));
+    document.querySelectorAll('.algo-panel').forEach(panel=>panel.classList.toggle('on',panel.dataset.panel===key));
+  };
+});
+
 const POL_INFO={
   random:{label:'random',color:COLORS.dim},
   exploit:{label:'pure exploit',color:COLORS.red},
@@ -246,30 +546,6 @@ const POL_INFO={
   thompson:{label:'Thompson',color:COLORS.green},
   oracle:{label:'oracle (cheating)',color:COLORS.purple},
 };
-
-// ============ Hero animation ============
-(function hero(){
-  const cv=document.getElementById('hero');
-  const ch=new Chart(cv,{xlabel:'pull',ylabel:'',xMin:0,yMin:0,padding:{l:32,r:12,t:12,b:20}});
-  const policies=['epsilon','ucb','thompson'];
-  let bandits=null,t=0,playing=true;
-  const status=document.getElementById('hero-status'),bestText=document.getElementById('hero-best');
-  function init(){
-    const ps=SCENARIOS.balanced.ps;
-    bandits={};
-    for(const p of policies){bandits[p]=newBandit(ps,1+policies.indexOf(p)*999+Date.now()%1000);ch.line(POL_INFO[p].label,POL_INFO[p].color);}
-    t=0; ch.reset(); for(const p of policies)ch.line(POL_INFO[p].label,POL_INFO[p].color);
-    bestText.textContent=`best arm pays ${(Math.max(...ps)*100|0)}%`;
-  }
-  function step(n){
-    for(let i=0;i<n;i++){t++;for(const p of policies){const arm=policyPick(bandits[p],p,t);pull(bandits[p],arm);ch.push(POL_INFO[p].label,t,bandits[p].cumRegret);}}
-    ch.render();
-    if(t>=1000){playing=false;status.textContent=`done · 1,000 pulls`;setTimeout(()=>{init();playing=true;tick();},2200);}else{status.textContent=`pull ${t} / 1,000`;}
-  }
-  function tick(){if(!playing)return;step(20);requestAnimationFrame(tick);}
-  init(); requestAnimationFrame(tick);
-  window.addEventListener('resize',()=>ch.render());
-})();
 
 // ============ Race widget ============
 (function race(){
@@ -316,33 +592,137 @@ const POL_INFO={
 (function manual(){
   let ps=SCENARIOS.balanced.ps.slice();
   let b=newBandit(ps,777);
+  let bot=newBandit(ps,1777);
+  let lastBot='—';
   let revealed=false;
   const armsDiv=document.getElementById('arms');
   const mancanvas=document.getElementById('mancanvas');
   const ch=new Chart(mancanvas,{xlabel:'pull',ylabel:'regret',xMin:0,yMin:0,padding:{l:40,r:12,t:14,b:22}});
-  ch.line('your regret',COLORS.orange);
+  ch.line('you',COLORS.orange).line('Thompson bot',COLORS.green);
   function render(){
     armsDiv.innerHTML='';
     for(let i=0;i<K;i++){
-      const n=b.pulls[i],mean=n?b.successes[i]/n:0,best=(i===b.bestArm)&&revealed;
+      const n=b.pulls[i],mean=n?b.successes[i]/n:0,best=(i===b.bestArm)&&revealed,meta=RESTAURANTS[i],col=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red][i];
       const el=document.createElement('div');
       el.className='arm'+(best?' star':'');
-      el.innerHTML=`<div class="top"><span>arm ${i}${best?' ★':''}</span><span>${n}</span></div>
-        <div class="bar"><div style="width:${(mean*100).toFixed(0)}%;background:${COLORS.cycle?COLORS.cycle[i]:COLORS.blue}"></div></div>
-        <div class="mu">μ̂ = ${n?mean.toFixed(3):'—'}</div>
+      el.innerHTML=`<div class="top"><span class="name">${meta.name}${best?' ★':''}</span><span>${n} visits</span></div>
+        <svg class="arm-icon" viewBox="0 0 76 60" aria-hidden="true">
+          <rect x="8" y="26" width="60" height="28" rx="6" fill="#17243c" stroke="${col}"></rect>
+          <path d="M14 26 L38 8 L62 26" fill="#213250" stroke="${col}"></path>
+          <circle cx="38" cy="40" r="9" fill="#0e1626" stroke="${col}" stroke-width="2"></circle>
+          <path d="M28 40 H48 M38 31 V49" stroke="${col}" stroke-width="2" stroke-linecap="round"></path>
+        </svg>
+        <div class="tag">${meta.tag}</div>
+        <div class="bar"><div style="width:${(mean*100).toFixed(0)}%;background:${col}"></div></div>
+        <div class="mu">liked = ${n?mean.toFixed(3):'—'}</div>
         ${revealed?`<div class="true">true = ${ps[i].toFixed(3)}</div>`:''}`;
       el.style.borderColor=best?COLORS.green:'';
-      el.querySelector('.bar > div').style.background=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red][i];
-      el.onclick=()=>{pull(b,i);ch.push('your regret',b.history.length,b.cumRegret);render();ch.render();};
+      el.onclick=()=>{
+        const t=b.history.length+1;
+        pull(b,i);
+        const botArm=policyPick(bot,'thompson',t);
+        pull(bot,botArm);
+        lastBot=RESTAURANTS[botArm].name;
+        ch.push('you',t,b.cumRegret);
+        ch.push('Thompson bot',t,bot.cumRegret);
+        render();ch.render();
+      };
       armsDiv.appendChild(el);
     }
     document.getElementById('mpulls').textContent=b.history.length;
     document.getElementById('mregret').textContent=b.cumRegret.toFixed(2);
+    document.getElementById('botregret').textContent=bot.cumRegret.toFixed(2);
+    document.getElementById('botpick').textContent=lastBot;
   }
   document.getElementById('reveal').onclick=()=>{revealed=!revealed;document.getElementById('reveal').textContent=revealed?'hide true means':'reveal true means';render();};
-  document.getElementById('manreset').onclick=()=>{b=newBandit(ps,Date.now()&0xffff);revealed=false;document.getElementById('reveal').textContent='reveal true means';ch.reset();ch.line('your regret',COLORS.orange);render();ch.render();};
+  document.getElementById('manreset').onclick=()=>{const seed=Date.now()&0xffff;b=newBandit(ps,seed);bot=newBandit(ps,seed+1009);lastBot='—';revealed=false;document.getElementById('reveal').textContent='reveal true means';ch.reset();ch.line('you',COLORS.orange).line('Thompson bot',COLORS.green);render();ch.render();};
   COLORS.cycle=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red];
   render(); ch.render();
+  window.addEventListener('resize',()=>ch.render());
+})();
+
+// ============ Contextual restaurant bandit ============
+(function contextual(){
+  const cv=document.getElementById('ctxcanvas');
+  if(!cv)return;
+  const contexts=[
+    {name:'quick lunch',desc:'You have 35 minutes and want low friction.',x:[1,1,0,0,1],chips:['quick','budget']},
+    {name:'date night',desc:'Atmosphere matters more than price.',x:[1,0,1,0,0],chips:['social']},
+    {name:'rainy solo dinner',desc:'Comfort and spice beat speed.',x:[1,0,0,1,0],chips:['spicy']},
+    {name:'cheap group meal',desc:'Friends want something casual and affordable.',x:[1,0,1,1,1],chips:['social','spicy','budget']},
+    {name:'tired safe choice',desc:'You want close, filling, and predictable.',x:[1,1,0,0,1],chips:['quick','budget']}
+  ];
+  const featureLabels=['bias','quick','social','spicy','budget'];
+  const theta=[
+    [0.35,0.20,-0.10,0.18,0.05],
+    [0.38,0.18,0.05,0.12,0.18],
+    [0.33,-0.12,0.08,0.28,-0.03],
+    [0.36,-0.08,0.25,-0.15,-0.20],
+    [0.42,0.08,0.02,-0.22,0.12]
+  ];
+  const d=featureLabels.length,alpha=0.75;
+  const rand=rng(4242);
+  const ch=new Chart(cv,{xlabel:'night',ylabel:'regret',xMin:0,yMin:0,padding:{l:46,r:14,t:18,b:28},shade:[0,80]});
+  let plain,lin,t=0,current=contexts[0],plainReg=0,linReg=0,lastPlain='—',lastLin='—';
+  function eye(){return Array.from({length:d},(_,i)=>Array.from({length:d},(_,j)=>i===j?1:0));}
+  function initLin(){return {A:Array.from({length:K},()=>eye()),b:Array.from({length:K},()=>Array(d).fill(0))};}
+  function prob(ctx,arm){return Math.max(0.05,Math.min(0.92,dot(ctx.x,theta[arm])));}
+  function bestArmFor(ctx){return argmax(RESTAURANTS.map((_,i)=>prob(ctx,i)));}
+  function linPick(st,ctx){
+    const scores=RESTAURANTS.map((_,a)=>{
+      const invb=solveLinear(st.A[a],st.b[a]);
+      const invx=solveLinear(st.A[a],ctx.x);
+      return dot(ctx.x,invb)+alpha*Math.sqrt(Math.max(0,dot(ctx.x,invx)));
+    });
+    return argmax(scores);
+  }
+  function linUpdate(st,arm,x,r){
+    for(let i=0;i<d;i++){st.b[arm][i]+=r*x[i];for(let j=0;j<d;j++)st.A[arm][i][j]+=x[i]*x[j];}
+  }
+  function updateContextUi(){
+    document.getElementById('ctxTitle').textContent=`context: ${current.name} — ${current.desc}`;
+    document.getElementById('ctxChips').innerHTML=featureLabels.slice(1).map((f,i)=>`<span class="${current.x[i+1]?'on':''}">${f}: ${current.x[i+1]}</span>`).join('');
+    const best=bestArmFor(current);
+    document.getElementById('ctxBest').textContent=RESTAURANTS[best].name;
+  }
+  function reset(){
+    plain=newBandit([0.5,0.5,0.5,0.5,0.5],991);
+    lin=initLin();t=0;plainReg=0;linReg=0;lastPlain='—';lastLin='—';
+    ch.reset();ch.line('plain Thompson',COLORS.dim).line('contextual LinUCB',COLORS.blue);
+    current=contexts[0];render();
+  }
+  function one(){
+    current=contexts[Math.floor(rand()*contexts.length)];
+    const best=bestArmFor(current),bestP=prob(current,best);
+    const plainArm=policyPick(plain,'thompson',t+1);
+    const plainReward=rand()<prob(current,plainArm)?1:0;
+    plain.pulls[plainArm]++;plain.successes[plainArm]+=plainReward;
+    plainReg+=bestP-prob(current,plainArm);
+    const linArm=linPick(lin,current);
+    const linReward=rand()<prob(current,linArm)?1:0;
+    linUpdate(lin,linArm,current.x,linReward);
+    linReg+=bestP-prob(current,linArm);
+    t++;
+    lastPlain=RESTAURANTS[plainArm].name;
+    lastLin=RESTAURANTS[linArm].name;
+    ch.push('plain Thompson',t,plainReg);
+    ch.push('contextual LinUCB',t,linReg);
+    render();
+  }
+  function step(n){for(let i=0;i<n;i++)one();}
+  function render(){
+    updateContextUi();
+    document.getElementById('ctxT').textContent=t;
+    document.getElementById('ctxPlain').textContent=plainReg.toFixed(1);
+    document.getElementById('ctxLin').textContent=linReg.toFixed(1);
+    document.getElementById('ctxPlainPick').textContent=lastPlain;
+    document.getElementById('ctxLinPick').textContent=lastLin;
+    ch.render();
+  }
+  document.getElementById('ctx1').onclick=()=>step(1);
+  document.getElementById('ctx50').onclick=()=>step(50);
+  document.getElementById('ctxReset').onclick=reset;
+  reset();
   window.addEventListener('resize',()=>ch.render());
 })();
 </script>

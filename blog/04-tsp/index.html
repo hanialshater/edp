@@ -27,6 +27,9 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
 .widget h2{margin-top:0;font-size:18px;border:0}
 .legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}
@@ -47,7 +50,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 4 / 6 · <a href="../03-shortest-path/">← prev</a> · <a href="../">index</a> · <a href="../05-edp/">next →</a></span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 4 / 7 · <a href="../03-shortest-path/">← prev</a> · <a href="../">index</a> · <a href="../4b-pattern/">next →</a></span></div>
 
 <h1>TSP when the distances are hidden</h1>
 <p class="subtitle">Eight cities. You need to visit each one, return to where you started, and the total distance should be small. But you can't see the distances — you only learn them by walking the tour.</p>
@@ -69,6 +72,17 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <h3>Act 2 — Now hide the distances</h3>
 
 <p>You only learn an edge's noisy distance when you traverse it on a tour. Each round you commit to a full tour, observe each edge along it, pay the sum. After T tours, can you find a near-optimal one? This is a combinatorial bandit, but the action space is now <em>factorial</em>.</p>
+
+<div class="mathbox">
+<div class="title">Math object</div>
+<ul>
+<li><strong>Unknowns:</strong> pairwise distances <code>dᵢⱼ</code> for <code>n(n−1)/2</code> city pairs.</li>
+<li><strong>Action:</strong> choose a tour <code>π</code>, a permutation of the cities.</li>
+<li><strong>Cost:</strong> <code>cost(π) = Σ_i d_{πᵢ,πᵢ₊₁}</code>, including the return edge.</li>
+<li><strong>Feedback:</strong> observe noisy distances for the edges used in the tour.</li>
+<li><strong>Solver:</strong> run 2-opt on current edge estimates; one swap replaces two edges with two others.</li>
+</ul>
+</div>
 
 <h3>Act 3 — Two-opt is the natural bandit-friendly local search</h3>
 
@@ -120,7 +134,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <p>So far you've watched algorithms learn the parameters from scratch. The remaining two posts ask a different question: <em>what if you already knew something useful about the problem before the first trial?</em> Not the answers, but the structure — that some widgets serve some customer types, that some routes are obviously bad. Could you skip most of the exploration entirely?</p>
 
-<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> what if instead of running 2-opt for a hundred trials, a domain expert just wrote down a sensible policy? That expert can now be an LLM. <a href="../05-edp/">Post 5 — when world knowledge replaces exploration</a>.</p>
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> put sort, shortest path, and TSP behind one Gym interface. <a href="../4b-pattern/">Level 1 bridge — run algorithms when the inputs are missing</a>.</p>
 
 <footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. <a href="../">series index</a>.</footer>
 </div>

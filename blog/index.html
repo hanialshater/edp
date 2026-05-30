@@ -24,67 +24,87 @@ em{color:var(--fg)}strong{color:#fff}
 .post .desc{font-size:14px;color:var(--dim);line-height:1.5}
 .banner{background:linear-gradient(135deg,var(--accent2) 0%,var(--card) 100%);border:1px solid var(--border);border-radius:14px;padding:20px;margin:0 0 36px;font-size:15px}
 .banner b{color:var(--good)}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0 36px;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:4px;font-family:var(--mono);font-size:13px}
 footer{margin-top:80px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
 @media (max-width:600px){body{padding:24px 12px 64px;font-size:15px}h1{font-size:28px}}
 </style>
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>6 POSTS · INTERACTIVE</span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>7 POSTS · INTERACTIVE</span></div>
 
-<h1>Solving classical problems when you don't know the numbers</h1>
-<p class="subtitle">Six interactive posts on what happens to your favourite textbook algorithm when its inputs are hidden — and what changes when you stop pretending you know nothing about the problem.</p>
+<h1>From school algorithms to real-world unknowns</h1>
+<p class="subtitle">Seven interactive posts on the gap between textbook problem solving and production decision systems: hidden parameters, costly exploration, probabilistic signals, delayed rewards, and policies you can edit instead of merely train.</p>
 
 <div class="banner">
-<b>A side project of the <a href="../paper/paper.md">WPO-Gym / EDP research</a>.</b> Each post is a single self-contained HTML file: read, then play. No build step, no accounts, no external libraries. Six widgets, six insights, walking from "I know nothing" (multi-armed bandits) to "I know quite a lot and I keep learning the rest" (the paper's bet).
+<b>A side project of the <a href="../paper/paper.md">WPO-Gym / EDP research</a>.</b> School gives you Dijkstra, sorting, and TSP with all the numbers printed on the page. Reality hides the numbers and charges you to discover them. Each post is a static HTML file: read, then play. Live LLM calls are optional; recorded traces keep the series usable offline.
 </div>
 
-<h2>The series</h2>
+<div class="mathbox">
+<div class="title">Objects you'll meet</div>
+<ul>
+<li><strong>Bandit:</strong> choose arm <code>a_t</code>, observe noisy reward <code>r_t</code>, minimize regret against the best hidden mean.</li>
+<li><strong>Combinatorial bandit:</strong> choose a structured action such as a path, tour, or slate, then update shared hidden parameters.</li>
+<li><strong>OPRO:</strong> ask an LLM to propose the next candidate <code>x_t</code> from a history of scored candidates.</li>
+<li><strong>GAM / EDP:</strong> map observed signals through named curves <code>g_j(x_j)</code>, estimate latent parameters, then run a normal solver.</li>
+<li><strong>WPO:</strong> the capstone where reward is delayed, noisy, page-level, and hard to attribute.</li>
+</ul>
+</div>
+
+<h2>The ladder</h2>
 
 <a class="post" href="01-bandit/">
-<div class="num">post 1</div>
-<div class="title">Picking the max when you don't know the numbers</div>
-<div class="desc">Five hidden slot machines, one is best. Race ε-greedy, UCB1, and Thompson sampling on a single chart. Find out why "a small amount of cleverness wins by a lot, more cleverness wins by very little."</div>
+<div class="num">level 0 · post 1</div>
+<div class="title">Pick from unknown options</div>
+<div class="desc">The smallest real-world problem: choose among hidden options, observe noisy reward, pay regret while learning. This is the multi-armed bandit.</div>
 </a>
 
 <a class="post" href="02-sort/">
-<div class="num">post 2</div>
+<div class="num">level 1 example · post 2</div>
 <div class="title">Sorting numbers you cannot read</div>
-<div class="desc">Eight hidden values, a noisy <strong>Bradley-Terry</strong> comparison oracle. Race uniform Borda, noisy mergesort, and active sampling; watch the fitted BT skills recover the hidden order live.</div>
+<div class="desc">A classical algorithm becomes a Gym problem: hidden values, noisy comparisons, estimated parameters, and a solver acting before it has full information.</div>
 </a>
 
 <a class="post" href="03-shortest-path/">
-<div class="num">post 3</div>
+<div class="num">level 1 example · post 3</div>
 <div class="title">Shortest path when the edge weights are hidden</div>
-<div class="desc">A 5×5 grid graph. Walk a path, observe its edges, build a per-edge UCB. Watch the per-path bandit fail and the semi-bandit win exponentially — and meet the structural argument behind <em>paper §5.2</em>.</div>
+<div class="desc">Dijkstra still works, but only on estimates. Walk paths, reveal edge samples, update the model, and see why decomposed feedback matters.</div>
 </a>
 
 <a class="post" href="04-tsp/">
-<div class="num">post 4</div>
+<div class="num">level 1 example · post 4</div>
 <div class="title">TSP when the distances are hidden</div>
-<div class="desc">Eight cities, 2,520 tours, 28 edges. Race random tours against per-edge + 2-opt and watch the action / information gap collapse the combinatorial explosion.</div>
+<div class="desc">A factorial action space is survivable only if observations update shared parameters. The solver is still 2-opt; the environment is now uncertain.</div>
 </a>
 
 <a class="post" href="4b-pattern/" style="border-style:dashed">
-<div class="num">interlude · after post 4</div>
-<div class="title">A combinatorial bandit is a wrapper, not an algorithm</div>
-<div class="desc">The unifying idea: one optimism wrapper, swap the base solver. Watch argmax, Dijkstra, Prim-MST, and 2-opt all learn their hidden parameters through the identical loop — and see where Bradley-Terry and the paper's GreedyLinTS fit in.</div>
+<div class="num">level 1 bridge · shared Gym</div>
+<div class="title">Run algorithms when the inputs are missing</div>
+<div class="desc">One in-browser Gym contract powers sort, shortest path, and TSP: reset, observe, act, step, learn. The algorithm is old; the feedback loop is the new thing.</div>
+</a>
+
+<a class="post" href="05-opro/">
+<div class="num">level 2 · post 5</div>
+<div class="title">Can an LLM explore?</div>
+<div class="desc">OPRO as the foundation before EDP: an LLM proposes candidates from score history. Try linear regression, TSP, and a constrained linear objective with recorded traces or your own OpenAI-compatible API key.</div>
 </a>
 
 <a class="post" href="05-edp/">
-<div class="num">post 5</div>
-<div class="title">When world knowledge replaces exploration: EDP</div>
-<div class="desc">A live instance of the actual EDP from the paper — 245 numbers, zero training data. Move persona sliders, watch a page recompose in real time. The point: a competent LLM-authored policy skips most of the exploration you spent four posts learning.</div>
+<div class="num">level 3 · post 6</div>
+<div class="title">Human-like priors as executable policy</div>
+<div class="desc">EDP generalizes the idea: estimate latent parameters with named GAM curves over signals, then run the solver. WPO is one instance, not the whole idea.</div>
 </a>
 
 <a class="post" href="06-edp-adapts/">
-<div class="num">post 6 · finale</div>
-<div class="title">EDP that adapts and explores — the paper, playable</div>
-<div class="desc">Race the LLM-prior GAM against the tuned bandit from Post 1. Real cold-start data from the paper's §5.7. The tuned bandit ties at 10K sessions but never leads — and the regime production lives in is well before 10K.</div>
+<div class="num">levels 4-5 · post 7 · finale</div>
+<div class="title">Production feedback is hostile; WPO is the capstone</div>
+<div class="desc">Delayed, noisy, page-level reward changes the game. Tuned bandits can tie on regret, but EDP's edge is cold-start, auditability, editability, and readable serving code.</div>
 </a>
 
 <h2>The arc, in one sentence</h2>
-<p>Bandits are great when you genuinely know nothing about the problem; they are an expensive way to learn things a domain expert already knows. The series walks from "I know nothing" (Post 1) to "I know quite a lot and I keep learning the rest" (Post 6), and the move that connects them — replacing exploration with authored, editable policy — is what <a href="../paper/paper.md">the paper</a> calls EDP.</p>
+<p>You were taught to solve problems after the inputs are known; production asks you to solve while learning the inputs, under cost, noise, delay, and missing attribution. The series walks from bandit exploration to combinatorial Gym interfaces, then to OPRO and EDP: policies that use LLM/human reasoning to start with a better guess and keep that guess editable.</p>
 
 <footer>Workflow + sources: <a href="WORKFLOW-v2.md">WORKFLOW-v2.md</a> · <a href="https://github.com/hanialshater/edp/tree/claude/bandit-edp-comparison-SFB0F/blog">github</a>. Side project of <a href="../paper/paper.md">the WPO-Gym / EDP research</a>.</footer>
 </div>

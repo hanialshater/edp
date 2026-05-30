@@ -1,7 +1,9 @@
 # Blog series workflow v2 — visuals + storytelling standard
 
 Supersedes `WORKFLOW.md` for the upgraded visual and narrative standard.
-Every post now ships with the higher bar described here.
+The current arc is a seven-post ladder: school algorithms with known inputs
+become real-world decision problems with hidden parameters, costly exploration,
+LLM/OPRO search, EDP priors, and finally WPO under production feedback.
 
 ## What "much better" means concretely
 
@@ -79,6 +81,12 @@ Each post inlines this small lib at the top of its `<script>`:
   `chart.push(name, x, y)`, `chart.render()`. Handles axes, gridlines,
   high-DPI scaling.
 - `colors` — shared palette object.
+- `Gym.reset(seed)`, `Gym.step(action)`, `Policy.act(observation, state)`,
+  `Policy.learn(transition, state)` — the Level 1 bridge convention for
+  turning classical algorithms into unknown-parameter environments.
+- `LLMClient.completeJson({ system, user, schema })` — the Post 5 convention
+  for optional OpenAI-compatible calls. All LLM widgets must have deterministic
+  recorded fallbacks and must keep API keys local to the browser.
 
 About 150 lines. Each post inlines it; minor redundancy is the price of
 portability.
@@ -101,7 +109,7 @@ portability.
    - [ ] Multi-policy comparison is on a single chart, not sequential.
    - [ ] Reads on a phone (manual test: open via htmlpreview on phone).
    - [ ] No external network calls; no relative-path assets.
-   - [ ] Closing arrow points forward (or, for Post 6, back to the paper).
+   - [ ] Closing arrow points forward (or, for Post 7, back to the paper).
 
 ## Status
 
@@ -111,5 +119,7 @@ portability.
 | 2 | Sort with unknown values | v1 complete: noisy-compare widget |
 | 3 | Shortest path with unknown weights | v1 complete: grid + per-edge UCB |
 | 4 | TSP with unknown distances | v1 complete: city map + 2-opt race |
-| 5 | EDP — world knowledge as policy | v1 complete: persona → page widget |
-| 6 | EDP that adapts and explores | v1 complete: in-browser cold-start race |
+| 4b | Run algorithms when inputs are missing | Level 1 bridge: shared Gym runner for sort/path/TSP |
+| 5 | Can an LLM explore? | OPRO playground with recorded fallback + optional OpenAI-compatible provider |
+| 6 | Human-like priors as executable policy | EDP generalized as signals → latent estimates → solver |
+| 7 | Production feedback + WPO capstone | Cold-start race + paper bridge with tuned-bandit caveat |

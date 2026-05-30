@@ -27,6 +27,9 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
 .widget h2{margin-top:0;font-size:18px;border:0}
 .legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}
@@ -47,7 +50,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 3 / 6 · <a href="../02-sort/">← prev</a> · <a href="../">index</a> · <a href="../04-tsp/">next →</a></span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 3 / 7 · <a href="../02-sort/">← prev</a> · <a href="../">index</a> · <a href="../04-tsp/">next →</a></span></div>
 
 <h1>Shortest path when the edge weights are hidden</h1>
 <p class="subtitle">A grid graph. Hidden edge weights. You can walk a path and learn the weights of edges you stepped on. How few walks until you know the best route?</p>
@@ -71,6 +74,17 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <p>You only learn an edge's (noisy) weight when you walk through it. Each round you commit to a full path; you observe each edge's noisy weight along the way; you pay the sum as your cost. After T rounds you'd like the cumulative cost to be close to T times the cost of the optimal path. The gap is regret.</p>
 
 <p>This setup has a name: <strong>online shortest path with semi-bandit feedback</strong>. <em>Bandit</em> because you only see the cost of the arm you pulled. <em>Semi</em> because the arm is a *combinatorial* action — a path — and the feedback decomposes per-edge.</p>
+
+<div class="mathbox">
+<div class="title">Math object</div>
+<ul>
+<li><strong>Unknowns:</strong> edge costs <code>w_e</code> for every edge <code>e ∈ E</code>.</li>
+<li><strong>Action:</strong> choose a full path <code>P_t</code> from source to sink.</li>
+<li><strong>Cost:</strong> <code>cost(P_t) = Σ_{e∈P_t} w_e</code>.</li>
+<li><strong>Semi-bandit feedback:</strong> after walking, observe noisy samples for every edge in <code>P_t</code>, not just the total.</li>
+<li><strong>Comb-UCB rule:</strong> run Dijkstra on optimistic edge costs <code>LCB_e = μ̂_e − √(2 ln t / n_e)</code>.</li>
+</ul>
+</div>
 
 <h3>Act 3 — Why per-edge beats per-path</h3>
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Interlude · A combinatorial bandit is a wrapper</title>
+<title>Level 1 · Run algorithms when the inputs are missing</title>
 <style>
 :root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
@@ -27,6 +27,9 @@ pre .k{color:var(--purple)}
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
 .widget h2{margin-top:0;font-size:18px;border:0}
 .legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}
@@ -49,10 +52,10 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>INTERLUDE · after <a href="../04-tsp/">Post 4</a> · <a href="../">index</a> · <a href="../05-edp/">Post 5 →</a></span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>LEVEL 1 BRIDGE · after <a href="../04-tsp/">Post 4</a> · <a href="../">index</a> · <a href="../05-opro/">Post 5 →</a></span></div>
 
-<h1>A combinatorial bandit is a wrapper, not an algorithm</h1>
-<p class="subtitle">Posts 1–4 looked like four different problems with four different solutions. They were the same algorithm four times. Here is the wrapper that proves it — change one function call, learn a different classical algorithm's parameters.</p>
+<h1>Run algorithms when the inputs are missing</h1>
+<p class="subtitle">School gives you the numbers first and asks for the answer second. Real systems reverse it: act now, observe partial feedback, update the missing parameters, and act again.</p>
 
 <div class="widget">
 <h2>The reduction</h2>
@@ -68,6 +71,53 @@ est = Estimates()
     est.update(observed)                          <span class="c"># only touched params</span></pre>
 </div>
 <p style="font-size:14px;color:var(--dim)">Set <code>solver = argmax</code> and you have Post 1's multi-armed bandit. Set <code>solver = Dijkstra</code> and you have Post 3. Set <code>solver = 2opt</code> and you have Post 4. The learning machinery — optimistic estimates, semi-bandit updates, the regret it incurs — is byte-for-byte identical.</p>
+</div>
+
+<hr class="scene">
+
+<h3>Act 0 — Put a Gym around the school problem</h3>
+
+<p>The shared interface is tiny. A hidden world has parameters you cannot read; <code>observe()</code> exposes only the signals available before acting; <code>act()</code> runs the classical solver on current estimates; <code>step(action)</code> reveals the reward and the touched parameters; <code>learn()</code> updates the estimates. That is enough to turn sorting, shortest path, and TSP into the same kind of problem.</p>
+
+<pre><span class="k">const</span> observation = Gym.reset(seed)
+<span class="k">for</span> (let t = 0; t < T; t++) {
+  action     = Policy.act(observation, state)       <span class="c"># run sort / Dijkstra / 2-opt on estimates</span>
+  transition = Gym.step(action)                     <span class="c"># reward + partial parameter reveal</span>
+  state      = Policy.learn(transition, state)      <span class="c"># update only what was touched</span>
+  observation = transition.observation
+}</pre>
+
+<div class="mathbox">
+<div class="title">Combinatorial bandit template</div>
+<ul>
+<li><strong>Parameters:</strong> vector <code>θ</code>, one component per edge, pair, item, or widget.</li>
+<li><strong>Action:</strong> a subset/structure <code>A</code> chosen by a classical solver.</li>
+<li><strong>Reward/cost:</strong> usually additive, e.g. <code>f(A, θ) = Σ_{i∈A} θᵢ</code>.</li>
+<li><strong>Feedback:</strong> semi-bandit means you observe the touched components <code>θᵢ</code> for <code>i∈A</code>.</li>
+<li><strong>Wrapper:</strong> estimate <code>θ̂</code>, add uncertainty bonus, run solver on optimistic parameters.</li>
+</ul>
+</div>
+
+<div class="widget">
+<h2>One Gym runner, three school algorithms</h2>
+<p class="legend">The buttons change only the environment and base solver. The runner stays the same: reset, observe, act, step, learn. Lower regret is better.</p>
+<div class="solver-pills">
+  <button class="gbtn on" data-g="sort">sort: noisy comparisons</button>
+  <button class="gbtn" data-g="path">shortest path: hidden edges</button>
+  <button class="gbtn" data-g="tour">TSP: hidden distances</button>
+</div>
+<div class="controls">
+  <button id="gym1">+1 step</button>
+  <button id="gym50" class="primary">+50</button>
+  <button id="gymReset">reset Gym</button>
+</div>
+<canvas id="gymCanvas" height="210"></canvas>
+<div class="stats">
+  <div class="stat"><div class="label">Gym</div><div class="value" id="gymName">sort</div></div>
+  <div class="stat"><div class="label">steps</div><div class="value" id="gymSteps">0</div></div>
+  <div class="stat"><div class="label">cum regret</div><div class="value" id="gymRegret">0.0</div></div>
+  <div class="stat"><div class="label">known params</div><div class="value" id="gymKnown">0%</div></div>
+</div>
 </div>
 
 <hr class="scene">
@@ -134,7 +184,7 @@ est = Estimates()
 
 <p>That is the move Posts 5 and 6 make concrete. The combinatorial bandit learns the parameters from clicks; EDP starts most of the way there because someone who understood the problem wrote them down first.</p>
 
-<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> meet the solver this whole series was built around, with its parameters authored by an LLM instead of learned. <a href="../05-edp/">Post 5 — when world knowledge replaces exploration</a>.</p>
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> before EDP, ask whether an LLM can imitate this optimizer loop from scores alone. <a href="../05-opro/">Post 5 — can an LLM explore?</a>.</p>
 
 <footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. <a href="../">series index</a>.</footer>
 </div>
@@ -160,6 +210,57 @@ class Chart{
     let lx=W-p.r-4,ly=p.t+12;ctx.textAlign='right';for(const k in this.s){ctx.fillStyle=this.s[k].col;ctx.fillText(k,lx,ly);ly+=14;}ctx.textAlign='left';
   }
 }
+
+// ===== shared Gym bridge: one runner, three environments =====
+(function gymBridge(){
+  const cv=document.getElementById('gymCanvas');
+  if(!cv)return;
+  const ctx=cv.getContext('2d');
+  let gymKind='sort',env=null,state=null,steps=0,cumRegret=0;
+  function drawAxes(ctx,W,H){ctx.clearRect(0,0,W,H);ctx.fillStyle='#0e1626';ctx.fillRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;for(let i=1;i<5;i++){const y=i*H/5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
+
+  function randGraph(n,seed){const r=rng(seed),w=[];for(let i=0;i<n;i++){w[i]=[];for(let j=0;j<n;j++)w[i][j]=0;}for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const v=.15+r()*.85;w[i][j]=w[j][i]=v;}return {w,r};}
+  function pathCost(path,w){let s=0;for(let i=0;i<path.length-1;i++)s+=w[path[i]][path[i+1]];return s;}
+  function tourCost2(t,w){let s=0;for(let i=0;i<t.length;i++)s+=w[t[i]][t[(i+1)%t.length]];return s;}
+  function bruteTour(n,w){const out=[];function rec(a,used){if(a.length===n){out.push(a.slice());return;}for(let i=1;i<n;i++)if(!used[i]){used[i]=1;a.push(i);rec(a,used);a.pop();used[i]=0;}}rec([0],{0:1});let best=out[0],bc=Infinity;for(const t of out){const c=tourCost2(t,w);if(c<bc){bc=c;best=t;}}return best;}
+  function dijkstraSmall(w){const n=w.length,dist=Array(n).fill(Infinity),prev=Array(n).fill(-1),vis=Array(n).fill(false);dist[0]=0;for(let it=0;it<n;it++){let u=-1,b=Infinity;for(let i=0;i<n;i++)if(!vis[i]&&dist[i]<b){b=dist[i];u=i;}if(u<0)break;vis[u]=true;for(let v=0;v<n;v++)if(v!==u&&dist[u]+w[u][v]<dist[v]){dist[v]=dist[u]+w[u][v];prev[v]=u;}}let p=[],cur=n-1;while(cur>=0){p.unshift(cur);cur=prev[cur];}return p;}
+  function twoOptSmall(w){const n=w.length;let t=[...Array(n).keys()],imp=true;while(imp){imp=false;for(let i=0;i<n-1;i++)for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue;const a=t[i],b=t[i+1],c=t[j],d=t[(j+1)%n];if(w[a][c]+w[b][d]<w[a][b]+w[c][d]){t=t.slice(0,i+1).concat(t.slice(i+1,j+1).reverse(),t.slice(j+1));imp=true;}}}return t;}
+
+  const GYMS={
+    sort:{
+      name:'sort',
+      reset(seed){const r=rng(seed),vals=[...Array(7)].map(()=>r());return {vals,r,pairs:{},bestOrder:vals.map((v,i)=>i).sort((a,b)=>vals[b]-vals[a])};},
+      init(){return {wins:{},n:{}};},
+      act(env,st){let bi=0,bj=1,bn=Infinity;for(let i=0;i<env.vals.length;i++)for(let j=i+1;j<env.vals.length;j++){const k=i+'-'+j,n=st.n[k]||0;if(n<bn){bn=n;bi=i;bj=j;}}return [bi,bj];},
+      step(env,st,a){const [i,j]=a,k=i+'-'+j;const p=1/(1+Math.exp(-7*(env.vals[i]-env.vals[j])));const iWins=env.r()<p;st.n[k]=(st.n[k]||0)+1;st.wins[k]=(st.wins[k]||0)+(iWins?1:0);const wrong=(env.vals[i]>env.vals[j])!==iWins;return {reward:wrong?1:0,touched:[k]};},
+      known(st){return Object.keys(st.n).filter(k=>st.n[k]>0).length/21;},
+      draw(env,st,W,H){drawAxes(ctx,W,H);ctx.fillStyle=COLORS.dim;ctx.font='12px ui-monospace';ctx.fillText('hidden values, visible comparison counts',14,18);env.vals.forEach((v,i)=>{const x=30+i*(W-60)/(env.vals.length-1),h=v*(H-55);ctx.fillStyle=COLORS.blue;ctx.fillRect(x-8,H-25-h,16,h);ctx.fillStyle=COLORS.fg;ctx.fillText(i,x-4,H-8);});}
+    },
+    path:{
+      name:'shortest path',
+      reset(seed){return Object.assign(randGraph(5,seed),{});},
+      init(){return {mean:Array.from({length:5},()=>Array(5).fill(.5)),n:Array.from({length:5},()=>Array(5).fill(0))};},
+      act(env,st){const est=st.mean.map((r,i)=>r.map((v,j)=>i===j?0:v));return dijkstraSmall(est);},
+      step(env,st,path){const opt=dijkstraSmall(env.w),reg=Math.max(0,pathCost(path,env.w)-pathCost(opt,env.w));for(let i=0;i<path.length-1;i++){const a=path[i],b=path[i+1],obs=env.w[a][b];st.n[a][b]++;st.n[b][a]++;st.mean[a][b]+=(obs-st.mean[a][b])/st.n[a][b];st.mean[b][a]=st.mean[a][b];}return {reward:reg,touched:path};},
+      known(st){let c=0;for(let i=0;i<5;i++)for(let j=i+1;j<5;j++)if(st.n[i][j])c++;return c/10;},
+      draw(env,st,W,H){drawAxes(ctx,W,H);const pts=[[.1,.2],[.35,.15],[.7,.22],[.35,.75],[.88,.78]].map(p=>[p[0]*W,p[1]*H]);for(let i=0;i<5;i++)for(let j=i+1;j<5;j++){ctx.strokeStyle=`rgba(140,150,170,${.06+.22*Math.min(1,st.n[i][j]/3)})`;ctx.beginPath();ctx.moveTo(...pts[i]);ctx.lineTo(...pts[j]);ctx.stroke();}pts.forEach((p,i)=>{ctx.fillStyle=i===0||i===4?COLORS.blue:COLORS.fg;ctx.beginPath();ctx.arc(p[0],p[1],5,0,7);ctx.fill();});}
+    },
+    tour:{
+      name:'TSP',
+      reset(seed){return Object.assign(randGraph(5,seed),{});},
+      init(){return {mean:Array.from({length:5},()=>Array(5).fill(.5)),n:Array.from({length:5},()=>Array(5).fill(0))};},
+      act(env,st){return twoOptSmall(st.mean);},
+      step(env,st,tour){const opt=bruteTour(5,env.w),reg=Math.max(0,tourCost2(tour,env.w)-tourCost2(opt,env.w));for(let i=0;i<tour.length;i++){const a=tour[i],b=tour[(i+1)%tour.length],obs=env.w[a][b];st.n[a][b]++;st.n[b][a]++;st.mean[a][b]+=(obs-st.mean[a][b])/st.n[a][b];st.mean[b][a]=st.mean[a][b];}return {reward:reg,touched:tour};},
+      known(st){let c=0;for(let i=0;i<5;i++)for(let j=i+1;j<5;j++)if(st.n[i][j])c++;return c/10;},
+      draw(env,st,W,H){drawAxes(ctx,W,H);const pts=[[.12,.22],[.72,.16],[.86,.68],[.36,.82],[.18,.58]].map(p=>[p[0]*W,p[1]*H]);for(let i=0;i<5;i++)for(let j=i+1;j<5;j++){ctx.strokeStyle=`rgba(140,150,170,${.04+.22*Math.min(1,st.n[i][j]/3)})`;ctx.beginPath();ctx.moveTo(...pts[i]);ctx.lineTo(...pts[j]);ctx.stroke();}pts.forEach((p,i)=>{ctx.fillStyle=COLORS.orange;ctx.beginPath();ctx.arc(p[0],p[1],5,0,7);ctx.fill();ctx.fillStyle=COLORS.fg;ctx.font='11px ui-monospace';ctx.fillText(i,p[0]+7,p[1]+4);});}
+    }
+  };
+  function resetGym(){env=GYMS[gymKind].reset(711);state=GYMS[gymKind].init();steps=0;cumRegret=0;renderGym();}
+  function stepGym(n){for(let k=0;k<n;k++){const action=GYMS[gymKind].act(env,state);const tr=GYMS[gymKind].step(env,state,action);cumRegret+=tr.reward;steps++;}renderGym();}
+  function renderGym(){const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||210;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);GYMS[gymKind].draw(env,state,W,H);document.getElementById('gymName').textContent=GYMS[gymKind].name;document.getElementById('gymSteps').textContent=steps;document.getElementById('gymRegret').textContent=cumRegret.toFixed(1);document.getElementById('gymKnown').textContent=Math.round(GYMS[gymKind].known(state)*100)+'%';}
+  document.querySelectorAll('.gbtn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.gbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');gymKind=b.dataset.g;resetGym();};});
+  document.getElementById('gym1').onclick=()=>stepGym(1);document.getElementById('gym50').onclick=()=>stepGym(50);document.getElementById('gymReset').onclick=resetGym;window.addEventListener('resize',renderGym);resetGym();
+})();
 
 // ===== shared hidden complete graph on N nodes =====
 const N=7;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>6 · EDP that adapts and explores — the paper, playable</title>
+<title>7 · Production feedback is hostile — WPO capstone</title>
 <style>
 :root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
@@ -40,38 +40,54 @@ canvas{display:block;width:100%;background:var(--code);border-radius:6px}
 .policy-pills button{font-size:11.5px;padding:5px 10px}
 .banner{background:linear-gradient(180deg,var(--card),var(--bg));border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;margin:24px 0;font-size:14.5px}
 .banner b{color:var(--good)}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
 footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color:var(--dim);font-size:13px}
 @media (max-width:600px){body{padding:18px 12px 64px;font-size:15px}h1{font-size:24px}}
 </style>
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 6 / 6 · <a href="../05-edp/">← prev</a> · <a href="../">index</a> · <a href="../../paper/paper.md">paper →</a></span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 7 / 7 · <a href="../05-edp/">← prev</a> · <a href="../">index</a> · <a href="../../paper/paper.md">paper →</a></span></div>
 
-<h1>EDP that adapts and explores</h1>
-<p class="subtitle">Post 5 wrote the policy and stopped. Post 6 asks the harder question: can the same readable policy keep improving as data arrives, and how does it stack up against the best tuned bandit from Posts 1–4? This is the bet the paper makes.</p>
+<h1>Production feedback is hostile</h1>
+<p class="subtitle">The capstone is whole-page optimization: choose a slate of widgets when reward is delayed, noisy, and observed only at the page level. Tuned bandits can tie on regret; EDP's case is cold-start, auditability, editability, and serving as readable code.</p>
 
 <div class="hero">
-  <div class="hero-title">live: in-browser cold-start race · LLM-prior GAM vs tuned bandit, from session 0</div>
+  <div class="hero-title">live: cold-start race · LLM-prior GAM vs tuned bandit, from session 0</div>
   <canvas id="hero" height="190"></canvas>
   <div class="hero-caption" id="hero-cap">running…</div>
 </div>
 
-<p>The chart above is the headline result of the research project, made playable. Three policies start at session 0 — none of them has seen any data yet. EDP-static is the LLM-authored prior from Post 5, frozen. Bayesian-EDP is the same prior plus regularised SGD on the same parameters. LinTS-warm at the tuned α=0.05 is the bandit from Post 1, equipped with the same problem-fingerprint context the GAM uses, and tuned to the exploration rate that minimises its long-run regret.</p>
+<p>The chart above is the production lesson of the research project, made playable. Three policies start at session 0 — none of them has seen any data yet. EDP-static is the LLM-authored prior from Post 6, frozen. Bayesian-EDP is the same prior plus regularised SGD on the same parameters. LinTS-warm at tuned α=0.05 is the bandit from Post 1, equipped with the same problem-fingerprint context the GAM uses, and tuned to the exploration rate that minimises long-run regret.</p>
 
-<p>Watch what happens for the first ~2,500 sessions: every GAM variant is far ahead. The bandit needs to warm up; the GAM is already competent. Then the bandit catches up. By session 10K, the tuned bandit ties Bayesian-EDP within noise. <em>But the tie is the bandit catching up — never leading.</em></p>
+<p>Watch what happens for the first ~2,500 sessions: every GAM variant is far ahead. The bandit needs to warm up; the GAM is already competent. Then the bandit catches up. By session 10K, tuned LinTS and Bayesian-EDP are effectively tied. <em>The point is not that bandits fail. The point is that EDP starts useful and stays readable.</em></p>
 
 <hr class="scene">
 
-<h3>Act 1 — Recap, in four sentences</h3>
+<h3>Act 1 — Why WPO is the capstone</h3>
 
-<p>Posts 1–4: from-scratch exploration; bandits learn by burning regret. Post 5: an LLM authors a readable policy that's already most of the way to optimal, no clicks needed. The natural worry is that a written policy stops improving the moment the data starts arriving — the world drifts, the prior was a guess, the data has fine-grained calibration the LLM couldn't have known. So the question is whether you can keep learning <em>and</em> keep the readable representation.</p>
+<p>Whole-page optimization contains every problem in the series. The action is combinatorial: choose 6 widgets from 22 and order them. The parameters are hidden: what does this shopper need, and which widgets satisfy it? The feedback is hostile: a purchase or return arrives days later as one page-level number, not a clean per-widget reward.</p>
+
+<p>That last sentence is the production break from the school setting. In the lab, a bandit can observe which edge, pair, or slot earned reward. In WPO production, the learner sees the whole page's result. The semi-bandit decomposition that saved shortest path and TSP is gone.</p>
+
+<div class="mathbox">
+<div class="title">Production WPO object</div>
+<ul>
+<li><strong>Action:</strong> an ordered slate <code>S = (w₁,...,w₆)</code> chosen from 22 widgets, with no repeats.</li>
+<li><strong>Hidden reward:</strong> true page value <code>R(S,u,c)</code> depends on latent shopper need <code>u</code> and category context <code>c</code>.</li>
+<li><strong>Observable feedback:</strong> delayed scalar <code>R_obs = R(S,u,c)+ε</code>, often days later, with no per-widget credit.</li>
+<li><strong>Credit problem:</strong> if every chosen slot receives the same <code>R_obs</code>, the targets are correlated and attribution is weak.</li>
+<li><strong>Bayesian-EDP update:</strong> fit readable parameters with <code>(R̂-R_obs)^2 + λΣθ((θ-μ_LLM)/σ_LLM)^2</code>.</li>
+</ul>
+</div>
 
 <h3>Act 2 — Bayesian-EDP: prior, plus SGD on the same numbers</h3>
 
 <p>The trick is to treat the LLM-authored parameters as a Bayesian prior and run regularised SGD on the same parameters with the observed reward. The regulariser pulls each parameter back toward its LLM-authored mean; the gradient pulls it toward what the data says. With strong regularisation (large λ), you stay near the prior (basically EDP-static). With weak regularisation, you forget the prior entirely and reduce to a per-parameter bandit on the EDP architecture — which the paper calls GreedyLinTS, and which is also competitive but slower to start.</p>
 
-<p>Bayesian-EDP at the right λ is in between: <strong>launches at the LLM prior, keeps improving from data, never gives up the readable representation</strong>. The widget below races it against the tuned bandit you met in Post 1 (now equipped with the EDP-derived problem-fingerprint features so the comparison is fair).</p>
+<p>Bayesian-EDP at the right λ is in between: <strong>launches at the LLM prior, keeps improving from data, never gives up the readable representation</strong>. The widget below races it against the tuned bandit you met in Post 1, equipped with the EDP-derived problem-fingerprint features so the comparison is fair.</p>
 
 <hr class="scene">
 
@@ -106,7 +122,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <b>Three demonstrated facts, all in EDP's favour at low N:</b>
 <ol style="margin:8px 0 0 18px;padding:0;">
 <li>At 500 sessions, every EDP variant is at ~20% regret while the tuned bandit is at ~30% — a 9.4 pp gap (≈1.5×) from the LLM prior, with zero data.</li>
-<li>Bayesian-EDP matches or beats the tuned bandit at every horizon shown; the 10K "tie" is the bandit catching up, never leading.</li>
+<li>Bayesian-EDP and tuned LinTS are effectively tied by 10K sessions; the low-N regime is where the prior matters most.</li>
 <li>The advantage is structural: EDP-static (which never learns) still beats the tuned bandit for ~2,500 sessions purely on the prior. No exploration schedule recovers it.</li>
 </ol>
 </div>
@@ -115,11 +131,11 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <h3>Where the series ends</h3>
 
-<p>Six posts ago we were picking which of five slot machines to pull, and the bandit literature gave us a fully-solved problem with very nice convergence guarantees. Five posts of complications later — sort, shortest path, TSP — the same per-arm logic was still mostly working, with progressively more structure that lets the algorithm extract information faster from each trial.</p>
+<p>Seven posts ago we were picking which of five hidden options to try, and the bandit literature gave us a clean answer. Then the actions became algorithms: sort, shortest path, TSP. Then the optimizer became an LLM in the OPRO loop. Then the LLM's guess became an executable, editable policy.</p>
 
-<p>The pivot was Post 5: <em>what if you knew something about the problem before the first trial?</em> What if the "arms" weren't arbitrary numbers but widgets, persons, signals — things a human expert could reason about, and now an LLM can too? The series ends here because the research project picks it up: a policy class small enough to be LLM-writable, structured enough to be human-auditable, fast enough to serve in microseconds, and editable as readable code. The bet is that the LLM-edit axis is the unique one — bandits do regret fine — and the empirical evidence is in <a href="../../paper/paper.md">the paper</a>.</p>
+<p>The pivot was Post 6: <em>what if you knew something about the problem before the first trial?</em> What if the "arms" were widgets, personas, signals, and constraints — things a human expert could reason about, and now an LLM can too? The series ends here because the research project picks it up: a policy class small enough to be LLM-writable, structured enough to be human-auditable, fast enough to serve in microseconds, and editable as readable code. The bet is that the LLM-edit axis is the unique one — tuned bandits can do regret well — and the empirical evidence is in <a href="../../paper/paper.md">the paper</a>.</p>
 
-<p>If you've played through all six widgets, you've seen the same lesson from six angles: when parameters are unknown, the algorithm's job is to find the most informative thing to try next. Bandits do this with random exploration; combinatorial bandits do it with structural decomposition; EDP does it by reading the problem with a competent expert before the first click ever lands.</p>
+<p>If you've played through the series, you've seen the same lesson from several angles: when parameters are unknown, the algorithm's job is to decide what information is worth paying for. Bandits do this with statistical exploration; combinatorial bandits do it with structural decomposition; OPRO asks an LLM to search from scores; EDP compiles expert reasoning into a readable policy before the first click ever lands.</p>
 
 <p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Read the paper:</strong> <a href="../../paper/paper.md">WPO-Gym — A Simulation Benchmark for Whole-Page Optimization, with Evolvable Decision Programs as a Reference Policy</a>.</p>
 
@@ -189,7 +205,7 @@ window.addEventListener('resize',()=>ch.render());
   const cap=document.getElementById('hero-cap');
   function loop(){
     hch.reset();for(const p of POLS)hch.line(POL_INFO[p].label,POL_INFO[p].col);
-    let i=0;function tick(){if(i>=COLDSTART.milestones.length){cap.textContent='end · the tuned bandit ties at 10K but never leads.';setTimeout(loop,2200);return;}const m=COLDSTART.milestones[i];for(const p of POLS){const v=COLDSTART.curves[p][m][0];hch.push(POL_INFO[p].label,m,v);}hch.render();cap.textContent=`session ${m} · EDP-static ${COLDSTART.curves.edp_static[m][0].toFixed(1)}% · Bayesian-EDP ${COLDSTART.curves.bayesian_edp[m][0].toFixed(1)}% · tuned bandit ${COLDSTART.curves['lints_warm_a0.05'][m][0].toFixed(1)}%`;i++;setTimeout(tick,600);}tick();
+    let i=0;function tick(){if(i>=COLDSTART.milestones.length){cap.textContent='end · tuned LinTS and Bayesian-EDP are tied within noise at 10K.';setTimeout(loop,2200);return;}const m=COLDSTART.milestones[i];for(const p of POLS){const v=COLDSTART.curves[p][m][0];hch.push(POL_INFO[p].label,m,v);}hch.render();cap.textContent=`session ${m} · EDP-static ${COLDSTART.curves.edp_static[m][0].toFixed(1)}% · Bayesian-EDP ${COLDSTART.curves.bayesian_edp[m][0].toFixed(1)}% · tuned bandit ${COLDSTART.curves['lints_warm_a0.05'][m][0].toFixed(1)}%`;i++;setTimeout(tick,600);}tick();
   }
   loop();window.addEventListener('resize',()=>hch.render());
 })();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>5 · When world knowledge replaces exploration</title>
+<title>6 · Human-like priors as executable policy</title>
 <style>
 :root{--bg:#0b1220;--card:#131c30;--card2:#1a2440;--fg:#e6edf3;--dim:#8b95a8;--faint:#5b6378;--accent:#4c8df6;--accent2:#2a4a7a;--good:#5fd2a3;--warn:#f0a058;--bad:#e16c6c;--purple:#c879f0;--border:#1f2a44;--code:#0e1626;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
@@ -23,6 +23,9 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
 .widget h2{margin-top:0;font-size:18px;border:0}
 .legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 @media (max-width:700px){.row{grid-template-columns:1fr}}
 .col{background:var(--code);border-radius:8px;padding:12px}
@@ -61,30 +64,43 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 5 / 6 · <a href="../04-tsp/">← prev</a> · <a href="../">index</a> · <a href="../06-edp-adapts/">next →</a></span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 6 / 7 · <a href="../05-opro/">← prev</a> · <a href="../">index</a> · <a href="../06-edp-adapts/">next →</a></span></div>
 
-<h1>When world knowledge replaces exploration</h1>
-<p class="subtitle">Posts 1–4 watched algorithms learn the problem from scratch. What if, instead, someone read the problem and wrote down a sensible policy? In 2025 that someone can be an LLM, and the policy can be a readable artefact that runs at sub-millisecond serving cost.</p>
+<h1>Human-like priors as executable policy</h1>
+<p class="subtitle">OPRO explores by proposing candidates from score history. EDP makes the next move: put the guess inside a readable model, estimate hidden parameters from signals, and run the solver on that estimate.</p>
 
 <div class="banner">
-<b>Live: an actual policy from the research project</b> · 245 named parameters, authored offline from shopping psychology, zero training data. Drag the sliders — watch a page recompose. No clicks were needed to build this; no clicks are needed to serve it.
+<b>Live: an actual EDP instance from the research project</b> · 245 named parameters, authored offline from shopping psychology, zero training data. Drag the sliders — watch hidden intent estimates change, then watch the solver compose a page.
 </div>
 
-<p>The previous posts each fixed the same problem from a different angle: how do you find the best <em>k</em>-tuple, edge, or permutation when you can only sample noisily? The answer was always some form of bandit exploration. This post is the move that the rest of the series sets up: <strong>if the problem has domain structure that a human (or LLM) can read, you can often write down a competent policy without exploring at all.</strong></p>
+<p>The previous level put a Gym around classical problems: sorting has hidden skill values, shortest path has hidden edge weights, TSP has hidden distances. A bandit estimates those parameters from trials. An LLM can also guess, but score-only OPRO is a thin feedback channel. EDP asks for a better interface: <strong>make the hidden-parameter estimator itself a readable artifact.</strong></p>
+
+<p>That idea is not WPO-specific. For sorting, a named GAM might estimate item skill from signals such as reviews, price, or model-written difficulty notes. For routing, it might estimate congestion from weather, time, and events. For TSP, it might estimate distance penalties from traffic or risk. The solver can still be sort, Dijkstra, or 2-opt; the EDP is the human-readable prior over the parameters those solvers need.</p>
 
 <hr class="scene">
 
-<h3>Act 1 — The widget you're about to play with</h3>
+<h3>Act 1 — The general shape</h3>
 
-<p>Below is a live instance of the EDP from <a href="../../paper/paper.md">the paper</a>: a 2-layer GAM with named piecewise-linear shape functions, on the whole-page-composition problem (choose 6 widgets out of 22 for a fashion product page). The whole policy is 245 numbers. Authored by an LLM, offline, from "size-anxious shoppers need fit reassurance" and similar statements — never trained on any data.</p>
+<p>An EDP has three pieces. First, a Gym-like environment defines what can be observed and how reward appears. Second, named GAM curves turn observable signals into latent parameter estimates: congestion, uncertainty, fit anxiety, comparison friction, or whatever the problem needs. Third, a classical solver acts on those estimates. The representation is small enough for an LLM to author, and explicit enough for a human to review.</p>
 
-<p>Move the persona sliders to simulate different shoppers; watch the 7 problem scores (Layer 1) recompute; watch the 6-widget page (Layer 2) recompose. This is what the policy <em>does</em> at every page render in production: it reads ~15 signals, evaluates ~300 named scalars in pure code, and returns a page in about 1 ms. No LLM in the serving path.</p>
+<div class="mathbox">
+<div class="title">EDP / GAM object</div>
+<ul>
+<li><strong>Signals:</strong> observed features <code>x</code>, such as clicks, price dwell, weather, congestion, or review text scores.</li>
+<li><strong>Latents:</strong> problem intensities <code>z_p = Σ_j w_{pj} g_{pj}(x_j)</code>, where <code>g</code> are named piecewise-linear curves.</li>
+<li><strong>Module score:</strong> <code>score(w) = base + Σ_p on_rem_p · remaining_p + Σ_p on_cov_p · coverage_p − decay · slot</code>.</li>
+<li><strong>Solver:</strong> greedy composition chooses the next widget with the highest score, updates remaining/coverage, repeats.</li>
+<li><strong>Edit unit:</strong> one named scalar or breakpoint, e.g. <code>size_guide.on_rem.F32</code>, with a human-readable reason.</li>
+</ul>
+</div>
+
+<p>Below is the paper's largest instance: whole-page optimization. Move the persona sliders to simulate different shoppers; watch the 7 problem scores (Layer 1) recompute; watch the 6-widget page (Layer 2) recompose. This is what the policy <em>does</em> at every page render: it reads signals, evaluates named scalars in pure code, and returns a page in about 1 ms. No LLM in the serving path.</p>
 
 <hr class="scene">
 
 <div class="widget">
 <h2>1 — Persona → page (live EDP, zero learning)</h2>
-<p class="legend">Pick a persona, or move the sliders. The middle column is the policy's problem fingerprint (what's worrying this shopper); the right column is the page it composes for them. Everything updates in real time, computed entirely in your browser from the actual policy JSON.</p>
+<p class="legend">Pick a persona, or move the sliders. The middle column is the policy's latent parameter estimate (what problem is active); the right column is the solver's chosen page. Everything updates in real time, computed entirely in your browser from the policy JSON.</p>
 
 <div class="persona-pills" id="personas"></div>
 
@@ -111,25 +127,25 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 </div>
 
-<p>Notice what just happened. You moved sliders; the policy responded with sensible widget choices for each persona archetype. <strong>It had never seen a click.</strong> The LLM that authored it just <em>knew</em> things about shopping psychology — size-anxious shoppers benefit from fit reassurance and return policy clarity; comparison shoppers benefit from side-by-side cards; outfit-seekers benefit from complete-the-look modules — and encoded those things as numbers in a typed grammar.</p>
+<p>Notice what just happened. You moved signals; the policy estimated hidden intent; the solver responded with sensible widget choices. <strong>It had never seen a click.</strong> The LLM that authored it just <em>knew</em> things about shopping psychology — size-anxious shoppers benefit from fit reassurance and return policy clarity; comparison shoppers benefit from side-by-side cards; outfit-seekers benefit from complete-the-look modules — and encoded those things as numbers in a typed grammar.</p>
 
 <hr class="scene">
 
-<h3>Act 2 — Why this is different from "use a rules engine"</h3>
+<h3>Act 2 — Why this is different from "ask an LLM"</h3>
 
-<p>Two reasons. First, the grammar is small and named, so an LLM can hold the entire policy in one prompt, edit a curve, and have the change be both <em>readable</em> (a human sees what changed) and <em>executable</em> (the system serves the new version with no retraining). Try this in your codebase: pick a 10K-line rules engine and ask Claude to "make returns_policy fire harder for the size-anxious." It will struggle. Now ask it to set <code>fit_reassurance.on_rem.F32 = 2.4</code> in a 9 KB JSON. That works.</p>
+<p>Two reasons. First, the grammar is small and named, so an LLM can hold the entire policy in one prompt, edit a curve, and have the change be both <em>readable</em> (a human sees what changed) and <em>executable</em> (the system serves the new version with no retraining). Try asking a model to directly choose every route, sort order, or page at runtime; now compare that with asking it to edit <code>fit_reassurance.on_rem.F32 = 2.4</code> in a 9 KB JSON. The latter is reviewable software.</p>
 
 <p>Second — and this is the load-bearing move — the small named GAM is a <em>fixed compositional structure</em>, not free-form code. Every page decision factors as <code>base + Σ(on_rem · remaining) + Σ(on_cov · coverage) − slot_decay · slot</code>. The LLM doesn't write the algorithm; it writes the numbers. The algorithm runs in microseconds, deterministically, in pure Python or compiled JavaScript.</p>
 
 <h3>Act 3 — What this skips, and what it doesn't</h3>
 
-<p>Posts 1–4 needed exploration because the algorithms knew nothing about the problem. EDP needs no exploration <em>for the things the LLM already knows</em>: that fit_reassurance addresses size anxiety, that comparison cards help comparison shoppers, that outfit_completion is irrelevant when the persona is paralyzed by choice. These were learnable from clicks but expensive to learn; they are free if you read them off a shopping-psychology textbook.</p>
+<p>Bandits need exploration because their priors are weak. EDP needs less exploration <em>for the things the LLM or human already knows</em>: that fit reassurance addresses size anxiety, that a snowstorm changes travel time, that a noisy comparison near a decision boundary deserves more samples. These facts are learnable from trials, but expensive to learn from scratch.</p>
 
 <p>What it does <em>not</em> skip: calibration. The LLM said "size_chart at 0.6 means moderate concern" but you may need to nudge it to 0.55. It said "fit_reassurance addresses F3.2 with weight 2.2" but production data might want 2.4. These are small calibrations to the LLM's prior, and they should still come from data.</p>
 
-<p>So you have an LLM-authored, zero-data, sub-millisecond policy that is already most of the way to optimal. The natural next question is whether you can still <em>improve it</em> as data arrives, without giving up the readable representation. That's the research bet, and the next post lets you play it.</p>
+<p>So you have an LLM-authored, zero-data, sub-millisecond policy that starts with a useful guess. The natural next question is whether it survives production feedback: delayed rewards, noisy measurements, and page-level attribution where the system sees only the total result, not which component deserved credit.</p>
 
-<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> can the LLM-authored policy keep improving as clicks come in — racing a tuned bandit from session 0? <a href="../06-edp-adapts/">Post 6 — EDP that adapts and explores</a>.</p>
+<p style="font-size:17px;border-left:3px solid var(--accent);padding-left:14px;color:var(--fg);margin-top:24px;"><strong>Next:</strong> production makes the reward hostile. Can a readable policy keep its advantage when bandits are tuned well? <a href="../06-edp-adapts/">Post 7 — production feedback and WPO</a>.</p>
 
 <footer>Side project of <a href="../../paper/paper.md">WPO-Gym / EDP</a>. <a href="../">series index</a>.</footer>
 </div>

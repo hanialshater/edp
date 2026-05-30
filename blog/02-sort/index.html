@@ -27,6 +27,9 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
 .widget h2{margin-top:0;font-size:18px;border:0}
 .legend{font-size:13px;color:var(--dim);margin-bottom:14px}
+.mathbox{background:var(--code);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:8px;padding:13px 15px;margin:18px 0;font-size:14px}
+.mathbox .title{font-family:var(--mono);font-size:11px;color:var(--good);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.mathbox ul{margin:8px 0 0 18px;padding:0}.mathbox li{margin:4px 0}.mathbox code{background:rgba(255,255,255,0.05)}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px}
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}
@@ -57,7 +60,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </head>
 <body>
 <div class="page">
-<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 2 / 6 · <a href="../01-bandit/">← prev</a> · <a href="../">index</a> · <a href="../03-shortest-path/">next →</a></span></div>
+<div class="nav"><span>SOLVING WITH UNKNOWN PARAMETERS</span><span>POST 2 / 7 · <a href="../01-bandit/">← prev</a> · <a href="../">index</a> · <a href="../03-shortest-path/">next →</a></span></div>
 
 <h1>Sorting numbers you cannot read</h1>
 <p class="subtitle">Eight things to put in order. You can compare any two, but the comparison is noisy. How many comparisons until you know the order — and where do you spend them?</p>
@@ -81,6 +84,17 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <p>You have eight wines, eight ad creatives, eight resumes. Pairwise comparisons are noisy: the panel says "A is better" with probability that depends on the true gap. A close pair flips its opinion half the time; a wide pair gets it right almost always. You want the eight sorted, and every comparison costs you.</p>
 
 <p>This is what computer science calls <strong>noisy sort</strong> or, when the oracle is a Bernoulli with P(i ≻ j) = some function of (μᵢ − μⱼ), the <strong>dueling bandit</strong> problem. The connection to Post 1 is direct: each of the n(n−1)/2 pairs is its own Bernoulli arm, and you are running them in parallel asking "which side is the success more likely on?" Your budget is the total number of comparisons.</p>
+
+<div class="mathbox">
+<div class="title">Math object</div>
+<ul>
+<li><strong>Unknowns:</strong> latent item scores <code>sᵢ</code>; the true order is sorting by <code>sᵢ</code>.</li>
+<li><strong>Action:</strong> choose a pair <code>(i, j)</code> to compare.</li>
+<li><strong>Feedback:</strong> observe one bit, modeled as <code>P(i ≻ j) = σ(τ(sᵢ − sⱼ))</code>.</li>
+<li><strong>Estimator:</strong> Borda counts use wins; Bradley-Terry fits scores <code>s</code> by logistic likelihood.</li>
+<li><strong>Metric:</strong> Kendall <code>τ</code> counts how many pairwise orderings match the hidden truth.</li>
+</ul>
+</div>
 
 <h3>Act 3 — Where to spend the budget</h3>
 
