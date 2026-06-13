@@ -1,6 +1,6 @@
 # Supplementary Material
 
-Companion to the paper "Evolvable Decision Programs: Explainable Page Composition under Production Reward Conditions". Contains reproduction commands, code structure, and instructions for the interactive demos. Numerical and methodological content stays in the main paper.
+Companion to the paper "WPO-Gym: A Simulation Benchmark for Whole-Page Optimization, with Evolvable Decision Programs as a Reference Policy". Contains reproduction commands, code structure, and instructions for the interactive demos. Numerical and methodological content stays in the main paper.
 
 ## A. Reproducing the experiments
 
@@ -22,7 +22,7 @@ EDP_PERSONA_SOURCE=llm python3 experiments/multiseed.py --reps 10 \
     --source llm --out results_multiseed_llm_cat.npz
 ```
 
-### A.2 §5.8 baselines (static, LLM-as-policy, Robust EDP)
+### A.2 §5.8 / §5.10 baselines (static, LLM-as-policy, Robust EDP)
 
 ```bash
 # static + LLM-as-policy (deterministic; one subagent call to author the policy)
@@ -44,7 +44,7 @@ EDP_PERSONA_SOURCE=llm python3 -m edp.orchestrators.robust \
 
 ```bash
 python3 experiments/stressor_decomp.py    # §5.2 — bandit cum regret per condition
-python3 experiments/lab_vs_real.py --reps 10  # §5.9 — lab vs production for both sources
+python3 experiments/lab_vs_real.py --reps 10  # §5.1 — lab vs production for both sources
 ```
 
 ### A.4 Figures
@@ -75,7 +75,7 @@ edp/                             # core package
     ├── base.py                  # state save/load, batch run
     ├── report.py                # report-based live-agent loop
     ├── opro.py                  # OPRO ablation loop
-    └── robust.py                # §5.8 Robust EDP — K-perturbation validation-slice selection
+    └── robust.py                # §5.10 Robust EDP — K-perturbation validation-slice selection
 
 experiments/                     # entry-point scripts (paper-aligned)
 ├── compare.py                   # head-to-head harness
@@ -84,7 +84,7 @@ experiments/                     # entry-point scripts (paper-aligned)
 ├── llm_policy_generate.py       # §5.8 prompt for the LLM-as-policy function
 ├── run_baselines.py             # §5.8 static + LLM-as-policy on either source
 ├── stressor_decomp.py           # §5.2 sweep
-├── lab_vs_real.py               # §5.9 lab vs production
+├── lab_vs_real.py               # §5.1 lab vs production
 ├── export_lints_state.py        # train LinTS, export weights JSON for the demo
 └── build_icml_pdf.py            # builds the ICML two-column PDF
 
@@ -164,7 +164,7 @@ Production reward stack (default):
 - noise σ = 0.20 added on release from delay queue
 - page-level attribution: each slot receives `page_total / N_SLOTS` as its credit
 
-Robust EDP wrapper (§5.8):
+Robust EDP wrapper (§5.10):
 - K = 8 perturbations per checkpoint
 - perturbation σ = 0.15 (Gaussian) on every parameter the agent's edits touched, except `slot_decay`
 - validation slice = 500 sessions at seed 99991
