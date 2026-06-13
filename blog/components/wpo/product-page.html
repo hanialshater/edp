@@ -12,6 +12,8 @@
   garment atoms, the tile()/widgetChrome() helpers and the COL accent palette.
   All classes prefixed `wpo-` to avoid collisions. Fully offline (no fonts /
   images / CDN / fetch). Light "phone screen" card on the dark blog page.
+  mount(root,{page,toolbar}) — pass toolbar:false to hide the preset toolbar
+  when an external composer drives the page (so presets can't desync it).
 -->
 <style>
 :root{--bg:#0b1220;--card:#131c30;--fg:#e6edf3;--dim:#8b95a8;--border:#1f2a44;--mono:ui-monospace,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -577,6 +579,13 @@ const fallback=(name)=>widgetChrome('slate',
 
 const ALL_MODULES=Object.keys(R);
 const DEFAULT_PAGE=['fit_reassurance','size_guide','comparison_card','value_breakdown','return_explainer','similar_items'];
+const PRESETS={
+  essentials:DEFAULT_PAGE,
+  premium:['brand_story','material_deep_dive','value_breakdown','expert_pick','price_history','occasion_lookbook'],
+  discovery:['recently_viewed','similar_items','also_bought','trending_now','personal_recs','wishlist_save'],
+  all:ALL_MODULES,
+};
+const samePage=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
 
 // ─── HEADER / HERO ─────────────────────────────────────────────────────────
 function heroHTML(){
@@ -595,6 +604,7 @@ function heroHTML(){
 // ─── MOUNT ─────────────────────────────────────────────────────────────────
 function mountWpoPage(root,opts){
   opts=opts||{};
+  const showToolbar=opts.toolbar!==false;
   let page=Array.isArray(opts.page)&&opts.page.length?opts.page.slice():DEFAULT_PAGE.slice();
   let rendered=[];
 
@@ -612,13 +622,10 @@ function mountWpoPage(root,opts){
         ${cardHTML}
       </div>`;
     }).join('');
+    const toolbar=showToolbar?`<div class="wpo-toolbar">${Object.keys(PRESETS).map(k=>
+        `<button data-f="${k}" class="${samePage(page,PRESETS[k])?'on':''}">${k==='all'?'all 22':k}</button>`).join('')}</div>`:'';
     root.innerHTML=`
-      <div class="wpo-toolbar">
-        <button data-f="essentials">essentials</button>
-        <button data-f="premium">premium</button>
-        <button data-f="discovery">discovery</button>
-        <button data-f="all">all 22</button>
-      </div>
+      ${toolbar}
       <div class="wpo-phone">
         <div class="wpo-phone__notch"></div>
         <div class="wpo-screen">
@@ -628,15 +635,9 @@ function mountWpoPage(root,opts){
           </div>
         </div>
       </div>`;
-    const presets={
-      essentials:DEFAULT_PAGE,
-      premium:['brand_story','material_deep_dive','value_breakdown','expert_pick','price_history','occasion_lookbook'],
-      discovery:['recently_viewed','similar_items','also_bought','trending_now','personal_recs','wishlist_save'],
-      all:ALL_MODULES,
-    };
-    Object.keys(presets).forEach(k=>{
+    Object.keys(PRESETS).forEach(k=>{
       const b=root.querySelector(`[data-f="${k}"]`);
-      if(b)b.onclick=()=>setPage(presets[k]);
+      if(b)b.onclick=()=>setPage(PRESETS[k]);
     });
   }
 

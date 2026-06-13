@@ -30,7 +30,7 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 button{font-family:var(--mono);font-size:13px;background:var(--card2);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:7px 13px;cursor:pointer;transition:all 0.12s}
 button:hover{background:var(--accent2);border-color:var(--accent)}
 button.primary{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
-button.toggle.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+button.on{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0;font-family:var(--mono);font-size:13px}
 .stat{background:var(--code);padding:9px 11px;border-radius:6px}
 .stat .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:0.08em}
@@ -774,6 +774,13 @@ const fallback=(name)=>widgetChrome('slate',
 
 const ALL_MODULES=Object.keys(R);
 const DEFAULT_PAGE=['fit_reassurance','size_guide','comparison_card','value_breakdown','return_explainer','similar_items'];
+const PRESETS={
+  essentials:DEFAULT_PAGE,
+  premium:['brand_story','material_deep_dive','value_breakdown','expert_pick','price_history','occasion_lookbook'],
+  discovery:['recently_viewed','similar_items','also_bought','trending_now','personal_recs','wishlist_save'],
+  all:ALL_MODULES,
+};
+const samePage=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
 
 // ─── HEADER / HERO ─────────────────────────────────────────────────────────
 function heroHTML(){
@@ -792,6 +799,7 @@ function heroHTML(){
 // ─── MOUNT ─────────────────────────────────────────────────────────────────
 function mountWpoPage(root,opts){
   opts=opts||{};
+  const showToolbar=opts.toolbar!==false;
   let page=Array.isArray(opts.page)&&opts.page.length?opts.page.slice():DEFAULT_PAGE.slice();
   let rendered=[];
 
@@ -809,13 +817,10 @@ function mountWpoPage(root,opts){
         ${cardHTML}
       </div>`;
     }).join('');
+    const toolbar=showToolbar?`<div class="wpo-toolbar">${Object.keys(PRESETS).map(k=>
+        `<button data-f="${k}" class="${samePage(page,PRESETS[k])?'on':''}">${k==='all'?'all 22':k}</button>`).join('')}</div>`:'';
     root.innerHTML=`
-      <div class="wpo-toolbar">
-        <button data-f="essentials">essentials</button>
-        <button data-f="premium">premium</button>
-        <button data-f="discovery">discovery</button>
-        <button data-f="all">all 22</button>
-      </div>
+      ${toolbar}
       <div class="wpo-phone">
         <div class="wpo-phone__notch"></div>
         <div class="wpo-screen">
@@ -825,15 +830,9 @@ function mountWpoPage(root,opts){
           </div>
         </div>
       </div>`;
-    const presets={
-      essentials:DEFAULT_PAGE,
-      premium:['brand_story','material_deep_dive','value_breakdown','expert_pick','price_history','occasion_lookbook'],
-      discovery:['recently_viewed','similar_items','also_bought','trending_now','personal_recs','wishlist_save'],
-      all:ALL_MODULES,
-    };
-    Object.keys(presets).forEach(k=>{
+    Object.keys(PRESETS).forEach(k=>{
       const b=root.querySelector(`[data-f="${k}"]`);
-      if(b)b.onclick=()=>setPage(presets[k]);
+      if(b)b.onclick=()=>setPage(PRESETS[k]);
     });
   }
 
@@ -856,7 +855,8 @@ function mountWpoPage(root,opts){
 (function wpoSection(){
   const host=document.getElementById('wpoPage');
   if(!host)return;
-  const wpo=mountWpoPage(host,{});
+  // toolbar:false — the persona buttons above are the only driver, so presets can't desync the page
+  const wpo=mountWpoPage(host,{toolbar:false});
   function show(name){
     const feat=Object.assign({},PERSONAS[name]||{});
     const {page}=compose(feat);
