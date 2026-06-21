@@ -80,7 +80,9 @@ class ContextualTSPEnv:
                 self._hidden_edge_residual[(left, right)] = self._rng.uniform(-0.12, 0.12)
 
         # Fixed, hidden contextual law. The public feature map is known; coefficients are not.
-        self._theta = (1.25, 1.75, 0.25, 1.15, 1.75, 0.55)
+        # The strong centrality x rush interaction makes the benchmark diagnose whether a
+        # policy can generalize across edge features and route position.
+        self._theta = (0.80, 1.15, 0.10, 1.80, 4.20, 0.35)
         self._day_context = {"weather": 0.0, "start_minute": 480.0}
 
     @property
