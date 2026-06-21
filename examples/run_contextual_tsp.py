@@ -1,3 +1,8 @@
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from semi_bandit_gym import ContextualLCBAgent, ContextualTSPEnv, EdgeOnlyLCBAgent, ExactOracle, run_episode
 from semi_bandit_gym.contextual_tsp import ContextualTSPConfig
 
