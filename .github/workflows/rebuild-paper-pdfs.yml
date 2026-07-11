@@ -7,6 +7,12 @@ on:
     paths:
       - .github/workflows/rebuild-paper-pdfs.yml
       - .github/icml-patch/**
+  pull_request:
+    branches:
+      - claude/bandit-edp-comparison-SFB0F
+    paths:
+      - .github/workflows/rebuild-paper-pdfs.yml
+      - .github/icml-patch/**
 
 permissions:
   contents: write
