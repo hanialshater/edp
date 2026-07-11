@@ -1,18 +1,22 @@
-"""Gym-like environment for whole-page composition.
+"""Gym-like environment for whole-page module selection.
 
 Separates the *environment* (session stream + ground-truth reward + the
 production reward stack: page-level attribution, multi-day delay, noise)
 from the *algorithm* (any page-composition policy).
 
-The classic Gym `reset()` / `step()` contract is adapted for delayed
-reward. `step(page, payload)` advances one session and returns a
-`StepResult` whose `matured` field carries the (noisy, delayed) feedback
+The classic Gym ``reset()`` / ``step()`` contract is adapted for delayed
+reward. ``step(page, payload)`` advances one session and returns a
+``StepResult`` whose ``matured`` field carries the noisy, delayed feedback
 that became available at this tick — exactly the feedback a learner is
-allowed to see in production. The immediate noise-free reward and the
-oracle are returned too, but only for evaluation; a policy that consumes
-them is cheating.
+allowed to see in production. The immediate noise-free reward and exact
+set-oracle are returned for evaluator bookkeeping only; the canonical runner
+never passes them to the policy.
 
-Typical loop (see edp/agents.py:run_episode for the canonical runner):
+The current ground-truth reward is permutation-invariant, so the environment
+benchmarks selection of six distinct modules. Position-sensitive ordering is
+out of scope until an order-aware reward is supplied.
+
+Typical loop (see ``edp/agents.py:run_episode`` for the canonical runner):
 
     env = PageCompositionEnv(n=10_000, seed=42, source='parametric')
     obs = env.reset()
@@ -22,7 +26,7 @@ Typical loop (see edp/agents.py:run_episode for the canonical runner):
         for r_obs, pl in step.matured:
             agent.learn(r_obs, pl)
         obs = step.obs
-    for r_obs, pl in env.drain():        # flush the delay queue
+    for r_obs, pl in env.drain():
         agent.learn(r_obs, pl)
     loss_pct = env.regret_pct()
 """
@@ -38,29 +42,35 @@ from edp.ground_truth import set_source, true_page_reward, oracle_reward
 
 @dataclass(frozen=True)
 class Observation:
-    """What the policy sees each tick. Persona is deliberately hidden —
-    it is the latent the reward depends on, and no policy may read it."""
-    index: int        # session index in the stream
-    category: str     # fashion category being viewed (observable)
-    feat: dict        # 14 raw behavioural signals + price_norm
+    """What the policy sees each tick.
+
+    Persona is deliberately hidden because it is the latent variable on which
+    the simulator reward depends. Category and behavioral/product features are
+    observable policy inputs.
+    """
+    index: int
+    category: str
+    feat: dict
 
 
 @dataclass
 class StepResult:
-    obs: Observation | None              # next observation, None when done
-    matured: list[tuple[float, Any]]     # (observed_reward, payload) ready now
-    true_reward: float                   # immediate noise-free reward (eval only)
-    oracle: float                        # oracle reward for this session (eval only)
+    obs: Observation | None
+    matured: list[tuple[float, Any]]
+    true_reward: float                   # evaluator only
+    oracle: float                        # evaluator only
     done: bool
     info: dict = field(default_factory=dict)
 
 
 class PageCompositionEnv:
-    """Gym-like environment wrapping the session stream + production
-    reward stack. Policy-agnostic: it submits a scalar page reward to the
-    delay queue and surfaces matured (reward, payload) pairs; how that
-    reward is attributed across slots lives entirely in the policy's
-    payload, so per-slot and page-level learners share one environment."""
+    """Delayed page-reward environment shared by all policy families.
+
+    Policy attribution lives in the opaque payload, not in the environment,
+    so per-arm and page-level learners can run through one protocol. The
+    environment never exposes the latent persona through ``Observation`` or
+    ``StepResult.info``.
+    """
 
     def __init__(self, n: int = 10_000, seed: int = 42, *,
                  source: str = 'parametric',
@@ -84,11 +94,13 @@ class PageCompositionEnv:
         self._oracles: list[float] = []
         self._oracle_cache: dict[tuple[str, str], float] = {}
 
-    # ------------------------------------------------------------------
     def reset(self) -> Observation:
         self._stream = make_session_stream(self.n, seed=self.seed)
-        self._fb = DelayedFeedback(delay=self.delay, noise_sigma=self.noise_sigma,
-                                   seed=self._feedback_seed)
+        self._fb = DelayedFeedback(
+            delay=self.delay,
+            noise_sigma=self.noise_sigma,
+            seed=self._feedback_seed,
+        )
         self._i = 0
         self._rewards = []
         self._oracles = []
@@ -99,33 +111,33 @@ class PageCompositionEnv:
             raise RuntimeError('call reset() before step()')
         persona, category, _ = self._stream[self._i]
 
-        # matured feedback that becomes visible at this tick
         matured = list(self._fb.drain_ready(self._i))
-
         true_r = self._reward_fn(persona, category, page)
         oracle = self._oracle(persona, category)
         self._rewards.append(true_r)
         self._oracles.append(oracle)
 
-        # submit this action's reward to the delay queue with its payload
         if payload is not None:
             self._fb.submit(self._i, true_r, payload)
 
         self._i += 1
         done = self._i >= self.n
         nxt = None if done else self._obs(self._i)
-        return StepResult(obs=nxt, matured=matured, true_reward=true_r,
-                          oracle=oracle, done=done,
-                          info={'persona': persona, 'category': category})
+        return StepResult(
+            obs=nxt,
+            matured=matured,
+            true_reward=true_r,
+            oracle=oracle,
+            done=done,
+            info={'category': category},
+        )
 
     def drain(self) -> list[tuple[float, Any]]:
-        """Flush the delay queue at end of episode. Returns the residual
-        matured feedback the policy still needs to learn from."""
+        """Flush feedback still pending at episode end."""
         if self._fb is None:
             return []
         return list(self._fb.drain_all())
 
-    # ------------------------------------------------------------------
     def _obs(self, i: int) -> Observation:
         _, category, feat = self._stream[i]
         return Observation(index=i, category=category, feat=feat)
@@ -136,23 +148,21 @@ class PageCompositionEnv:
             self._oracle_cache[key] = self._oracle_fn(persona, category)
         return self._oracle_cache[key]
 
-    # ------------------------------------------------------------------
     def cumulative_regret(self) -> float:
-        return float(np.sum(np.array(self._oracles) - np.array(self._rewards)))
+        return float(np.sum(np.asarray(self._oracles) - np.asarray(self._rewards)))
 
     def oracle_total(self) -> float:
         return float(np.sum(self._oracles))
 
     def regret_pct(self) -> float:
-        """Percent of oracle reward lost over the episode — the paper's
-        headline metric."""
-        tot = self.oracle_total()
-        return 100.0 * self.cumulative_regret() / tot if tot else 0.0
+        """Percent of exact set-oracle reward lost over the episode."""
+        total = self.oracle_total()
+        return 100.0 * self.cumulative_regret() / total if total else 0.0
 
     @property
     def rewards(self) -> np.ndarray:
-        return np.array(self._rewards)
+        return np.asarray(self._rewards)
 
     @property
     def oracles(self) -> np.ndarray:
-        return np.array(self._oracles)
+        return np.asarray(self._oracles)
