@@ -1,0 +1,50 @@
+name: Apply ICML audit and rebuild paper
+
+on:
+  push:
+    branches:
+      - agent/icml-methodology-audit
+    paths:
+      - .github/workflows/rebuild-paper-pdfs.yml
+      - .github/icml-patch/**
+
+permissions:
+  contents: write
+
+jobs:
+  apply-build-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/icml-methodology-audit
+
+      - name: Apply validated source tree
+        run: |
+          cat .github/icml-patch/part-* | base64 --decode > /tmp/icml-tree.tar.gz
+          tar -xzf /tmp/icml-tree.tar.gz
+
+      - name: Install PDF toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc texlive-latex-base texlive-latex-recommended \
+            texlive-latex-extra texlive-fonts-recommended
+
+      - name: Validate and build
+        run: |
+          PYTHONPATH=. python -m pytest -q
+          PYTHONPATH=. python experiments/recompute_exact_metrics.py
+          PYTHONPATH=. python experiments/check_paper_consistency.py
+          python experiments/build_paper_pdf.py
+          python experiments/build_icml_pdf.py
+          python experiments/build_supplementary_pdf.py
+
+      - name: Commit corrected repository
+        run: |
+          rm -rf .github/icml-patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix benchmark methodology and paper"
+          git push origin HEAD:agent/icml-methodology-audit
