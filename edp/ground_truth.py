@@ -31,6 +31,7 @@ from edp.config import N_SLOTS, NEEDS
 from edp.catalog import (
     TRUE_PROVISIONS,
     WIDGETS,
+    WIDGET_IDX,
     CATEGORIES,
     CATEGORY_MIX,
     apply_category_multiplier,
@@ -58,8 +59,11 @@ def get_source():
 
 
 def set_source(name: str):
+    """Activate a persona source without invalidating an unchanged cache."""
     global _PERSONA_SOURCE, _TRUE_NEEDS_CACHE, _ORACLE_CACHE
     global _ORACLE_PAGE_CACHE, _EFFECTIVE_CACHE
+    if name == _PERSONA_SOURCE:
+        return
     _PERSONA_SOURCE = name
     _TRUE_NEEDS_CACHE = None
     _ORACLE_CACHE = None
@@ -154,7 +158,7 @@ def true_page_reward(persona_name: str, category: str | list[str],
     needs = _needs_array(_EFFECTIVE_CACHE[(persona_name, category)])
     if not page:
         return 0.0
-    indices = [WIDGETS.index(widget) for widget in page]
+    indices = [WIDGET_IDX[widget] for widget in page]
     coverage = _PROVISION_MATRIX[indices].sum(axis=0)
     return float(_reward_from_coverage(needs, coverage))
 
