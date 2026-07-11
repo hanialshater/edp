@@ -1,8 +1,13 @@
-# ICML-style review: WPO-Gym / Evolvable Decision Programs
+# ICML 2026-style review: WPO-Gym / Evolvable Decision Programs
 
-**Recommendation on the audited draft:** Reject (major scientific revision required)  
-**Score:** 3/10  
-**Confidence:** 5/5
+**Overall recommendation:** **2/6 — Reject**  
+**Soundness:** **1/4 — Poor**  
+**Presentation:** **3/4 — Good**  
+**Significance:** **3/4 — Good**  
+**Originality:** **3/4 — Good**  
+**Confidence:** **5/5**  
+**Limitations adequately discussed:** No  
+**Ethics flag:** No
 
 This review evaluates the claims against the checked-in implementation and result provenance, not only the prose.
 
@@ -122,14 +127,17 @@ Use the official style files, make the main scientific claim fit in eight pages,
 - The claim that logged evaluation "cannot" study the problem is too absolute. Logged evaluation is difficult because of support and propensity issues, but restrictions or structured policies can make counterfactual evaluation possible.
 - The policy's apparent order-specific parameters (`slot_decay`) are not identifiable from an order-invariant reward without additional assumptions.
 
-## Questions for the authors
+## Key questions for the authors
 
-1. What information would a real deployment possess at an edit checkpoint? In particular, where would persona labels, need vectors, widget provisions, and per-persona oracle regret come from?
+1. What information would a real deployment possess at an edit checkpoint? In particular, where would persona labels, need vectors, widget provisions, and per-persona oracle regret come from? A production-observable answer could materially improve the soundness assessment.
 2. Is the intended contribution a set-selection benchmark or an ordered-page benchmark? If ordering is essential, what user model makes position causally affect reward?
 3. Why were full-bandit page-level models omitted when aggregate page reward is the defining setting?
-4. How independent are the LLM calls that authored the simulator, the prior, and the edits? Were prompts/models held out across roles?
-5. What real-world measurement supports `delay=500`, `sigma=0.2`, the mixture weights, and the provision map?
-6. Can the main result survive a held-out simulator family and a validation/test hyperparameter protocol?
+4. How independent are the LLM calls that authored the simulator, the prior, and the edits? Were prompts or model families held out across roles?
+5. Can the primary result survive a held-out simulator family and a validation/test hyperparameter protocol?
+
+## Limitations assessment
+
+**No.** The draft discusses several numerical caveats but does not adequately disclose that the editor receives the simulator's latent reward model, that the reward is order-invariant, or that the named combinatorial baselines use uniform copied credit. These limitations must be made explicit because they change the interpretation of the main result.
 
 ## Minimum revision that could become reviewable
 
@@ -146,6 +154,6 @@ A focused resubmission could be strong if it does the following:
 7. Narrow the main paper to one claim: whether an interpretable GAM prior/update class improves cold-start under aggregate delayed feedback while remaining auditable.
 8. Use the official ICML style and eight-page main-paper limit.
 
-## Overall assessment
+## Final justification
 
-The representation and engineering direction are promising, and the repository is much more transparent than most early research artifacts. But the current paper's strongest result is driven by privileged simulator information, the benchmark does not test the ordered action it claims to test, and the baseline labels overstate comparator strength. These are not cosmetic issues; they change the scientific question. I would reject the current submission but encourage a substantially narrower, leakage-free resubmission.
+The paper has a promising and reasonably original representation idea, strong engineering instincts, and good presentation. Those merits support good scores for presentation, significance, and originality. The overall recommendation is nevertheless **Reject (2/6)** because the central empirical evidence is not sound: the headline editor uses privileged simulator knowledge unavailable to its comparators; the benchmark does not test ordering despite framing the task as ordered page optimization; the reference oracle was approximate; and baseline labels overstate comparator strength. These problems require new experiments and reframing, not a rebuttal-only clarification. A leakage-free, set-selection-focused resubmission could be substantially stronger.
