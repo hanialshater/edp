@@ -1,23 +1,21 @@
-"""
-CombLinUCB — Combinatorial Linear UCB slate bandit.
+"""Pooled LinUCB with uniform page-level credit.
 
-Per arm (widget) maintain a posterior over a linear coefficient θ_a ∈ R^d
-with Gaussian prior (precision λ I). At decision time, compute the upper
-confidence bound
+For each widget, maintain an independent contextual linear UCB model. Select
+the six widgets with the largest UCB scores, then update every selected widget
+with ``page_reward / 6``.
 
-  UCB_a(x) = θ̂_a · x + α · sqrt(x^T A_a⁻¹ x)
+This is *not* a standard full-bandit combinatorial linear UCB algorithm. The
+scalar page reward is not decomposed or estimated jointly over the selected
+set; it is copied uniformly to the selected widget models. The implementation
+is retained because it is a useful attribution-heuristic baseline, but the
+paper must not cite it as evidence against the broader class of combinatorial
+full-bandit methods.
 
-for every arm a, sort by UCB, and pick the top-K (here K = N_SLOTS = 6).
-Update each chosen arm's posterior with the same observed reward (the
-slate-bandit signal: the page total). Page-level attribution is the
-default — each chosen arm receives `page_total / N_SLOTS` as its
-observation, same as our per-slot LinTS in §5.1.
-
-This is the natural combinatorial-bandit baseline for slate problems.
-Slate-LinTS (§5.3) is the Thompson-sampling sibling; CombLinUCB
-substitutes the upper confidence bound for the TS sample.
+``CombLinUCB`` remains as a backwards-compatible alias for existing experiment
+scripts and result files.
 """
 from __future__ import annotations
+
 import numpy as np
 
 from edp.config import N_SLOTS
@@ -25,8 +23,12 @@ from edp.catalog import N_WIDGETS, WIDGETS
 from edp.policies.base import Policy
 
 
-class CombLinUCB(Policy):
+class PooledLinUCB(Policy):
+    """Independent per-widget LinUCB models with top-K selection."""
+
     def __init__(self, ctx_dim: int, alpha: float = 0.3, lam: float = 1.0):
+        if lam <= 0:
+            raise ValueError('lam must be positive')
         self.d = ctx_dim
         self.K = N_WIDGETS
         self.alpha = alpha
@@ -36,26 +38,29 @@ class CombLinUCB(Policy):
 
     def select_page_with_payload(self, x: np.ndarray):
         ucb = np.full(self.K, -np.inf)
-        for a in range(self.K):
-            mu = self.A_inv[a] @ self.b[a]
-            mean = float(mu @ x)
-            # exploration bonus: alpha * sqrt(x' A_inv x)
-            bonus = self.alpha * float(np.sqrt(max(x @ self.A_inv[a] @ x, 0.0)))
-            ucb[a] = mean + bonus
-        # Top-K by UCB
+        for arm in range(self.K):
+            mean_vector = self.A_inv[arm] @ self.b[arm]
+            mean = float(mean_vector @ x)
+            variance = max(float(x @ self.A_inv[arm] @ x), 0.0)
+            ucb[arm] = mean + self.alpha * np.sqrt(variance)
+
         order = np.argsort(-ucb)[:N_SLOTS]
-        page = [WIDGETS[a] for a in order]
-        payload = [(int(a), x) for a in order]
+        page = [WIDGETS[arm] for arm in order]
+        payload = [(int(arm), x) for arm in order]
         return page, payload
 
     def select_page(self, feat: dict):
         raise NotImplementedError('Use select_page_with_payload with a context')
 
     def record_feedback(self, payload, observed_page_reward: float):
-        slot_r = observed_page_reward / N_SLOTS
-        for a, x in payload:
-            self.A[a] += np.outer(x, x)
-            self.b[a] += x * slot_r
-            Ax = self.A_inv[a] @ x
-            denom = 1.0 + float(x @ Ax)
-            self.A_inv[a] -= np.outer(Ax, Ax) / denom
+        attributed_reward = observed_page_reward / N_SLOTS
+        for arm, x in payload:
+            self.A[arm] += np.outer(x, x)
+            self.b[arm] += x * attributed_reward
+            ax = self.A_inv[arm] @ x
+            denominator = 1.0 + float(x @ ax)
+            self.A_inv[arm] -= np.outer(ax, ax) / denominator
+
+
+# Backwards compatibility for committed scripts and result provenance.
+CombLinUCB = PooledLinUCB
