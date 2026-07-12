@@ -1,0 +1,25 @@
+{
+  "note": "Final consolidation: keep demoting below-mean widgets (also_bought, similar_items, price_history, easy_returns_promise, style_bridge), keep promoting consistently above-mean widgets (low_return_alts, customers_chose, comparison_card, fit_reassurance), lightly trim price_drop_notify which drifted below mean.",
+  "edits": [
+    {"widget": "also_bought", "path": "base", "from": 0.20, "to": 0.10,
+     "reason": "assoc_page_reward=0.89 far below mean 1.70 at 4.2% activation"},
+    {"widget": "similar_items", "path": "base", "from": 0.30, "to": 0.22,
+     "reason": "assoc_page_reward=1.37 below mean at 10.6% activation; continue demotion"},
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.02,
+     "reason": "assoc_page_reward=1.19 (n=165) below mean after it started firing; demote"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.12, "to": 0.06,
+     "reason": "assoc_page_reward=0.37 (n=12) when it fires; finish rollback"},
+    {"widget": "style_bridge", "path": "base", "from": 0.08, "to": 0.05,
+     "reason": "assoc_page_reward=1.60 below mean at 1.4%; revert earlier promotion"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.16, "to": 0.20,
+     "reason": "assoc_page_reward=1.95, highest at scale (10.9%); return_hist-high cohort 2.50"},
+    {"widget": "customers_chose", "path": "base", "from": 0.14, "to": 0.17,
+     "reason": "assoc_page_reward=1.92 above mean at 12.5%; consistent gainer across rounds"},
+    {"widget": "comparison_card", "path": "base", "from": 0.05, "to": 0.08,
+     "reason": "assoc_page_reward=1.90 above mean; tab_switch-high cohort 2.01 vs low 1.04"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 2.2, "to": 2.4,
+     "reason": "assoc_page_reward=1.80 above mean; size_chart-high cohort reward 2.32"},
+    {"widget": "price_drop_notify", "path": "on_rem.F51", "from": 1.6, "to": 1.4,
+     "reason": "assoc_page_reward=1.64 drifted below mean at 8.1%; trim back toward original"}
+  ]
+}

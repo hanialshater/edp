@@ -61,8 +61,6 @@ hr.scene::after{content:"§ § §";letter-spacing:0.5em;font-family:var(--mono);
 .problem-bar .lbl span:first-child{color:var(--fg)}
 .bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
 .bar > div{height:100%;background:var(--accent);transition:width 0.3s}
-.bar > div.f{background:var(--bad)}
-.bar > div.b{background:var(--blue)}
 .slot{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:5px 0;display:flex;justify-content:space-between;align-items:center;transition:all 0.25s}
 .slot .pos{font-family:var(--mono);font-size:10px;color:var(--dim)}
 .slot .w{font-family:var(--mono);font-size:13px;color:var(--fg);font-weight:600}
@@ -785,6 +783,13 @@ const fallback=(name)=>widgetChrome('slate',
 
 const ALL_MODULES=Object.keys(R);
 const DEFAULT_PAGE=['fit_reassurance','size_guide','comparison_card','value_breakdown','return_explainer','similar_items'];
+const PRESETS={
+  essentials:DEFAULT_PAGE,
+  premium:['brand_story','material_deep_dive','value_breakdown','expert_pick','price_history','occasion_lookbook'],
+  discovery:['recently_viewed','similar_items','also_bought','trending_now','personal_recs','wishlist_save'],
+  all:ALL_MODULES,
+};
+const samePage=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
 
 // ─── HEADER / HERO ─────────────────────────────────────────────────────────
 function heroHTML(){
@@ -803,6 +808,7 @@ function heroHTML(){
 // ─── MOUNT ─────────────────────────────────────────────────────────────────
 function mountWpoPage(root,opts){
   opts=opts||{};
+  const showToolbar=opts.toolbar!==false;
   let page=Array.isArray(opts.page)&&opts.page.length?opts.page.slice():DEFAULT_PAGE.slice();
   let rendered=[];
 
@@ -820,13 +826,10 @@ function mountWpoPage(root,opts){
         ${cardHTML}
       </div>`;
     }).join('');
+    const toolbar=showToolbar?`<div class="wpo-toolbar">${Object.keys(PRESETS).map(k=>
+        `<button data-f="${k}" class="${samePage(page,PRESETS[k])?'on':''}">${k==='all'?'all 22':k}</button>`).join('')}</div>`:'';
     root.innerHTML=`
-      <div class="wpo-toolbar">
-        <button data-f="essentials">essentials</button>
-        <button data-f="premium">premium</button>
-        <button data-f="discovery">discovery</button>
-        <button data-f="all">all 22</button>
-      </div>
+      ${toolbar}
       <div class="wpo-phone">
         <div class="wpo-phone__notch"></div>
         <div class="wpo-screen">
@@ -836,15 +839,9 @@ function mountWpoPage(root,opts){
           </div>
         </div>
       </div>`;
-    const presets={
-      essentials:DEFAULT_PAGE,
-      premium:['brand_story','material_deep_dive','value_breakdown','expert_pick','price_history','occasion_lookbook'],
-      discovery:['recently_viewed','similar_items','also_bought','trending_now','personal_recs','wishlist_save'],
-      all:ALL_MODULES,
-    };
-    Object.keys(presets).forEach(k=>{
+    Object.keys(PRESETS).forEach(k=>{
       const b=root.querySelector(`[data-f="${k}"]`);
-      if(b)b.onclick=()=>setPage(presets[k]);
+      if(b)b.onclick=()=>setPage(PRESETS[k]);
     });
   }
 
@@ -913,8 +910,9 @@ function render(){
   if(wpo)wpo.api.setPage(page.map(it=>it.widget));
 }
 
-// mount the real product page (recomposes from the same compose() output)
-const wpo=mountWpoPage(document.getElementById('wpoPage'),{page:compose(feat).page.map(it=>it.widget)});
+// mount the real product page (recomposes from the same compose() output);
+// toolbar:false — only the policy trace above may set the page, so the two never desync
+const wpo=mountWpoPage(document.getElementById('wpoPage'),{toolbar:false,page:compose(feat).page.map(it=>it.widget)});
 
 const pdiv=document.getElementById('personas');for(const k of Object.keys(PERSONAS)){const b=document.createElement('button');b.textContent=k;b.onclick=()=>setPersona(k);pdiv.appendChild(b);}
 setPersona('size-anxious');

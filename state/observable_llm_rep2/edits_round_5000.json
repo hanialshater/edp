@@ -1,0 +1,25 @@
+{
+  "note": "Continue demoting low-reward defaults (trending_now, personal_recs, also_bought, similar_items); promote above-mean targeted widgets (customers_chose, low_return_alts, fit_reassurance, comparison_card); partially roll back easy_returns_promise which underperformed when it fired.",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.15, "to": 0.05,
+     "reason": "still worst assoc_page_reward=0.44 vs mean 1.65; demote further"},
+    {"widget": "personal_recs", "path": "base", "from": 0.20, "to": 0.10,
+     "reason": "assoc_page_reward=0.64 still far below mean; demote further"},
+    {"widget": "also_bought", "path": "base", "from": 0.30, "to": 0.20,
+     "reason": "assoc_page_reward=1.10 dropped further below mean at 6.6% activation"},
+    {"widget": "similar_items", "path": "base", "from": 0.38, "to": 0.30,
+     "reason": "assoc_page_reward=1.49 below mean 1.65 at highest activation 13.9%"},
+    {"widget": "customers_chose", "path": "base", "from": 0.10, "to": 0.14,
+     "reason": "assoc_page_reward=1.88 above mean; promote moderately"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.12, "to": 0.16,
+     "reason": "assoc_page_reward=1.90 above mean; return_hist-high cohort 2.30 supports"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.10, "to": 0.14,
+     "reason": "assoc_page_reward=1.79 above mean; size_chart-high cohort reward 2.14"},
+    {"widget": "comparison_card", "path": "on_rem.F41", "from": 2.3, "to": 2.5,
+     "reason": "assoc_page_reward=1.83 above mean; tab_switch-high cohort 1.89 vs low 1.07"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.16, "to": 0.12,
+     "reason": "when it fired (n=19) assoc_page_reward=0.66 well below mean; partial rollback"},
+    {"widget": "value_breakdown", "path": "on_rem.F45", "from": 2.1, "to": 1.8,
+     "reason": "assoc_page_reward=1.43 below mean even after base demotion; trim F45 weight"}
+  ]
+}

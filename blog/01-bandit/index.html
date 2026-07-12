@@ -244,15 +244,15 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 
 <h3>Act 3 — Three policies</h3>
 
-<p>Three policies cover most of the territory. Stupid-sounding ones work surprisingly well; clever ones win by less than you'd think.</p>
+<p>Three policies cover most of the territory. The simple ones do better than they sound; the clever ones win by less than you'd expect.</p>
 
 <ul>
 <li><strong>ε-greedy.</strong> Pull the best-so-far 90% of the time; pull a random arm the other 10%. The randomness is your tax on stagnation.</li>
 <li><strong>UCB1</strong> (Auer et al., 2002). Pull the arm with the highest <code>μ̂ + √(2 ln t / n)</code>: optimism in the face of uncertainty. Arms you've pulled little get a bonus that decays as you sample them. It is simple and has strong guarantees, but in short runs it can look conservative.</li>
-<li><strong>Thompson sampling</strong> (Thompson, 1933). Keep a posterior over each arm's mean (a Beta for Bernoulli rewards). Each round, sample once from each posterior; pull the arm whose sample was highest. Bayesian. Embarrassingly good in practice.</li>
+<li><strong>Thompson sampling</strong> (Thompson, 1933). Keep a posterior over each arm's mean (a Beta for Bernoulli rewards). Each round, sample once from each posterior; pull the arm whose sample was highest. Bayesian, and consistently strong in practice.</li>
 </ul>
 
-<p>The loop is almost embarrassingly small. Start every arm with a weak prior. Choose an arm using one of the policies above. Pull it. Update only that arm's estimate. Repeat. What changes between algorithms is not the data they receive, but how they translate <em>estimate plus uncertainty</em> into the next pull.</p>
+<p>The loop is small. Start every arm with a weak prior. Choose an arm using one of the policies above. Pull it. Update only that arm's estimate. Repeat. What changes between algorithms is not the data they receive, but how they translate <em>estimate plus uncertainty</em> into the next pull.</p>
 
 <div class="algo-box">
 <div class="title">How the algorithms decide</div>
@@ -260,7 +260,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
   <button class="algo-tab on" data-tab="epsilon">ε-greedy</button>
   <button class="algo-tab" data-tab="ucb">UCB1</button>
   <button class="algo-tab" data-tab="thompson">Thompson</button>
-  <button class="algo-tab" data-tab="linucb">Contextual LinUCB</button>
+  <button class="algo-tab" data-tab="linucb">Contextual</button>
 </div>
 <div class="algo-panel on" data-panel="epsilon">
   <h4>ε-greedy: simplest exploration tax</h4>
@@ -277,7 +277,10 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
   <p><strong>Intuition:</strong> score each restaurant by "what we know" plus "how wrong we might be." Under-sampled arms get a big bonus; the bonus shrinks as evidence accumulates.</p>
   <div class="latex-line"><span class="eq">score<sub>i</sub>(t) = μ̂<sub>i</sub>(t) + sqrt(2 ln t / n<sub>i</sub>(t))</span></div>
   <div class="latex-line"><span class="eq">a<sub>t</sub> = argmax<sub>i</sub> score<sub>i</sub>(t)</span></div>
-  <p class="math-intuition">The square-root term is a confidence radius from concentration bounds. It is intentionally conservative, which is why UCB1 can feel statistically slow in short runs.</p>
+  <p class="math-intuition"><strong>Where √(2 ln t / n) actually comes from.</strong> It is not a magic constant. Hoeffding's inequality bounds how far the true mean can plausibly sit above your estimate:</p>
+  <div class="latex-line"><span class="eq">P[ μ<sub>i</sub> ≥ μ̂<sub>i</sub> + u ] ≤ e<sup>−2 n<sub>i</sub> u²</sup></div>
+  <div class="latex-line"><span class="eq">pick a shrinking tail t<sup>−4</sup>:  e<sup>−2 n u²</sup> = t<sup>−4</sup>  ⇒  u = sqrt(2 ln t / n<sub>i</sub>)</span></div>
+  <p class="math-intuition">So the bonus is the highest the mean could plausibly be at a confidence that tightens over time: <span class="eq">ln t</span> creeps the bar up slowly as the clock runs, while each pull drops the bonus by <span class="eq">1/√n</span>. Conservative by design — which is why UCB1 can feel statistically slow in short runs.</p>
   <ul>
     <li><strong>Good:</strong> directed exploration and strong regret guarantees.</li>
     <li><strong>Bad:</strong> generic bound can over-explore arms a tighter model would drop earlier.</li>
@@ -295,12 +298,13 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
   </ul>
 </div>
 <div class="algo-panel" data-panel="linucb">
-  <h4>Contextual LinUCB: choose after seeing the situation</h4>
+  <h4>Contextual LinUCB / LinTS: choose after seeing the situation</h4>
   <p><strong>Intuition:</strong> the best restaurant is not global. It depends on tonight's features: quick, social, spicy, budget. Contextual bandits learn how each arm responds to the context vector.</p>
   <div class="latex-line"><span class="eq">x<sub>t</sub> = [1, quick, social, spicy, budget]</span></div>
   <div class="latex-line"><span class="eq">r̂<sub>a,t</sub> = x<sub>t</sub><sup>T</sup> θ̂<sub>a</sub></span></div>
   <div class="latex-line"><span class="eq">score<sub>a</sub> = x<sub>t</sub><sup>T</sup> θ̂<sub>a</sub> + α sqrt(x<sub>t</sub><sup>T</sup>A<sub>a</sub><sup>-1</sup>x<sub>t</sub>)</span></div>
   <div class="latex-line"><span class="eq">a<sub>t</sub> = argmax<sub>a</sub> score<sub>a</sub></span></div>
+  <p class="math-intuition"><strong>LinTS</strong> is the same model with the fixed bonus <span class="eq">α</span> swapped for a random draw <span class="eq">z·√(x<sub>t</sub><sup>T</sup>A<sub>a</sub><sup>-1</sup>x<sub>t</sub>), z∼N(0,1)</span>: optimism versus sampling, exactly as UCB1 versus Thompson above.</p>
   <ul>
     <li><strong>Good:</strong> transfers learning across similar nights.</li>
     <li><strong>Bad:</strong> only works if the context features explain reward.</li>
@@ -308,7 +312,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 </div>
 
-<p>So is UCB "slow"? Not in CPU terms: basic UCB is just one index per arm. The slowness you feel in the chart is <em>learning slowness</em>. UCB1 uses a Hoeffding-style confidence bound that is deliberately safe for any bounded reward distribution, so it can keep re-checking arms that a more model-aware method would already mostly abandon. In production people often use tighter UCB variants such as KL-UCB or UCB-Tuned, or Thompson sampling when a Bayesian reward model is natural.</p>
+<p>So is UCB "slow"? Not in CPU terms: basic UCB is just one index per arm. The slowness you feel in the chart is <em>learning slowness</em>. UCB1 uses a Hoeffding-style confidence bound that is deliberately safe for any bounded reward distribution, so it can keep re-checking arms that a more model-aware method would already mostly abandon. In production people often use tighter UCB variants such as KL-UCB or UCB-Tuned, or Thompson sampling when a Bayesian reward model is natural. In fact <strong>Bayesian UCB and Thompson are two reads of the <em>same</em> posterior</strong>: UCB takes an optimistic high quantile (the upper edge of the belief), Thompson takes a random draw from it. Same belief about each arm; different rule for turning that uncertainty into tonight's pull.</p>
 
 <hr class="scene">
 
@@ -321,6 +325,7 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
   <button class="toggle on" data-pol="random">random</button>
   <button class="toggle" data-pol="exploit">pure exploit</button>
   <button class="toggle on" data-pol="epsilon">ε-greedy</button>
+  <button class="toggle" data-pol="epsilon_decay">ε-decay</button>
   <button class="toggle on" data-pol="ucb">UCB1</button>
   <button class="toggle on" data-pol="thompson">Thompson</button>
   <button class="toggle" data-pol="oracle">oracle</button>
@@ -340,34 +345,37 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 </div>
 </div>
 
-<p>Try this: race ε-greedy, UCB, and Thompson at the "hard" scenario (top-two arms very close). Then race ε-greedy and pure-exploit at "balanced". The story tells itself:</p>
+<p>Try this: race ε-greedy, UCB, and Thompson at the "hard" scenario (top-two arms very close). Then race ε-greedy and pure-exploit at "balanced". A few things to watch:</p>
 
 <ul>
 <li>Pure-exploit commits to the wrong arm about as often as it commits to the right one. It is brittle.</li>
 <li>ε-greedy beats pure-exploit because the 10% random tax is cheaper than committing to the wrong arm.</li>
 <li>UCB and Thompson beat ε-greedy because their exploration is <em>directed</em> at the arms you're uncertain about, not uniform.</li>
-<li>UCB and Thompson beat each other by a noisy margin. Whoever wins will lose next time. Bandits are not where you find your edge.</li>
+<li>UCB and Thompson beat each other by a noisy margin; whoever wins one race loses the next. The gap between them is noise.</li>
+<li>Switch on <strong>ε-decay</strong> (ε<sub>t</sub> = min(1, 20/t)): it explores hard early, then anneals, so it stops paying ε-greedy's flat 10% tax once the winner is obvious — and catches the directed methods.</li>
 </ul>
+<p>Watch the <em>shape</em>, not just the order. <code>random</code> and <code>pure-exploit</code> climb in a roughly straight line — <strong>linear regret</strong>, a constant cost per round forever. UCB, Thompson, and ε-decay bend over and flatten — <strong>logarithmic regret</strong>: each new round costs less than the last because the policy is running out of arms it's still unsure about. Fixed-ε greedy sits in between, bending but never fully flattening because that 10% tax never goes away. That bend, from straight to flat, is what a good policy buys you.</p>
 
 <hr class="scene">
 
 <div class="widget">
-<h2>2 — Pull manually, see what you'd do</h2>
-<p class="legend">Same restaurants. Click a place to eat there tonight. The estimates update; the regret line accumulates. Try a hundred dinners by hand — see how well your intuition does against the algorithms.</p>
-
-<div class="arms" id="arms"></div>
+<h2>2 — Watch Thompson update its beliefs</h2>
+<p class="legend">The race shows <em>who</em> wins. This shows <em>why</em>. Each restaurant carries a Beta belief over its "would I return?" rate. Every round, Thompson draws one sample per curve (the filled dots) and eats at the arm whose sample landed highest. A good night pushes that curve right and narrows it; a bad night pushes it left. Watch known-bad places collapse into thin low bumps while the real contender stays wide enough to keep occasionally drawing a winning sample. Ticks under the axis mark each restaurant's true rate.</p>
 <div class="controls">
-  <button id="reveal">reveal true means</button>
-  <button id="manreset">reset</button>
+  <button id="ts1" class="primary">+1 round</button>
+  <button id="ts20">+20 rounds</button>
+  <button id="tsplay">▶ play 200</button>
+  <button id="tsreset">reset</button>
 </div>
+<canvas id="tscanvas" height="240"></canvas>
 <div class="stats">
-  <div class="stat"><div class="label">dinners</div><div class="value" id="mpulls">0</div></div>
-  <div class="stat"><div class="label">your regret</div><div class="value" id="mregret">0.00</div></div>
-  <div class="stat"><div class="label">Thompson regret</div><div class="value" id="botregret">0.00</div></div>
-  <div class="stat"><div class="label">bot picked</div><div class="value" id="botpick">—</div></div>
+  <div class="stat"><div class="label">round</div><div class="value" id="tsT">0</div></div>
+  <div class="stat"><div class="label">ate at</div><div class="value" id="tsPick">—</div></div>
+  <div class="stat"><div class="label">current leader</div><div class="value" id="tsLead">—</div></div>
 </div>
-<canvas id="mancanvas" height="160"></canvas>
 </div>
+
+<p>This is the engine behind "directed exploration." There is no explicit explore-vs-exploit switch anywhere in the code — the <em>width</em> of each belief does the job. Wide posteriors take chances; narrow ones stop. Exploration fades on its own as evidence accumulates, which is exactly the bend toward flat regret you saw in the race.</p>
 
 <hr class="scene">
 
@@ -382,14 +390,21 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <li><strong>Action:</strong> choose restaurant <code>a_t</code> after seeing <code>x_t</code>.</li>
 <li><strong>Model:</strong> each arm has weights <code>θ_a</code>; predicted reward is <code>x_tᵀ θ_a</code>.</li>
 <li><strong>LinUCB:</strong> choose <code>argmax_a x_tᵀ θ̂_a + α√(x_tᵀ A_a⁻¹x_t)</code>.</li>
+<li><strong>LinTS:</strong> the same score with <code>α</code> replaced by a random <code>z∼N(0,1)</code>, the contextual Thompson variant.</li>
 <li><strong>Why it matters:</strong> the same restaurant can be bad for lunch and great for a rainy solo dinner.</li>
 </ul>
 </div>
 
 <div class="widget">
-<h2>3 — Contextual dinner bandit</h2>
-<p class="legend">Each night has a situation. Plain Thompson sees only restaurant averages; LinUCB sees the context vector before choosing. Lower regret means fewer bad-context dinners.</p>
+<h2>3 — Contextual dinner bandit: UCB vs TS, now with context</h2>
+<p class="legend">Each night has a situation. <strong>Plain Thompson</strong> ignores it and learns one global average per restaurant. <strong>LinUCB</strong> and <strong>LinTS</strong> both read the context vector before choosing — they are the contextual cousins of the two policies you just raced: LinUCB adds an optimism bonus <code>α√(xᵀA⁻¹x)</code>, LinTS replaces that fixed bonus with a random draw <code>z·√(xᵀA⁻¹x)</code>, <code>z∼N(0,1)</code>. Same machinery, optimism vs sampling. Toggle who's in the race; lower regret means fewer bad-context dinners.</p>
 
+<div class="policy-pills">
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-right:6px;">in the race:</span>
+  <button class="toggle on" data-ctxpol="plain">plain Thompson</button>
+  <button class="toggle on" data-ctxpol="linucb">LinUCB</button>
+  <button class="toggle on" data-ctxpol="lints">LinTS</button>
+</div>
 <div class="context-card">
   <div class="context-title" id="ctxTitle">context: —</div>
   <div class="context-chips" id="ctxChips"></div>
@@ -402,19 +417,49 @@ footer{margin-top:64px;border-top:1px solid var(--border);padding-top:24px;color
 <canvas id="ctxcanvas" height="230"></canvas>
 <div class="stats">
   <div class="stat"><div class="label">night</div><div class="value" id="ctxT">0</div></div>
-  <div class="stat"><div class="label">plain Thompson</div><div class="value" id="ctxPlain">0.0</div><div class="sub" id="ctxPlainPick">—</div></div>
-  <div class="stat"><div class="label">contextual LinUCB</div><div class="value" id="ctxLin">0.0</div><div class="sub" id="ctxLinPick">—</div></div>
+  <div class="stat" data-statpol="plain"><div class="label">plain Thompson</div><div class="value" id="ctxR_plain">0.0</div><div class="sub" id="ctxP_plain">—</div></div>
+  <div class="stat" data-statpol="linucb"><div class="label">contextual LinUCB</div><div class="value" id="ctxR_linucb">0.0</div><div class="sub" id="ctxP_linucb">—</div></div>
+  <div class="stat" data-statpol="lints"><div class="label">contextual LinTS</div><div class="value" id="ctxR_lints">0.0</div><div class="sub" id="ctxP_lints">—</div></div>
   <div class="stat"><div class="label">oracle tonight</div><div class="value" id="ctxBest">—</div></div>
 </div>
 </div>
 
-<p>That widget is the first step from "which arm is best?" to "which arm is best <em>given what I know right now?</em>" The later posts keep stretching that question: paths, tours, page slates, and finally policies whose inputs are rich signals rather than one tiny context vector.</p>
+<p>That widget is the first step from "which arm is best?" to "which arm is best <em>given what I know right now?</em>" Both contextual policies pull away from plain Thompson, and LinUCB and LinTS trade the lead by the noisy margin UCB and Thompson did: the optimism-vs-sampling choice barely matters, reading the context at all is what matters. The later posts keep stretching that question: paths, tours, page slates, and finally policies whose inputs are rich signals rather than one tiny context vector.</p>
+
+<hr class="scene">
+
+<div class="widget">
+<h2>4 — Pull manually, see what you'd do</h2>
+<p class="legend">Now you drive. Click a restaurant to eat there tonight; your regret line accumulates next to a bot's. Flip <strong>context</strong> on and each night opens with a situation — the best arm now shifts night to night, and you play against the contextual LinTS bot from the widget above. Reveal the true rates to check yourself.</p>
+
+<div class="policy-pills">
+  <span style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-right:6px;">mode:</span>
+  <button class="toggle" id="manCtxToggle">context: off</button>
+</div>
+<div class="context-card" id="manCtxCard" style="display:none">
+  <div class="context-title" id="manCtxTitle">context: —</div>
+  <div class="context-chips" id="manCtxChips"></div>
+  <div id="manResult" style="font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:10px;min-height:16px"></div>
+</div>
+<div class="arms" id="arms"></div>
+<div class="controls">
+  <button id="reveal">reveal true means</button>
+  <button id="manreset">reset</button>
+</div>
+<div class="stats">
+  <div class="stat"><div class="label">dinners</div><div class="value" id="mpulls">0</div></div>
+  <div class="stat"><div class="label">your regret</div><div class="value" id="mregret">0.00</div></div>
+  <div class="stat"><div class="label">bot regret</div><div class="value" id="botregret">0.00</div></div>
+  <div class="stat"><div class="label">bot picked</div><div class="value" id="botpick">—</div></div>
+</div>
+<canvas id="mancanvas" height="160"></canvas>
+</div>
 
 <hr class="scene">
 
 <h3>What you saw, in one sentence</h3>
 
-<p><em>A small amount of cleverness wins by a lot; more cleverness wins by very little.</em> That's the bandit lesson. ε-greedy, UCB, and Thompson are different points on a smooth curve, and any of them is dramatically better than committing too early or never committing at all. Real-world recommenders use Thompson and UCB because the constant-factor differences add up at scale, but the textbook problem is essentially solved.</p>
+<p><em>A small amount of cleverness wins by a lot; more cleverness wins by very little.</em> That's the bandit lesson, with one caveat. The jump from "commit too early / never commit" to <em>any</em> principled policy is enormous: it moves you from linear regret to logarithmic regret, a different growth class, not a different constant. Among the principled policies (ε-decay, UCB, Thompson) the differences really are small constant factors — whoever wins the race above will lose the next one. Fixed-ε greedy is the one honest exception: it's principled but still linear, because the tax never decays. Real-world recommenders reach for Thompson and UCB because those constants add up at scale, but the textbook problem is essentially solved.</p>
 
 <p>It's also a very specific kind of problem. <em>k</em> independent arms; one pull per round; reward observed immediately. Contextual bandits add state, but the action is still one arm. Most of the things you'd want to do — sort a list, find a path, plan a tour, compose a page — are algorithms running with missing inputs. That structure is where the next levels go.</p>
 
@@ -525,6 +570,7 @@ function policyPick(b,name,t){
   if(name==='random') return Math.floor(b.rng()*K);
   if(name==='exploit'){for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
   if(name==='epsilon'){if(b.rng()<0.10)return Math.floor(b.rng()*K);for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
+  if(name==='epsilon_decay'){const eps=Math.min(1,20/Math.max(1,t));if(b.rng()<eps)return Math.floor(b.rng()*K);for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const m=b.pulls.map((n,i)=>n?b.successes[i]/n:0);return argmax(m);}
   if(name==='ucb'){for(let i=0;i<K;i++)if(b.pulls[i]===0)return i;const u=b.pulls.map((n,i)=>{const mean=b.successes[i]/n;return mean+Math.sqrt(2*Math.log(t)/n);});return argmax(u);}
   if(name==='thompson'){const s=b.pulls.map((n,i)=>{const a=1+b.successes[i],bb=1+(n-b.successes[i]);return beta(a,bb,b.rng);});return argmax(s);}
   return 0;
@@ -542,17 +588,54 @@ const POL_INFO={
   random:{label:'random',color:COLORS.dim},
   exploit:{label:'pure exploit',color:COLORS.red},
   epsilon:{label:'ε-greedy',color:COLORS.orange},
+  epsilon_decay:{label:'ε-decay',color:'#3fb6c4'},
   ucb:{label:'UCB1',color:COLORS.blue},
   thompson:{label:'Thompson',color:COLORS.green},
   oracle:{label:'oracle (cheating)',color:COLORS.purple},
 };
+
+// ============ Contextual model (shared by widgets) ============
+const CONTEXTS=[
+  {name:'quick lunch',desc:'You have 35 minutes and want low friction.',x:[1,1,0,0,1],chips:['quick','budget']},
+  {name:'date night',desc:'Atmosphere matters more than price.',x:[1,0,1,0,0],chips:['social']},
+  {name:'rainy solo dinner',desc:'Comfort and spice beat speed.',x:[1,0,0,1,0],chips:['spicy']},
+  {name:'cheap group meal',desc:'Friends want something casual and affordable.',x:[1,0,1,1,1],chips:['social','spicy','budget']},
+  {name:'tired safe choice',desc:'You want close, filling, and predictable.',x:[1,1,0,0,1],chips:['quick','budget']}
+];
+const FEATURE_LABELS=['bias','quick','social','spicy','budget'];
+const CTX_THETA=[
+  [0.35,0.20,-0.10,0.18,0.05],
+  [0.38,0.18,0.05,0.12,0.18],
+  [0.33,-0.12,0.08,0.28,-0.03],
+  [0.36,-0.08,0.25,-0.15,-0.20],
+  [0.42,0.08,0.02,-0.22,0.12]
+];
+const CTX_D=FEATURE_LABELS.length,CTX_ALPHA=0.75,CTX_VTS=0.3;   // LinUCB bonus / LinTS sampling scale
+function ctxProb(ctx,arm){return Math.max(0.05,Math.min(0.92,dot(ctx.x,CTX_THETA[arm])));}
+function ctxBestArm(ctx){return argmax(RESTAURANTS.map((_,i)=>ctxProb(ctx,i)));}
+function ctxEye(){return Array.from({length:CTX_D},(_,i)=>Array.from({length:CTX_D},(_,j)=>i===j?1:0));}
+function ctxInitLin(){return {A:Array.from({length:K},()=>ctxEye()),b:Array.from({length:K},()=>Array(CTX_D).fill(0))};}
+// ridge mean xᵀθ̂ plus an exploration term applied to the posterior sd √(xᵀA⁻¹x)
+function ctxLinScores(lin,ctx,bonus){
+  return RESTAURANTS.map((_,a)=>{
+    const invb=solveLinear(lin.A[a],lin.b[a]);
+    const invx=solveLinear(lin.A[a],ctx.x);
+    const sd=Math.sqrt(Math.max(0,dot(ctx.x,invx)));
+    return dot(ctx.x,invb)+bonus(sd);
+  });
+}
+function ctxLinUpdate(lin,arm,x,r){
+  for(let i=0;i<CTX_D;i++){lin.b[arm][i]+=r*x[i];for(let j=0;j<CTX_D;j++)lin.A[arm][i][j]+=x[i]*x[j];}
+}
+function linUcbPick(lin,ctx){return argmax(ctxLinScores(lin,ctx,sd=>CTX_ALPHA*sd));}              // optimism: fixed bonus
+function linTsPick(lin,ctx,rand){return argmax(ctxLinScores(lin,ctx,sd=>CTX_VTS*gauss(rand)*sd));} // sampling: random bonus
 
 // ============ Race widget ============
 (function race(){
   const ch=new Chart(document.getElementById('race'),{xlabel:'pulls',ylabel:'regret',xMin:0,yMin:0,padding:{l:46,r:14,t:18,b:28},shade:[0,150]});
   let scenario=0;
   const seedname=document.getElementById('seedname');
-  let bandits={},t=0,active={random:true,exploit:false,epsilon:true,ucb:true,thompson:true,oracle:false},playing=false;
+  let bandits={},t=0,active={random:true,exploit:false,epsilon:true,epsilon_decay:false,ucb:true,thompson:true,oracle:false},playing=false;
   function refreshScenario(){const k=SC_KEYS[scenario];seedname.textContent=k;}
   function init(){
     const ps=SCENARIOS[SC_KEYS[scenario]].ps;
@@ -590,22 +673,75 @@ const POL_INFO={
 
 // ============ Manual playground ============
 (function manual(){
-  let ps=SCENARIOS.balanced.ps.slice();
-  let b=newBandit(ps,777);
-  let bot=newBandit(ps,1777);
-  let lastBot='—';
-  let revealed=false;
+  const COLS=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red];
+  const ps=SCENARIOS.balanced.ps.slice();
   const armsDiv=document.getElementById('arms');
   const mancanvas=document.getElementById('mancanvas');
-  const ch=new Chart(mancanvas,{xlabel:'pull',ylabel:'regret',xMin:0,yMin:0,padding:{l:40,r:12,t:14,b:22}});
-  ch.line('you',COLORS.orange).line('Thompson bot',COLORS.green);
+  const ctxCard=document.getElementById('manCtxCard');
+  const ch=new Chart(mancanvas,{xlabel:'night',ylabel:'regret',xMin:0,yMin:0,padding:{l:40,r:12,t:14,b:22}});
+  let ctxOn=false,revealed=false;
+  let b,bot,botLin,mrand,curCtx,nights,userReg,botReg,lastBot,lastResult;
+  function botLabel(){return ctxOn?'LinTS bot':'Thompson bot';}
+  function drawCtx(){curCtx=CONTEXTS[Math.floor(mrand()*CONTEXTS.length)];}
+  function init(){
+    const seed=(Date.now()&0xffff)||7;
+    mrand=rng(seed);
+    b=newBandit(ps,seed);bot=newBandit(ps,seed+1009);botLin=ctxInitLin();
+    nights=0;userReg=0;botReg=0;lastBot='—';lastResult='';revealed=false;
+    document.getElementById('reveal').textContent='reveal true means';
+    ctxCard.style.display=ctxOn?'':'none';
+    if(ctxOn)drawCtx();
+    ch.reset();ch.line('you',COLORS.orange).line(botLabel(),COLORS.green);
+    render();ch.render();
+  }
+  function updateCtxCard(){
+    if(!ctxOn)return;
+    document.getElementById('manCtxTitle').textContent=`tonight: ${curCtx.name} — ${curCtx.desc}`;
+    document.getElementById('manCtxChips').innerHTML=FEATURE_LABELS.slice(1).map((f,i)=>`<span class="${curCtx.x[i+1]?'on':''}">${f}: ${curCtx.x[i+1]}</span>`).join('');
+    document.getElementById('manResult').textContent=lastResult;
+  }
+  function play(i){
+    if(ctxOn){
+      const best=ctxBestArm(curCtx),bestP=ctxProb(curCtx,best);
+      const ur=mrand()<ctxProb(curCtx,i)?1:0;
+      userReg+=bestP-ctxProb(curCtx,i);
+      const botArm=linTsPick(botLin,curCtx,mrand);
+      const br=mrand()<ctxProb(curCtx,botArm)?1:0;
+      ctxLinUpdate(botLin,botArm,curCtx.x,br);
+      botReg+=bestP-ctxProb(curCtx,botArm);
+      lastBot=RESTAURANTS[botArm].name;nights++;
+      lastResult=`you: ${RESTAURANTS[i].name} ${ur?'liked ✓':'meh ✗'}  ·  LinTS: ${RESTAURANTS[botArm].name} ${br?'✓':'✗'}`;
+      ch.push('you',nights,userReg);ch.push(botLabel(),nights,botReg);
+      drawCtx();
+    }else{
+      const t=b.history.length+1;
+      pull(b,i);
+      const botArm=policyPick(bot,'thompson',t);pull(bot,botArm);
+      lastBot=RESTAURANTS[botArm].name;
+      ch.push('you',t,b.cumRegret);ch.push(botLabel(),t,bot.cumRegret);
+    }
+    render();ch.render();
+  }
   function render(){
+    updateCtxCard();
     armsDiv.innerHTML='';
     for(let i=0;i<K;i++){
-      const n=b.pulls[i],mean=n?b.successes[i]/n:0,best=(i===b.bestArm)&&revealed,meta=RESTAURANTS[i],col=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red][i];
+      const meta=RESTAURANTS[i],col=COLS[i];
+      let best,topRight,barPct,muLine,trueLine;
+      if(ctxOn){
+        const p=ctxProb(curCtx,i);
+        best=(i===ctxBestArm(curCtx))&&revealed;
+        topRight='';barPct=revealed?(p*100).toFixed(0):0;
+        muLine='tonight';trueLine=revealed?`p = ${p.toFixed(3)}`:'';
+      }else{
+        const n=b.pulls[i],mean=n?b.successes[i]/n:0;
+        best=(i===b.bestArm)&&revealed;
+        topRight=`${n} visits`;barPct=(mean*100).toFixed(0);
+        muLine=`liked = ${n?mean.toFixed(3):'—'}`;trueLine=revealed?`true = ${ps[i].toFixed(3)}`:'';
+      }
       const el=document.createElement('div');
       el.className='arm'+(best?' star':'');
-      el.innerHTML=`<div class="top"><span class="name">${meta.name}${best?' ★':''}</span><span>${n} visits</span></div>
+      el.innerHTML=`<div class="top"><span class="name">${meta.name}${best?' ★':''}</span><span>${topRight}</span></div>
         <svg class="arm-icon" viewBox="0 0 76 60" aria-hidden="true">
           <rect x="8" y="26" width="60" height="28" rx="6" fill="#17243c" stroke="${col}"></rect>
           <path d="M14 26 L38 8 L62 26" fill="#213250" stroke="${col}"></path>
@@ -613,31 +749,22 @@ const POL_INFO={
           <path d="M28 40 H48 M38 31 V49" stroke="${col}" stroke-width="2" stroke-linecap="round"></path>
         </svg>
         <div class="tag">${meta.tag}</div>
-        <div class="bar"><div style="width:${(mean*100).toFixed(0)}%;background:${col}"></div></div>
-        <div class="mu">liked = ${n?mean.toFixed(3):'—'}</div>
-        ${revealed?`<div class="true">true = ${ps[i].toFixed(3)}</div>`:''}`;
+        <div class="bar"><div style="width:${barPct}%;background:${col}"></div></div>
+        <div class="mu">${muLine}</div>
+        ${trueLine?`<div class="true">${trueLine}</div>`:''}`;
       el.style.borderColor=best?COLORS.green:'';
-      el.onclick=()=>{
-        const t=b.history.length+1;
-        pull(b,i);
-        const botArm=policyPick(bot,'thompson',t);
-        pull(bot,botArm);
-        lastBot=RESTAURANTS[botArm].name;
-        ch.push('you',t,b.cumRegret);
-        ch.push('Thompson bot',t,bot.cumRegret);
-        render();ch.render();
-      };
+      el.onclick=()=>play(i);
       armsDiv.appendChild(el);
     }
-    document.getElementById('mpulls').textContent=b.history.length;
-    document.getElementById('mregret').textContent=b.cumRegret.toFixed(2);
-    document.getElementById('botregret').textContent=bot.cumRegret.toFixed(2);
+    document.getElementById('mpulls').textContent=ctxOn?nights:b.history.length;
+    document.getElementById('mregret').textContent=(ctxOn?userReg:b.cumRegret).toFixed(2);
+    document.getElementById('botregret').textContent=(ctxOn?botReg:bot.cumRegret).toFixed(2);
     document.getElementById('botpick').textContent=lastBot;
   }
   document.getElementById('reveal').onclick=()=>{revealed=!revealed;document.getElementById('reveal').textContent=revealed?'hide true means':'reveal true means';render();};
-  document.getElementById('manreset').onclick=()=>{const seed=Date.now()&0xffff;b=newBandit(ps,seed);bot=newBandit(ps,seed+1009);lastBot='—';revealed=false;document.getElementById('reveal').textContent='reveal true means';ch.reset();ch.line('you',COLORS.orange).line('Thompson bot',COLORS.green);render();ch.render();};
-  COLORS.cycle=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red];
-  render(); ch.render();
+  document.getElementById('manreset').onclick=init;
+  document.getElementById('manCtxToggle').onclick=()=>{ctxOn=!ctxOn;const btn=document.getElementById('manCtxToggle');btn.textContent='context: '+(ctxOn?'on':'off');btn.classList.toggle('on',ctxOn);init();};
+  init();
   window.addEventListener('resize',()=>ch.render());
 })();
 
@@ -645,85 +772,138 @@ const POL_INFO={
 (function contextual(){
   const cv=document.getElementById('ctxcanvas');
   if(!cv)return;
-  const contexts=[
-    {name:'quick lunch',desc:'You have 35 minutes and want low friction.',x:[1,1,0,0,1],chips:['quick','budget']},
-    {name:'date night',desc:'Atmosphere matters more than price.',x:[1,0,1,0,0],chips:['social']},
-    {name:'rainy solo dinner',desc:'Comfort and spice beat speed.',x:[1,0,0,1,0],chips:['spicy']},
-    {name:'cheap group meal',desc:'Friends want something casual and affordable.',x:[1,0,1,1,1],chips:['social','spicy','budget']},
-    {name:'tired safe choice',desc:'You want close, filling, and predictable.',x:[1,1,0,0,1],chips:['quick','budget']}
-  ];
-  const featureLabels=['bias','quick','social','spicy','budget'];
-  const theta=[
-    [0.35,0.20,-0.10,0.18,0.05],
-    [0.38,0.18,0.05,0.12,0.18],
-    [0.33,-0.12,0.08,0.28,-0.03],
-    [0.36,-0.08,0.25,-0.15,-0.20],
-    [0.42,0.08,0.02,-0.22,0.12]
-  ];
-  const d=featureLabels.length,alpha=0.75;
+  const contexts=CONTEXTS,featureLabels=FEATURE_LABELS;
   const rand=rng(4242);
+  const POLS={
+    plain: {label:'plain Thompson',    color:COLORS.dim,   ctx:false},
+    linucb:{label:'contextual LinUCB',  color:COLORS.blue,  ctx:true},
+    lints: {label:'contextual LinTS',   color:COLORS.green, ctx:true},
+  };
   const ch=new Chart(cv,{xlabel:'night',ylabel:'regret',xMin:0,yMin:0,padding:{l:46,r:14,t:18,b:28},shade:[0,80]});
-  let plain,lin,t=0,current=contexts[0],plainReg=0,linReg=0,lastPlain='—',lastLin='—';
-  function eye(){return Array.from({length:d},(_,i)=>Array.from({length:d},(_,j)=>i===j?1:0));}
-  function initLin(){return {A:Array.from({length:K},()=>eye()),b:Array.from({length:K},()=>Array(d).fill(0))};}
-  function prob(ctx,arm){return Math.max(0.05,Math.min(0.92,dot(ctx.x,theta[arm])));}
-  function bestArmFor(ctx){return argmax(RESTAURANTS.map((_,i)=>prob(ctx,i)));}
-  function linPick(st,ctx){
-    const scores=RESTAURANTS.map((_,a)=>{
-      const invb=solveLinear(st.A[a],st.b[a]);
-      const invx=solveLinear(st.A[a],ctx.x);
-      return dot(ctx.x,invb)+alpha*Math.sqrt(Math.max(0,dot(ctx.x,invx)));
-    });
-    return argmax(scores);
+  let active={plain:true,linucb:true,lints:true};
+  let st={},t=0,current=contexts[0];
+  const initLin=ctxInitLin,prob=ctxProb,bestArmFor=ctxBestArm;
+  function pick(key,ctx){
+    if(key==='plain')  return policyPick(st.plain.bandit,'thompson',t+1);
+    if(key==='linucb') return linUcbPick(st.linucb.lin,ctx);
+    return linTsPick(st.lints.lin,ctx,rand);
   }
-  function linUpdate(st,arm,x,r){
-    for(let i=0;i<d;i++){st.b[arm][i]+=r*x[i];for(let j=0;j<d;j++)st.A[arm][i][j]+=x[i]*x[j];}
+  function learn(key,arm,ctx,r){
+    if(key==='plain'){st.plain.bandit.pulls[arm]++;st.plain.bandit.successes[arm]+=r;}
+    else ctxLinUpdate(st[key].lin,arm,ctx.x,r);
   }
   function updateContextUi(){
     document.getElementById('ctxTitle').textContent=`context: ${current.name} — ${current.desc}`;
     document.getElementById('ctxChips').innerHTML=featureLabels.slice(1).map((f,i)=>`<span class="${current.x[i+1]?'on':''}">${f}: ${current.x[i+1]}</span>`).join('');
-    const best=bestArmFor(current);
-    document.getElementById('ctxBest').textContent=RESTAURANTS[best].name;
+    document.getElementById('ctxBest').textContent=RESTAURANTS[bestArmFor(current)].name;
   }
   function reset(){
-    plain=newBandit([0.5,0.5,0.5,0.5,0.5],991);
-    lin=initLin();t=0;plainReg=0;linReg=0;lastPlain='—';lastLin='—';
-    ch.reset();ch.line('plain Thompson',COLORS.dim).line('contextual LinUCB',COLORS.blue);
-    current=contexts[0];render();
+    ch.reset();st={};t=0;current=contexts[0];
+    for(const k in active){if(active[k]){
+      st[k]={reg:0,last:'—'};
+      if(k==='plain') st[k].bandit=newBandit([0.5,0.5,0.5,0.5,0.5],991);
+      else st[k].lin=initLin();
+      ch.line(POLS[k].label,POLS[k].color);
+    }}
+    render();
   }
   function one(){
     current=contexts[Math.floor(rand()*contexts.length)];
-    const best=bestArmFor(current),bestP=prob(current,best);
-    const plainArm=policyPick(plain,'thompson',t+1);
-    const plainReward=rand()<prob(current,plainArm)?1:0;
-    plain.pulls[plainArm]++;plain.successes[plainArm]+=plainReward;
-    plainReg+=bestP-prob(current,plainArm);
-    const linArm=linPick(lin,current);
-    const linReward=rand()<prob(current,linArm)?1:0;
-    linUpdate(lin,linArm,current.x,linReward);
-    linReg+=bestP-prob(current,linArm);
+    const bestP=prob(current,bestArmFor(current));
     t++;
-    lastPlain=RESTAURANTS[plainArm].name;
-    lastLin=RESTAURANTS[linArm].name;
-    ch.push('plain Thompson',t,plainReg);
-    ch.push('contextual LinUCB',t,linReg);
+    for(const k in st){
+      const arm=pick(k,current);
+      const r=rand()<prob(current,arm)?1:0;
+      learn(k,arm,current,r);
+      st[k].reg+=bestP-prob(current,arm);
+      st[k].last=RESTAURANTS[arm].name;
+      ch.push(POLS[k].label,t,st[k].reg);
+    }
     render();
   }
   function step(n){for(let i=0;i<n;i++)one();}
   function render(){
     updateContextUi();
     document.getElementById('ctxT').textContent=t;
-    document.getElementById('ctxPlain').textContent=plainReg.toFixed(1);
-    document.getElementById('ctxLin').textContent=linReg.toFixed(1);
-    document.getElementById('ctxPlainPick').textContent=lastPlain;
-    document.getElementById('ctxLinPick').textContent=lastLin;
+    for(const k in POLS){
+      const box=document.querySelector(`[data-statpol="${k}"]`);
+      if(active[k]){box.style.display='';
+        document.getElementById('ctxR_'+k).textContent=(st[k]?st[k].reg:0).toFixed(1);
+        document.getElementById('ctxP_'+k).textContent=st[k]?st[k].last:'—';
+      } else box.style.display='none';
+    }
     ch.render();
   }
+  document.querySelectorAll('[data-ctxpol]').forEach(btn=>{
+    btn.onclick=()=>{const k=btn.dataset.ctxpol;active[k]=!active[k];btn.classList.toggle('on',active[k]);reset();};
+  });
   document.getElementById('ctx1').onclick=()=>step(1);
   document.getElementById('ctx50').onclick=()=>step(50);
   document.getElementById('ctxReset').onclick=reset;
   reset();
   window.addEventListener('resize',()=>ch.render());
+})();
+
+// ============ Thompson belief evolution ============
+(function tsbelief(){
+  const cv=document.getElementById('tscanvas');
+  if(!cv)return;
+  const ps=SCENARIOS.balanced.ps;                       // hidden true return rates
+  const cols=[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red];
+  let a,b,t,rand,lastPick,lastSamples,playing=false;
+  function reset(){a=new Array(K).fill(1);b=new Array(K).fill(1);t=0;lastPick=-1;lastSamples=null;rand=rng((Date.now()&0xffff)||7);render();}
+  function round(){
+    const s=new Array(K);for(let i=0;i<K;i++)s[i]=beta(a[i],b[i],rand);
+    const pick=argmax(s);
+    if(rand()<ps[pick])a[pick]+=1;else b[pick]+=1;
+    t++;lastPick=pick;lastSamples=s;
+  }
+  function step(n){for(let i=0;i<n;i++)round();render();}
+  function play(target){playing=true;(function tick(){if(!playing)return;for(let k=0;k<3&&t<target;k++)round();render();if(t<target)requestAnimationFrame(tick);else playing=false;})();}
+  function render(){
+    const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight||cv.height;
+    cv.width=W*dpr;cv.height=H*dpr;const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+    const pad={l:10,r:10,t:14,b:24},pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+    const xPx=x=>pad.l+x*pw;
+    ctx.font='11px ui-monospace,Menlo,monospace';
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.fillStyle=COLORS.dim;ctx.textAlign='center';
+    for(let g=0;g<=10;g+=2){const x=xPx(g/10);ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ph);ctx.stroke();ctx.fillText((g/10).toFixed(1),x,H-7);}
+    // normalized Beta densities in log-space (robust to sharp posteriors)
+    const N=160,curves=[];let gmax=1e-9;
+    for(let i=0;i<K;i++){
+      const al=a[i],be=b[i],lp=new Array(N+1).fill(-Infinity);let lm=-Infinity;
+      for(let j=1;j<N;j++){const x=j/N,v=(al-1)*Math.log(x)+(be-1)*Math.log(1-x);lp[j]=v;if(v>lm)lm=v;}
+      const dens=new Array(N+1).fill(0);let sum=0;
+      for(let j=1;j<N;j++){dens[j]=Math.exp(lp[j]-lm);sum+=dens[j];}
+      const area=sum/N;for(let j=0;j<=N;j++){dens[j]=area>0?dens[j]/area:0;if(dens[j]>gmax)gmax=dens[j];}
+      curves.push(dens);
+    }
+    const yPx=v=>pad.t+ph*(1-Math.min(1,v/gmax)*0.9);
+    // true-rate ticks
+    for(let i=0;i<K;i++){ctx.strokeStyle=cols[i];ctx.globalAlpha=0.5;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(xPx(ps[i]),pad.t+ph-7);ctx.lineTo(xPx(ps[i]),pad.t+ph+3);ctx.stroke();}
+    ctx.globalAlpha=1;
+    // belief curves
+    for(let i=0;i<K;i++){
+      ctx.strokeStyle=cols[i];ctx.lineWidth=(i===lastPick)?2.6:1.5;ctx.globalAlpha=(lastPick<0||i===lastPick)?0.95:0.62;
+      ctx.beginPath();for(let j=0;j<=N;j++){const px=xPx(j/N),py=yPx(curves[i][j]);if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    // this round's samples
+    if(lastSamples){for(let i=0;i<K;i++){const x=lastSamples[i],jj=Math.max(1,Math.min(N-1,Math.round(x*N)));ctx.fillStyle=cols[i];ctx.beginPath();ctx.arc(xPx(x),yPx(curves[i][jj]),i===lastPick?5:3,0,Math.PI*2);ctx.fill();if(i===lastPick){ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();}}}
+    // legend (wins/visits per arm)
+    ctx.textAlign='left';let ly=pad.t+11;
+    for(let i=0;i<K;i++){ctx.fillStyle=cols[i];const w=a[i]-1,v=(a[i]-1)+(b[i]-1);ctx.fillText(RESTAURANTS[i].name.split(' ')[0]+'  '+w+'/'+v,pad.l+4,ly);ly+=13;}
+    const means=a.map((al,i)=>al/(al+b[i])),lead=argmax(means);
+    document.getElementById('tsT').textContent=t;
+    document.getElementById('tsPick').textContent=lastPick<0?'—':RESTAURANTS[lastPick].name;
+    document.getElementById('tsLead').textContent=t?RESTAURANTS[lead].name:'—';
+  }
+  document.getElementById('ts1').onclick=()=>{playing=false;step(1);};
+  document.getElementById('ts20').onclick=()=>{playing=false;step(20);};
+  document.getElementById('tsplay').onclick=()=>{playing=false;play(t+200);};
+  document.getElementById('tsreset').onclick=()=>{playing=false;reset();};
+  reset();
+  window.addEventListener('resize',render);
 })();
 </script>
 </body>

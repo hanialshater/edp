@@ -1,0 +1,27 @@
+{
+  "note": "Unblock size_guide (coverage penalty too harsh given worst-cohort size_conf gap), revert price_history boost that backfired, keep demoting low-reward defaults, lean into strong return/cart_osc cohorts.",
+  "edits": [
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": -0.6,
+      "reason": "still zero activations after base/on_rem boost; harsh coverage penalty blocks it while size_conf-high cohort is worst (1.26 vs 2.19)"},
+    {"widget": "size_guide", "path": "base", "from": 0.15, "to": 0.2,
+      "reason": "size_chart-high cohort rewards 2.20 vs 1.41 low, yet the size-guide widget never appears"},
+    {"widget": "fit_reassurance", "path": "on_rem.F32", "from": 2.2, "to": 2.5,
+      "reason": "size_conf-high gap persists; the one active F32 widget assoc reward is healthy (1.80)"},
+    {"widget": "price_history", "path": "base", "from": 0.12, "to": 0.05,
+      "reason": "previous boost backfired: assoc_page_reward 0.92, far below mean 1.69; revert"},
+    {"widget": "also_bought", "path": "base", "from": 0.2, "to": 0.1,
+      "reason": "assoc reward 1.05 still well below mean at 5.2% activation"},
+    {"widget": "personal_recs", "path": "base", "from": 0.15, "to": 0.05,
+      "reason": "assoc reward 0.59 at 1.4% activation; keep demoting"},
+    {"widget": "trending_now", "path": "base", "from": 0.1, "to": 0.02,
+      "reason": "assoc reward 0.52; lowest-value filler still appearing on 0.5% of slots"},
+    {"widget": "similar_items", "path": "base", "from": 0.3, "to": 0.2,
+      "reason": "11.8% activation with assoc reward 1.44 below mean 1.69; free slots for targeted widgets"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.12,
+      "reason": "assoc reward 2.05 (best among active widgets) at only 5.7% activation; return cohorts reward-rich"},
+    {"widget": "return_explainer", "path": "on_rem.F46", "from": 2.0, "to": 2.3,
+      "reason": "return_view-high cohort 2.09 vs 1.25 low and assoc reward 1.85; strengthen F46 response"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.12, "to": 0.16,
+      "reason": "still zero activation despite cart_osc-high (2.42 vs 1.33) and wishlist-high (1.86 vs 1.48) cohorts"}
+  ]
+}

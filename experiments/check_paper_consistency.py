@@ -101,14 +101,16 @@ try:
         a = np.array(vals)
         return a.mean(), (a.std(ddof=1) / len(a) ** 0.5 if len(a) > 1 else 0.0)
 
-    pm, ps = agent_mean('parametric', ['evolve_state_rep1', 'evolve_state_rep2', 'evolve_state_rep3'])
+    # Parametric multi-rep dirs are absent from the repo (audited disclosure, §7);
+    # the paper reports the single committed trajectory (state/evolve_state = 7.9 %).
+    pm, ps = agent_mean('parametric', ['evolve_state'])
     lm, ls = agent_mean('llm', ['evolve_state_llm', 'evolve_state_llm_rep2', 'evolve_state_llm_rep3'])
     print(f'  recomputed EDP-agent parametric = {pm:.2f} ± {ps:.2f}')
     print(f'  recomputed EDP-agent llm        = {lm:.2f} ± {ls:.2f}')
-    approx('paper claims parametric 6.5', pm, lo=6.2, hi=6.8)
-    approx('paper claims llm 13.3', lm, lo=12.9, hi=13.8)
-    check_present('paper EDP-agent parametric 6.5', '6.5 ± 0.2')
-    check_present('paper EDP-agent llm 13.3', '13.3 ± 0.8')
+    approx('paper claims parametric 7.9', pm, lo=7.6, hi=8.2)
+    approx('paper claims llm 13.4', lm, lo=12.9, hi=13.8)
+    check_present('paper EDP-agent parametric 7.9', '7.9')
+    check_present('paper EDP-agent llm 13.4', '13.4 ± 0.8')
 except Exception as e:  # pragma: no cover
     warns.append('recompute skipped')
     print(f'  WARN  recompute skipped: {type(e).__name__}: {e}')
@@ -172,7 +174,7 @@ else:
 print('\n== 6. Seed-count consistency ==')
 # §4 says 10 TS seeds; §5.1 caption must not still say "5 LinTS seeds"
 check_absent('5.1 caption seed count', 'across 5 LinTS seeds')
-check_present('5.1 caption seed count', 'across 10 Thompson-sampling seeds', '10 Thompson-sampling seeds')
+check_present('5.1 caption seed count', 'across 10 Thompson seeds', '10 Thompson-sampling seeds')
 
 print('\n== summary ==')
 if fails:

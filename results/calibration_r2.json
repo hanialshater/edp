@@ -1,0 +1,24 @@
+{
+  "script": "experiments/calibration_r2.py",
+  "invocation": "PYTHONPATH=. python3 experiments/calibration_r2.py",
+  "date": "2026-07-12",
+  "note": "Script prints to stdout only; this JSON was written by the reproduction harness from the captured stdout.",
+  "parametric": {
+    "n_predictions": 10000,
+    "pred_range": [0.052, 5.522],
+    "r2_vs_observed": -1.4864,
+    "r2_vs_noise_free_last1k": 0.3090,
+    "pearson_corr": 0.2821,
+    "final_a": -0.1504,
+    "final_b": 0.2373
+  },
+  "llm": {
+    "n_predictions": 10000,
+    "pred_range": [0.090, 6.824],
+    "r2_vs_observed": 0.0597,
+    "r2_vs_noise_free_last1k": 0.3871,
+    "pearson_corr": 0.5228,
+    "final_a": -0.1280,
+    "final_b": 0.2903
+  }
+}
