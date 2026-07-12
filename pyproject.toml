@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wpo-gym-edp"
+version = "0.1.0"
+description = "Evolvable Decision Programs for contextual module-set selection"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "matplotlib>=3.8",
+]
+
+[tool.setuptools.packages.find]
+include = ["edp*"]
