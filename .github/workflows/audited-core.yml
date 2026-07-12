@@ -1,0 +1,35 @@
+name: Audited core experiment
+
+on:
+  push:
+    branches:
+      - agent/lean-paper-revision
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  audited-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime dependency
+        run: python -m pip install numpy
+      - name: Run scientific contracts
+        run: python tests/test_scientific_contracts.py
+      - name: Run held-out audited experiment
+        run: python experiments/run_audited_core.py --out results/audited_core.json
+      - name: Upload audited results
+        uses: actions/upload-artifact@v4
+        with:
+          name: audited-core-results
+          path: results/audited_core.json
