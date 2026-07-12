@@ -28,9 +28,9 @@ jobs:
       - name: Install runtime dependency
         run: python -m pip install numpy
       - name: Run scientific contracts
-        run: python tests/test_scientific_contracts.py
+        run: PYTHONPATH=. python tests/test_scientific_contracts.py
       - name: Run held-out audited experiment
-        run: python experiments/run_audited_core.py --out results/audited_core.json
+        run: PYTHONPATH=. python experiments/run_audited_core.py --out results/audited_core.json
       - name: Upload audited results
         uses: actions/upload-artifact@v4
         with:
