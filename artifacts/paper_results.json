@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "generated_at": "2026-07-12",
+  "source_branch": "agent/lean-paper-revision",
+  "protocol": {
+    "source": "llm",
+    "n": 10000,
+    "train_stream_for_editor_edits": 42,
+    "held_out_test_streams": [101, 202, 303],
+    "delay": 500,
+    "noise_sigma": 0.2,
+    "note": "One independent observable edit trajectory is paired with each held-out stream.",
+    "metric": "percentage loss against exact latent-persona (clairvoyant) oracle",
+    "alpha_selection": "LinTS alpha=0.05 selected on stream 42, then fixed for held-out streams",
+    "editor_selection": "three independent observable edit trajectories generated on stream 42, paired with held-out streams 101/202/303"
+  },
+  "held_out_primary": {
+    "static_llm_prior": {"mean_pct": 19.996646374607995, "sem_pct": 0.013221610852101247, "all_pct": [19.970205111444358, 20.010145721648005, 20.009588290731624]},
+    "edp_sgd_llm_init_no_editor": {"mean_pct": 16.15217767734956, "sem_pct": 0.052326136748528776, "all_pct": [16.242321909537335, 16.061066590659724, 16.15314453185162]},
+    "edp_sgd_random_coeff_no_editor": {"mean_pct": 28.505441046321028, "sem_pct": 2.3275656863144043, "all_pct": [32.03939989376974, 29.36258761437545, 24.114335630817894]},
+    "observable_editor": {"mean_pct": 15.020008727257027, "sem_pct": 0.8006848755371241, "all_pct": [15.90547529755094, 15.732805850368827, 13.421745033851312]},
+    "observable_editor_sgd": {"mean_pct": 10.349199187004489, "sem_pct": 0.45877475493425296, "all_pct": [10.402705670368952, 11.11571489055674, 9.529177000087776]},
+    "lints_warm_default": {"mean_pct": 21.76396703913986, "sem_pct": 0.08901751924910743, "all_pct": [21.589358032020602, 21.821169596343566, 21.88137348905542]},
+    "lints_warm_validation_selected": {"mean_pct": 10.613243334455342, "sem_pct": 0.5247813968562268, "all_pct": [11.657371776452221, 10.18355546821827, 9.99880275869554]}
+  },
+  "paired_improvements": {
+    "observable_editor_plus_sgd_vs_static": {"mean_pp": 9.647447187603506, "sem_pp": 0.4595748891282926, "all_pp": [9.567499441075405, 8.894430831091265, 10.480411290643849]},
+    "observable_editor_plus_sgd_vs_no_editor_sgd": {"mean_pp": 5.80297849034507, "sem_pp": 0.484920791145231, "all_pp": [5.839616239168382, 4.945351700102984, 6.623967531763844]},
+    "observable_editor_plus_sgd_vs_observable_editor": {"mean_pp": 4.670809540252537, "sem_pp": 0.46560052880669855, "all_pp": [5.502769627181987, 4.617090959812087, 3.8925680337635367]},
+    "llm_init_sgd_vs_random_coeff_sgd": {"mean_pp": 12.353263368971469, "sem_pp": 2.3111811738089862, "all_pp": [15.797077984232406, 13.301521023715726, 7.961191098966275]}
+  },
+  "cold_start_seed42_sensitivity": {
+    "note": "Historical sensitivity only. Static prior and fixed-alpha LinTS are clean; privileged Bayesian trajectory removed from the lean paper.",
+    "sessions": [500, 1000, 2500, 5000, 7500, 10000],
+    "static_llm_prior": [20.799595873806776, 19.840359171352834, 20.068080290454684, 20.124528315380598, 19.900665134122654, 19.843723249914966],
+    "lints_warm_alpha_005": [30.203687893585112, 24.345744013655704, 17.025087204868417, 13.38310597168674, 11.626731723286236, 10.597116500707346]
+  },
+  "limitations": [
+    "Three held-out streams are preliminary.",
+    "The exact oracle observes latent persona; it is a clairvoyant upper bound.",
+    "The random-coefficient ablation retains the authored feature taxonomy and module address structure.",
+    "A genuine full-bandit page-level comparator is not yet included."
+  ]
+}

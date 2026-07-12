@@ -1,0 +1,53 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[letterpaper,margin=0.72in,columnsep=0.25in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{balance}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+\setlist{nosep,leftmargin=*}
+\captionsetup{font=small,labelfont=bf}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+
+% Updated from artifacts/paper_results.json.
+\newcommand{\HeldStatic}{20.00 $\pm$ 0.01}
+\newcommand{\HeldNoEditor}{16.15 $\pm$ 0.05}
+\newcommand{\HeldRandom}{28.51 $\pm$ 2.33}
+\newcommand{\HeldObservable}{15.02 $\pm$ 0.80}
+\newcommand{\HeldObservableSGD}{\textbf{10.35 $\pm$ 0.46}}
+\newcommand{\HeldTuned}{10.61 $\pm$ 0.52}
+\newcommand{\HeldDefault}{21.76 $\pm$ 0.09}
+
+\title{\vspace{-1.2em}\textbf{Evolvable Decision Programs for Contextual Module-Set Selection under Delayed Aggregate Feedback}}
+\author{Hani Al-Shater}
+\date{Working paper -- July 2026}
+
+\begin{document}
+\twocolumn[
+\begin{@twocolumnfalse}
+\maketitle
+\vspace{-1.5em}
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+\vspace{0.7em}
+\end{@twocolumnfalse}
+]
+
+\input{sections/introduction}
+\input{sections/setting}
+\input{sections/edp}
+\input{sections/protocol}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/references}

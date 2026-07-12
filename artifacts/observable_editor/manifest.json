@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "source_stream": 42,
+  "information_contract": {
+    "allowed": [
+      "observable category",
+      "observable feature cohorts",
+      "selected module sets",
+      "matured noisy page-level reward",
+      "current policy coefficients",
+      "prior edit history"
+    ],
+    "excluded": [
+      "latent persona",
+      "true needs",
+      "widget provision vectors",
+      "oracle reward",
+      "counterfactual regret",
+      "immediate noise-free reward"
+    ]
+  },
+  "retained_runs": [
+    {
+      "id": "llm_rep1",
+      "held_out_stream": 101,
+      "final_oracle_loss_pct": 15.90547529755094,
+      "edit_files": ["llm_rep1/edits_2500.json", "llm_rep1/edits_5000.json", "llm_rep1/edits_7500.json"]
+    },
+    {
+      "id": "llm_rep2",
+      "held_out_stream": 202,
+      "final_oracle_loss_pct": 15.732805850368827,
+      "edit_files": ["llm_rep2/edits_2500.json", "llm_rep2/edits_5000.json", "llm_rep2/edits_7500.json"]
+    },
+    {
+      "id": "llm_rep3",
+      "held_out_stream": 303,
+      "final_oracle_loss_pct": 13.421745033851312,
+      "edit_files": ["llm_rep3/edits_2500.json", "llm_rep3/edits_5000.json", "llm_rep3/edits_7500.json"]
+    }
+  ],
+  "integrity_note": "The prompts excluded simulator-private variables, but the historical editor execution was not isolated in a cryptographically enforced sandbox. The paper treats this as a limitation."
+}
