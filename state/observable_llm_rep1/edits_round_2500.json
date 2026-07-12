@@ -1,0 +1,33 @@
+{
+  "note": "Demote low-reward generic defaults that crowd slots; promote never-firing targeted widgets on features whose high cohorts show strong observed reward (cart_osc, return_hist/return_view, size_chart, zoom).",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.30, "to": 0.18,
+     "reason": "assoc_page_reward 0.4914 is far below the 1.586 mean at 1.9% activation"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.22,
+     "reason": "assoc_page_reward 0.7682 well below mean; base lets it displace targeted widgets"},
+    {"widget": "also_bought", "path": "base", "from": 0.40, "to": 0.30,
+     "reason": "assoc_page_reward 1.2448 below mean at 10.1% activation"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.38,
+     "reason": "highest activation (15.4%) but assoc_page_reward 1.4988 slightly below mean"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.14,
+     "reason": "best assoc_page_reward on the board (2.4126) at only 1.2% activation"},
+    {"widget": "price_drop_notify", "path": "on_rem.F51", "from": 1.3, "to": 1.6,
+     "reason": "cart_osc-high cohort mean 2.4105 vs low 1.2224; F51-linked widget underused"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.2, "to": 1.5,
+     "reason": "wishlist-high cohort 1.7906 vs low 1.3191 yet widget never activates"},
+    {"widget": "expert_pick", "path": "on_rem.F51", "from": 1.4, "to": 1.6,
+     "reason": "F51 cohorts (cart_osc, wishlist, revisit) all high-reward; widget n=2 only"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.12,
+     "reason": "size_chart-high cohort 2.0560 vs low 1.3083 but size_guide activation is 0%"},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.0, "to": 2.3,
+     "reason": "low size_conf cohort earns 2.0686; strengthen the second F32 responder"},
+    {"widget": "return_explainer", "path": "on_rem.F46", "from": 2.0, "to": 2.3,
+     "reason": "return_view-high 1.9659 and return_hist-high 2.2978 but widget n=2"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.10, "to": 0.13,
+     "reason": "strong F46 cohorts yet 0% activation; only low_return_alts covers returns"},
+    {"widget": "material_deep_dive", "path": "on_rem.F33", "from": 1.7, "to": 2.0,
+     "reason": "zoom-high cohort 1.7148 vs low 1.0641; brand_story is sole F33 responder now"},
+    {"widget": "value_breakdown", "path": "on_rem.F45", "from": 2.1, "to": 1.9,
+     "reason": "assoc_page_reward 1.3885 below mean and price_dwell cohorts barely differ"}
+  ]
+}

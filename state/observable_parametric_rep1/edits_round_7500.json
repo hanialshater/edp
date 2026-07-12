@@ -1,0 +1,18 @@
+{
+  "note": "Consolidate: keep cutting below-mean fillers (also_bought 0.801, personal_recs 0.642, similar_items 1.010 vs mean 1.072), roll back boosts that landed below mean (return_explainer 0.910, price_history 0.876, price_drop_notify 1.039), and reinforce what worked: size_guide now activates at 1.4% with 1.169 assoc reward while size_conf-high still trails (0.904 vs 1.192), expert_pick scaled to 3.5% at 1.196, style_bridge shows 1.255 on early activations.",
+  "edits": [
+    {"widget": "also_bought", "path": "base", "from": 0.15, "to": 0.08, "reason": "assoc page reward 0.801, well below the 1.072 mean, at 2.8% activation"},
+    {"widget": "personal_recs", "path": "base", "from": 0.08, "to": 0.03, "reason": "assoc page reward 0.642; keep it off pages"},
+    {"widget": "similar_items", "path": "base", "from": 0.3, "to": 0.24, "reason": "assoc reward 1.010 below the 1.072 mean while still consuming 13% of slots"},
+    {"widget": "price_history", "path": "base", "from": 0.06, "to": 0.04, "reason": "assoc reward 0.876; the earlier boost never paid off"},
+    {"widget": "return_explainer", "path": "base", "from": 0.15, "to": 0.08, "reason": "boost produced 0.910 assoc reward (n=12); roll it back"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.18, "to": 0.14, "reason": "assoc reward slid from 1.196 to 1.039 as activation grew; partial rollback"},
+    {"widget": "size_guide", "path": "base", "from": 0.15, "to": 0.2, "reason": "now activates (1.4%) with above-mean 1.169 assoc reward; size_conf-high cohort still trails 0.904 vs 1.192"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.12, "reason": "assoc reward 1.255 on its few activations; style_stretch-high cohort (1.145) suggests headroom beyond outfit_completion"},
+    {"widget": "expert_pick", "path": "base", "from": 0.18, "to": 0.22, "reason": "scaled to 3.5% activation while keeping above-mean 1.196 assoc reward"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.1, "to": 0.14, "reason": "return_hist-high (1.258) and return_view-high (1.182) cohorts outperform; its rare activations averaged 1.347"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.12, "to": 0.16, "reason": "still 0% activation while wishlist-high cohort earns 1.256 vs 0.958"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.15, "to": 0.18, "reason": "assoc reward 1.104 above mean at 9.8% activation; appears in top high-frequency sets"},
+    {"widget": "fit_reassurance", "path": "base", "from": 0.1, "to": 0.13, "reason": "assoc reward 1.112 above mean but activation fell to 7.7% after other boosts; restore competitiveness"}
+  ]
+}

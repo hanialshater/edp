@@ -1,0 +1,29 @@
+{
+  "note": "Demote low-assoc-reward default fillers; surface never-activating widgets targeting underperforming observable cohorts (size_conf-high, return_view-high, cart_osc-high).",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.3, "to": 0.1,
+      "reason": "assoc_page_reward=0.49, far below mean 1.59, yet fills slots on 1.9% of selections"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.15,
+      "reason": "assoc_page_reward=0.77 at 4.1% activation, well below aggregate mean"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.2,
+      "reason": "assoc_page_reward=1.24 at 10.1% activation, below aggregate mean 1.59"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.3,
+      "reason": "highest activation (15.4%) but assoc reward 1.50 below mean; free slots for targeted widgets"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.15,
+      "reason": "never activates (n=0) while size_conf-high cohort underperforms badly (1.16 vs 2.07 low)"},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.0, "to": 2.4,
+      "reason": "strengthen F32 response; size_conf-high and size_chart-high cohorts show large reward gaps"},
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.15,
+      "reason": "n=2 activations despite return_view-high (1.97 vs 1.17) and return_hist-high (2.30) cohorts"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.16,
+      "reason": "highest assoc_page_reward observed (2.41) at only 1.2% activation"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.12,
+      "reason": "never activates; wishlist-high (1.79 vs 1.32) and cart_osc-high (2.41 vs 1.22) cohorts reward-rich"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.1,
+      "reason": "n=2 activations; decision-paralysis proxies (cart_osc, revisit) show high-reward cohorts"},
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.12,
+      "reason": "never activates while F45 peer value_breakdown assoc reward 1.39 is below mean; offer alternative"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.1,
+      "reason": "0.2% activation but assoc reward 1.82 above mean; give it a fairer shot vs outfit_completion"}
+  ]
+}

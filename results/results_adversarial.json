@@ -1,5 +1,6 @@
 {
   "scale": 0.15,
+  "mode": "iid",
   "seeds": 5,
   "cells": {
     "edp_static": {

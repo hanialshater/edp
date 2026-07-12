@@ -1,0 +1,31 @@
+{
+  "note": "Continue demoting persistently low-reward defaults; amplify expert_pick (assoc 2.37 at 0.3%), unblock size_guide via smaller coverage penalty, and reinforce returns/outfit widgets that matured well.",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.18, "to": 0.10,
+     "reason": "still fires 0.9% with assoc_page_reward 0.4116, worst on the board"},
+    {"widget": "personal_recs", "path": "base", "from": 0.22, "to": 0.14,
+     "reason": "assoc_page_reward 0.6674 at 2.3% activation, far below 1.658 mean"},
+    {"widget": "also_bought", "path": "base", "from": 0.30, "to": 0.22,
+     "reason": "assoc_page_reward fell to 1.1288 at 6.5% activation"},
+    {"widget": "similar_items", "path": "base", "from": 0.38, "to": 0.32,
+     "reason": "14.0% activation with assoc_page_reward 1.5053 below mean"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.10,
+     "reason": "assoc_page_reward 2.3676 (best this round) at only 0.3% activation"},
+    {"widget": "expert_pick", "path": "on_rem.F51", "from": 1.6, "to": 1.8,
+     "reason": "cart_osc-high cohort 2.3819 vs low 1.3022 remains the largest gap"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.10,
+     "reason": "wishlist-high cohort 1.8399 vs low 1.4446 but widget still 0% activation"},
+    {"widget": "size_guide", "path": "base", "from": 0.12, "to": 0.16,
+     "reason": "size_chart-high cohort 2.1249 yet size_guide never selected"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": -1.0,
+     "reason": "coverage penalty blocks it whenever fit_reassurance is chosen first"},
+    {"widget": "value_breakdown", "path": "on_rem.F45", "from": 1.9, "to": 1.7,
+     "reason": "assoc_page_reward 1.3560 still below mean after prior demotion"},
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.09,
+     "reason": "new activation (2.8%) delivered 1.8318 assoc reward; return cohorts strongest"},
+    {"widget": "easy_returns_promise", "path": "on_rem.F46", "from": 1.2, "to": 1.4,
+     "reason": "return_view-high 2.0230 and return_hist-high 2.3224; widget still n=2"},
+    {"widget": "style_bridge", "path": "on_rem.F43", "from": 2.0, "to": 2.2,
+     "reason": "assoc_page_reward 1.9156 above mean at just 0.2% activation"}
+  ]
+}

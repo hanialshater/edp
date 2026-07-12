@@ -1,0 +1,18 @@
+{
+  "note": "Prune remaining below-mean widgets (incl. reverting the price_history boost that showed assoc 0.7078), and keep promoting above-mean but starved specialists: size_guide, expert_pick, style_bridge, wishlist_save, easy_returns_promise.",
+  "edits": [
+    {"widget": "also_bought", "path": "base", "from": 0.22, "to": 0.14, "reason": "assoc reward fell to 0.8358, far below the 1.0534 mean, still 4.1% of slots"},
+    {"widget": "personal_recs", "path": "base", "from": 0.12, "to": 0.06, "reason": "assoc reward 0.6423 remains among the worst"},
+    {"widget": "similar_items", "path": "base", "from": 0.32, "to": 0.26, "reason": "assoc reward 0.9824 now below mean while holding 13.3% of slots"},
+    {"widget": "trending_now", "path": "base", "from": 0.05, "to": 0.02, "reason": "assoc reward 0.5390; keep it effectively retired"},
+    {"widget": "price_history", "path": "base", "from": 0.10, "to": 0.05, "reason": "revert round-1 boost: assoc reward 0.7078 (n=25) is well below mean"},
+    {"widget": "return_explainer", "path": "base", "from": 0.12, "to": 0.09, "reason": "assoc reward 0.9953 slipped below mean; partially revert round-1 boost"},
+    {"widget": "size_guide", "path": "base", "from": 0.18, "to": 0.24, "reason": "now activates (n=41) with above-mean assoc 1.0699; size_chart-high cohort still rewards 1.2369"},
+    {"widget": "expert_pick", "path": "base", "from": 0.18, "to": 0.24, "reason": "assoc reward 1.3357 but activation fell back to 0.1%; revisit-high cohort at 1.2891"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.12, "to": 0.18, "reason": "still zero activation while wishlist-high cohort rewards 1.2522 vs 0.9364 low"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.6, "to": 1.8, "reason": "same starved widget; F51 cohorts (cart_osc 1.3702) are the strongest observed"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.10, "reason": "assoc reward 1.2482 (n=10) and style_stretch-high cohort at 1.1381"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.10, "to": 0.14, "reason": "n=1 at assoc 1.1845; return_hist-high cohort rewards 1.2244"},
+    {"widget": "value_breakdown", "path": "on_rem.F45", "from": 2.1, "to": 1.9, "reason": "assoc reward 0.9914 below mean at 4.8% activation; price_dwell-high cohort only at mean"}
+  ]
+}

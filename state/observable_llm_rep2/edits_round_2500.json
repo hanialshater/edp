@@ -1,0 +1,29 @@
+{
+  "note": "Demote generic default widgets with low associated page reward; promote under-activated widgets whose activation or feature cohorts (return_view, return_hist, cart_osc, wishlist) associate with high observed reward.",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.30, "to": 0.15,
+     "reason": "assoc_page_reward=0.49 vs mean 1.59 at 1.9% activation; strongly demote"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.20,
+     "reason": "assoc_page_reward=0.77 vs mean 1.59 at 4.1% activation; demote"},
+    {"widget": "also_bought", "path": "base", "from": 0.40, "to": 0.30,
+     "reason": "assoc_page_reward=1.24 below mean at 10.1% activation; demote moderately"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.38,
+     "reason": "assoc_page_reward=1.50 slightly below mean at highest activation 15.4%; small demotion"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.18,
+     "reason": "highest assoc_page_reward=2.41 but only 1.2% activation; promote"},
+    {"widget": "price_drop_notify", "path": "on_rem.F51", "from": 1.3, "to": 1.6,
+     "reason": "cart_osc-high cohort reward 2.41 vs low 1.22 suggests F51 sessions reward this widget"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.12,
+     "reason": "assoc_page_reward=1.88 above mean; return_hist-high cohort reward 2.30"},
+    {"widget": "easy_returns_promise", "path": "base", "from": 0.10, "to": 0.16,
+     "reason": "never activates while return_view-high cohort reward 1.97 vs low 1.17; explore"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.10,
+     "reason": "never activates while wishlist-high cohort reward 1.79 vs low 1.32; explore"},
+    {"widget": "value_breakdown", "path": "base", "from": 0.05, "to": 0.02,
+     "reason": "assoc_page_reward=1.39 below mean 1.59 at 5.3% activation; small demotion"},
+    {"widget": "style_bridge", "path": "base", "from": 0.05, "to": 0.08,
+     "reason": "assoc_page_reward=1.82 (n=25) above mean at near-zero activation; gentle promotion"},
+    {"widget": "customers_chose", "path": "on_rem.F51", "from": 1.2, "to": 1.5,
+     "reason": "assoc_page_reward=1.77 above mean; cart_osc-high cohort strong, lean into F51 targeting"}
+  ]
+}

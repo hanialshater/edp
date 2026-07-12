@@ -1,0 +1,19 @@
+{
+  "note": "Demote generic defaults with below-mean associated reward; promote starved specialized widgets whose feature cohorts (cart_osc/wishlist/revisit, return_view, zoom, low size_conf) show above-mean observed reward.",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.30, "to": 0.15, "reason": "assoc_page_reward 0.5510 is the worst of all widgets, far below the 1.0172 mean"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.22, "reason": "assoc_page_reward 0.7059 well below mean at 3.4% activation"},
+    {"widget": "also_bought", "path": "base", "from": 0.40, "to": 0.30, "reason": "assoc_page_reward 0.9080 below mean while occupying 9.3% of slots"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.38, "reason": "highest activation (15.8%) but assoc reward 0.9961 only at mean; free slots for specialized modules"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.12, "reason": "never activates (act=0.0%) although low size_conf cohort (1.1139) and high size_chart cohort (1.1738) reward well above mean"},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.0, "to": 2.3, "reason": "same size-signal cohorts; fit_reassurance currently monopolizes F32 coverage"},
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.12, "reason": "only n=1 activation but assoc reward 1.3899; high return_view cohort at 1.1368"},
+    {"widget": "return_explainer", "path": "on_rem.F46", "from": 2.0, "to": 2.3, "reason": "high return_hist cohort (1.1360) above mean while returns widgets are starved"},
+    {"widget": "low_return_alts", "path": "on_rem.F46", "from": 1.8, "to": 2.0, "reason": "assoc reward 1.1125 above mean at only 5.0% activation"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.14, "reason": "assoc reward 1.3076 with only 1.5% activation; high cart_osc cohort at 1.3365"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.12, "reason": "assoc reward 1.3565 (n=15) and strong high-revisit (1.2481) / wishlist (1.2337) cohorts"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.2, "to": 1.6, "reason": "never activates although high wishlist cohort rewards 1.2337 vs 0.8806 low"},
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.10, "reason": "never activates; high price_dwell (1.0281) and price_sens (1.0462) cohorts above their low counterparts"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.05, "to": 0.10, "reason": "never activates; high zoom cohort rewards 1.1986 vs 0.8806 low, suggesting unmet quality-signal demand"}
+  ]
+}

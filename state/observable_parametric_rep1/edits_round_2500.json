@@ -1,0 +1,19 @@
+{
+  "note": "Shift slot budget away from low-reward default fillers (trending_now 0.551, personal_recs 0.706, also_bought 0.908 assoc page reward, all below the 1.017 mean) toward targeted widgets that show high associated reward but near-zero activation, and open up never-selected widgets serving cohorts that currently underperform (size_conf-high 0.833).",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.3, "to": 0.1, "reason": "lowest assoc page reward (0.551) of any widget; pure filler at 1.4% activation"},
+    {"widget": "personal_recs", "path": "base", "from": 0.35, "to": 0.18, "reason": "assoc page reward 0.706, far below 1.017 mean, at 3.4% activation"},
+    {"widget": "also_bought", "path": "base", "from": 0.4, "to": 0.25, "reason": "assoc page reward 0.908 below mean while taking 9.3% of slots"},
+    {"widget": "similar_items", "path": "base", "from": 0.45, "to": 0.36, "reason": "highest activation (15.8%) but assoc reward 0.996 slightly below mean; free a marginal slot"},
+    {"widget": "size_guide", "path": "base", "from": 0.05, "to": 0.15, "reason": "never activates (0%) yet size_conf-high cohort badly underperforms (0.833 vs 1.114)"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.4, "to": -1.0, "reason": "strong coverage penalty blocks it whenever fit_reassurance is picked first; size_conf-high pages likely need both"},
+    {"widget": "return_explainer", "path": "base", "from": 0.05, "to": 0.15, "reason": "assoc reward 1.39 on its rare activations and return_view-high cohort rewards (1.137) suggest unmet returns demand"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.08, "to": 0.15, "reason": "assoc page reward 1.308 at only 1.5% activation"},
+    {"widget": "expert_pick", "path": "base", "from": 0.05, "to": 0.12, "reason": "assoc page reward 1.357 at 0.1% activation; guidance appears valuable"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.05, "to": 0.1, "reason": "assoc page reward 1.113 (above mean) at only 5.0% activation"},
+    {"widget": "price_history", "path": "base", "from": 0.05, "to": 0.12, "reason": "never activates while price_dwell-high (1.028 vs 0.901) and price_sens-high (1.046 vs 0.906) cohorts do better when price content lands"},
+    {"widget": "wishlist_save", "path": "base", "from": 0.05, "to": 0.12, "reason": "never activates; wishlist-high cohort earns 1.234 vs 0.881, indicating save-oriented sessions respond well"},
+    {"widget": "material_deep_dive", "path": "base", "from": 0.05, "to": 0.1, "reason": "never activates although brand_story (same F33 quality-signal problem) carries above-mean 1.063 assoc reward"},
+    {"widget": "recently_viewed", "path": "base", "from": 0.1, "to": 0.14, "reason": "never activates; revisit-high cohort rewards 1.248 vs 0.876, so returning-session context aids reward"}
+  ]
+}

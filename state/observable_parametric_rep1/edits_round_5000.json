@@ -1,0 +1,19 @@
+{
+  "note": "Continue draining low-reward defaults (trending_now 0.540, personal_recs 0.659, also_bought 0.875), revert the price_history boost that landed at 0.845 assoc reward, and push harder on high-reward under-activated widgets (expert_pick 1.336, low_return_alts 1.148, price_drop_notify 1.196). size_guide still never fires while the size_conf-high cohort trails 0.878 vs 1.154, so raise its remaining-weight and soften its coverage penalty so it can co-appear with fit_reassurance.",
+  "edits": [
+    {"widget": "trending_now", "path": "base", "from": 0.1, "to": 0.02, "reason": "assoc page reward 0.540, by far the worst; keep it off pages"},
+    {"widget": "personal_recs", "path": "base", "from": 0.18, "to": 0.08, "reason": "assoc page reward 0.659 still far below the 1.054 mean"},
+    {"widget": "also_bought", "path": "base", "from": 0.25, "to": 0.15, "reason": "assoc page reward 0.875 below mean at 5.5% activation"},
+    {"widget": "similar_items", "path": "base", "from": 0.36, "to": 0.3, "reason": "assoc reward 1.006 below the 1.054 mean while still the top slot consumer (14.4%)"},
+    {"widget": "price_history", "path": "base", "from": 0.12, "to": 0.06, "reason": "last round's boost produced 0.845 assoc reward; revert most of it"},
+    {"widget": "size_guide", "path": "on_rem.F32", "from": 2.0, "to": 2.5, "reason": "still 0% activation while size_conf-high cohort underperforms (0.878 vs 1.154)"},
+    {"widget": "size_guide", "path": "on_cov.F32", "from": -1.0, "to": -0.5, "reason": "coverage penalty still blocks it after fit_reassurance is picked; size-anxious pages likely need both"},
+    {"widget": "expert_pick", "path": "base", "from": 0.12, "to": 0.18, "reason": "assoc page reward 1.336 at only 0.3% activation"},
+    {"widget": "expert_pick", "path": "on_rem.F51", "from": 1.4, "to": 1.7, "reason": "paralysis-flavored cohorts (cart_osc-high 1.342, revisit-high 1.284) do well; let it compete for those sessions"},
+    {"widget": "low_return_alts", "path": "base", "from": 0.1, "to": 0.15, "reason": "assoc page reward 1.148, clearly above mean, at 6.7% activation"},
+    {"widget": "price_drop_notify", "path": "base", "from": 0.15, "to": 0.18, "reason": "assoc page reward 1.196 at 2.7% activation; appears in several high-reward common sets"},
+    {"widget": "wishlist_save", "path": "on_rem.F51", "from": 1.2, "to": 1.6, "reason": "still never activates; wishlist-high cohort rewards 1.254 vs 0.915"},
+    {"widget": "recently_viewed", "path": "on_rem.F51", "from": 0.7, "to": 1.0, "reason": "still never activates; revisit-high cohort rewards 1.284 vs 0.933"},
+    {"widget": "customers_chose", "path": "base", "from": 0.1, "to": 0.12, "reason": "assoc page reward 1.103 above mean at 13% activation; small reinforcement"}
+  ]
+}
